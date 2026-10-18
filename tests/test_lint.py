@@ -20,6 +20,19 @@ class LiteralRules(unittest.TestCase):
             with self.subTest(f=f):
                 self.assertTrue(lint_formula(f), f)
 
+    def test_numeric_text(self):
+        # WR-06: Excel coerces numeric text in arithmetic.
+        for f in ['=B1*"0.5"', '=B1*VALUE("12")', '=B1*" 12 "', '=B1*"5%"',
+                  '=B1*"1,000"', '=B1*NUMBERVALUE("3")', '=B1*VALUE("1"&"1")',
+                  '=B1*("1"&"1")', '=B1*"1E3"']:
+            with self.subTest(f=f):
+                self.assertTrue(lint_formula(f), f)
+        for f in ['=IF(A1>0,"100 kg",1)', '=TEXT(A1,"0.0%")', '=TEXT(A1,"0")',
+                  '=IFERROR(A1,"n/a")', '="Scenario: "&A1', '=IF(A1,"inf","nan")',
+                  '=IF(A1,"",B1)', '=VALUE(A1)']:
+            with self.subTest(f=f):
+                self.assertEqual(lint_formula(f), [], f)
+
     def test_inf_name_pinned(self):
         # Tokenizer reads Inf as a NUMBER; the lint flags it (pinned).
         self.assertTrue(lint_formula("=A1*Inf"))

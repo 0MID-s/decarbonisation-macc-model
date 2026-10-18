@@ -1,4 +1,5 @@
 """Tokenizer-based formula lint (D-15) with an LB/MB range tag index."""
+import math
 import re
 from typing import Dict, FrozenSet, List, Optional, Tuple
 
@@ -99,6 +100,32 @@ def _func_name(value):
     return name
 
 
+def _text_number(value):
+    """The number Excel would coerce a text literal to, else None (WR-06)."""
+    v = value[1:-1].replace('""', '"') if value.startswith('"') else value
+    v = v.strip().replace(",", "")
+    scale = 1.0
+    if v.endswith("%"):
+        v, scale = v[:-1], 0.01
+    try:
+        num = float(v) * scale
+    except ValueError:
+        return None
+    return num if math.isfinite(num) else None
+
+
+def _next_to_concat(items, i):
+    """True if token i is an operand of '&' (e.g. "1"&"1" builds 11)."""
+    for j in (i - 1, i + 1):
+        k = j
+        while 0 <= k < len(items) and items[k].type == Token.WSPACE:
+            k += -1 if j < i else 1
+        if (0 <= k < len(items) and items[k].type == Token.OP_IN
+                and items[k].value == "&"):
+            return True
+    return False
+
+
 def lint_formula(formula, sheet="", tags=None):
     # type: (str, str, Optional[RangeTagIndex]) -> List[str]
     if not formula.startswith("="):
@@ -122,6 +149,12 @@ def lint_formula(formula, sheet="", tags=None):
             name = _func_name(tok.value)
             if name in BANNED_FUNCTIONS:
                 problems.append("%s: banned function %s" % (pos, name))
+            if name in ("VALUE", "NUMBERVALUE"):
+                nxt = items[i + 1] if i + 1 < len(items) else None
+                if (nxt is not None and nxt.type == Token.OPERAND
+                        and nxt.subtype == Token.TEXT):
+                    problems.append("%s: %s of a text literal hides a number"
+                                    % (pos, name))
         elif tok.type == Token.OPERAND and tok.subtype == Token.RANGE:
             if "[" in tok.value:
                 problems.append("%s: external or structured reference %s"
@@ -132,6 +165,11 @@ def lint_formula(formula, sheet="", tags=None):
             low = tok.value.lower()
             if "://" in low or "file:" in low or tok.value.strip('"').startswith("\\\\"):
                 problems.append("%s: text operand looks like a URL or path" % pos)
+            num = _text_number(tok.value)
+            if num is not None and (num not in ALLOWED_NUMERIC_LITERALS
+                                    or _next_to_concat(items, i)):
+                problems.append("%s: numeric text %s not allowed (Excel coerces "
+                                "it to a number)" % (pos, tok.value))
     # whole-string DDE check outside quoted text
     stripped = re.sub(r'"(?:[^"]|"")*"', '""', formula)
     if "|" in stripped:
