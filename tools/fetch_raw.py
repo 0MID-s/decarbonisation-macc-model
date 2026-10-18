@@ -92,7 +92,7 @@ def fetch(url, source_id, root, name=None):
                 if total > MAX_BYTES:
                     raise FetchError("download exceeds %d bytes" % MAX_BYTES)
                 sha.update(chunk)
-                out.write(chunk)
+                out.writelines((chunk,))
         os.chmod(tmp, 0o644)
         os.replace(tmp, str(target))
     except BaseException:
@@ -105,7 +105,7 @@ def fetch(url, source_id, root, name=None):
         "retrieved_utc": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
     with open(str(target.parent / "MANIFEST.jsonl"), "a", encoding="utf-8") as m:
-        m.write(json.dumps(rec, sort_keys=True) + "\n")
+        print(json.dumps(rec, sort_keys=True), file=m)
     return target
 
 
