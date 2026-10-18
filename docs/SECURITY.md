@@ -46,7 +46,7 @@ Flags: `--isolated` ignores env vars and user config; `--require-hashes` rejects
 
 ## Untrusted downloads policy
 
-Downloads go only into `data_raw/` (one subdirectory per source), from allowlisted official hosts, via `tools/fetch_raw.py`. Parse as data with `python3 -I` from scripts kept outside `data_raw/`. Never open downloads in Excel, never enable or run macros. `data_raw/*` is gitignored except its README.
+Downloads go only into `data_raw/` (one subdirectory per source), from allowlisted official hosts, via `tools/fetch_raw.py`. Parse as data with `python3 -I` from scripts kept outside `data_raw/`. Never open downloads in Excel, never enable or run macros. `data_raw/*` is gitignored except its README. File types are an allowlist (`ALLOWED_SUFFIXES`: .csv, .tsv, .json, .xlsx, .pdf, .txt, .xml); macro-capable formats, including legacy .xls, executables, scripts and archives are refused. The fetcher never overwrites an existing file and refuses the reserved name `MANIFEST.jsonl`, so every manifest hash keeps matching the bytes on disk.
 
 ## Secrets policy
 

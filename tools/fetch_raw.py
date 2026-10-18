@@ -30,10 +30,12 @@ from config.security import host_allowed  # noqa: E402
 MAX_BYTES = 50 * 1024 * 1024
 TIMEOUT_S = 60
 CHUNK = 64 * 1024
-FORBIDDEN_SUFFIXES = (
-    ".xlsm", ".xlsb", ".xls", ".exe", ".bat", ".cmd", ".sh", ".py", ".js", ".vbs",
-    ".ps1", ".dll", ".so", ".dylib", ".jar", ".app", ".pkg", ".dmg", ".zip",
-)
+# Allowlist, not denylist (CR-03): data formats only. Macro-capable Office
+# files (.xlsm, .xltm, .xlam, .docm, legacy .xls), executables, scripts and
+# archives are never stored. Legacy .xls (e.g. Damodaran) is deliberately not
+# on the list; adding it would be a reviewed, documented exception.
+ALLOWED_SUFFIXES = (".csv", ".tsv", ".json", ".xlsx", ".pdf", ".txt", ".xml")
+MANIFEST_NAME = "MANIFEST.jsonl"
 DEFAULT_ROOT = _ROOT / "data_raw"
 
 
@@ -62,12 +64,16 @@ def plan_target(url, source_id, root, name=None):
     if (name in ("", ".", "..") or "/" in name or "\\" in name or ".." in name
             or "\x00" in name or name.startswith(".")):
         raise FetchError("unsafe file name: %r" % name)
-    if name.lower().endswith(FORBIDDEN_SUFFIXES):
-        raise FetchError("forbidden file type: %s" % name)
+    if name.rstrip(" .") != name or not name.lower().endswith(ALLOWED_SUFFIXES):
+        raise FetchError("file type not on allowlist: %s" % name)
+    if name.upper() == MANIFEST_NAME.upper():
+        raise FetchError("reserved file name: %s" % name)
     root = Path(root).resolve()
     target = (root / source_id / name).resolve()
     if root not in target.parents or target.parent != root / source_id:
         raise FetchError("target escapes data_raw root")
+    if target.exists():
+        raise FetchError("target already exists; refuse to overwrite: %s" % target)
     return target
 
 
@@ -94,6 +100,8 @@ def fetch(url, source_id, root, name=None):
                 sha.update(chunk)
                 out.writelines((chunk,))
         os.chmod(tmp, 0o644)
+        if target.exists():  # appeared during the download
+            raise FetchError("target already exists; refuse to overwrite: %s" % target)
         os.replace(tmp, str(target))
     except BaseException:
         if os.path.exists(tmp):
@@ -104,7 +112,7 @@ def fetch(url, source_id, root, name=None):
         "file": target.name, "sha256": sha.hexdigest(), "bytes": total,
         "retrieved_utc": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
-    with open(str(target.parent / "MANIFEST.jsonl"), "a", encoding="utf-8") as m:
+    with open(str(target.parent / MANIFEST_NAME), "a", encoding="utf-8") as m:
         print(json.dumps(rec, sort_keys=True), file=m)
     return target
 

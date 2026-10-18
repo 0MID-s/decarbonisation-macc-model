@@ -60,7 +60,10 @@ class PlanTargetTests(Base):
                     plan_target(url, "Src_X", self.root)
 
     def test_rejects_forbidden_suffix(self):
-        for n in ("a.xlsm", "a.exe", "a.zip", "a.XLSM", "a.py", "a.xls"):
+        for n in ("a.xlsm", "a.exe", "a.zip", "a.XLSM", "a.py", "a.xls",
+                  # CR-03: denylist gaps, now closed by the allowlist
+                  "x.xltm", "x.xlam", "x.docm", "x.scr", "x.hta", "x.command",
+                  "x.7z", "x.tar.gz", "x.xlsm.", "x.csv.", "x.csv ", "noext"):
             with self.subTest(n=n):
                 with self.assertRaises(FetchError):
                     plan_target(GOOD, "Src_X", self.root, name=n)
@@ -69,6 +72,21 @@ class PlanTargetTests(Base):
         for n in ("a.xlsx", "a.csv", "a.json", "a.tsv", "a.pdf", "a.xml"):
             with self.subTest(n=n):
                 plan_target(GOOD, "Src_X", self.root, name=n)
+
+    def test_rejects_manifest_name(self):
+        for n in ("MANIFEST.jsonl", "manifest.JSONL"):
+            with self.subTest(n=n):
+                with self.assertRaises(FetchError):
+                    plan_target(GOOD, "Src_X", self.root, name=n)
+        with self.assertRaises(FetchError):
+            plan_target("https://ec.europa.eu/x/MANIFEST.jsonl", "Src_X", self.root)
+
+    def test_refuses_overwrite(self):
+        d = self.root / "Src_X"
+        d.mkdir()
+        (d / "a.csv").write_bytes(b"old")
+        with self.assertRaises(FetchError):
+            plan_target(GOOD, "Src_X", self.root, name="a.csv")
 
     def test_rejects_traversal_names(self):
         for n in ("../a.csv", "a/b.csv", "..", "a\\b.csv", "/etc/a.csv"):
@@ -88,10 +106,10 @@ class PlanTargetTests(Base):
 
 
 class FetchTests(Base):
-    def run_fetch(self, data, **kw):
+    def run_fetch(self, data, name="d.json", **kw):
         with mock.patch.object(urllib.request.OpenerDirector, "open",
                                return_value=FakeResp(data, kw.pop("final", GOOD))):
-            return fetch(GOOD, "Src_X", self.root, name="d.json", **kw)
+            return fetch(GOOD, "Src_X", self.root, name=name, **kw)
 
     def test_success_writes_file_and_manifest(self):
         data = b'{"a": 1}'
@@ -110,10 +128,19 @@ class FetchTests(Base):
             self.assertIn(k, rec)
 
     def test_manifest_appends(self):
-        self.run_fetch(b"1")
-        self.run_fetch(b"2")
+        self.run_fetch(b"1", name="a.json")
+        self.run_fetch(b"2", name="b.json")
         lines = (self.root / "Src_X" / "MANIFEST.jsonl").read_text().splitlines()
         self.assertEqual(len(lines), 2)
+
+    def test_refetch_same_name_refused(self):
+        # CR-03: an earlier manifest sha256 must keep matching the file on disk.
+        self.run_fetch(b"1")
+        with self.assertRaises(FetchError):
+            self.run_fetch(b"2")
+        self.assertEqual((self.root / "Src_X" / "d.json").read_bytes(), b"1")
+        lines = (self.root / "Src_X" / "MANIFEST.jsonl").read_text().splitlines()
+        self.assertEqual(len(lines), 1)
 
     def test_oversize_aborts_no_file(self):
         with mock.patch.object(fetch_raw, "MAX_BYTES", 10):
