@@ -49,6 +49,7 @@ def _sheet(wb, cells, styles, name, kind, dataset, title, purpose, note, last_co
     setup_sheet(ws, kind, freeze_row=4, freeze_col=2, header_last_row=3)
     write_title_band(cells, styles, ws, title, purpose, note, last_col)
     write_synthetic_banner(cells, styles, ws, 3, last_col)
+    ws.set_row(3, 26)
     return ws
 
 
@@ -56,7 +57,7 @@ def _instructions(wb, styles, cells, dataset):
     ws = _sheet(wb, cells, styles, "Instructions", SheetKind.SPIKE_NOTES,
                 dataset, "GATE-A: Excel check for the MACC spike", GATE_PURPOSE,
                 "Throwaway spike; every number on these sheets is synthetic.", 4)
-    ws.set_column(1, 1, 12.0)
+    ws.set_column(1, 1, 40.0)
     ws.set_column(2, 2, 70.0)
     ws.set_column(3, 3, 50.0)
     ws.set_column(4, 4, 34.0)

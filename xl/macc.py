@@ -3,7 +3,7 @@
 Row and column numbers are zero-based in the layout dataclasses; the formula
 strings use Excel A1 notation. Cached values come from
 checkmodel.macc_reference. Measures arrive as arguments (name, annual
-abatement tCO2e, cost EUR per tCO2e); nothing is imported from tests.
+abatement tCO2e, cost EUR per tCO2e); no test module is used here.
 """
 from dataclasses import dataclass
 from typing import Sequence, Tuple

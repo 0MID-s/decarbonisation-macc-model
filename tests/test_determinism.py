@@ -10,8 +10,8 @@ import unittest
 import zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# Plan 01-07 adds ("spike", "fixtures").
-TARGET_DATASETS = sorted([("main", "config"), ("main", "fixtures")])
+TARGET_DATASETS = sorted([("main", "config"), ("main", "fixtures"),
+                          ("spike", "fixtures")])
 SEEDS = ("0", "1", "12345", None)
 
 
