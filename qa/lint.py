@@ -143,19 +143,133 @@ def lint_formula(formula, sheet="", tags=None):
     return problems
 
 
+# Selector functions return ONE of their branch arguments, so LB in one branch
+# and MB in another is a selection, not a sum (CLAUDE.md LB/MB selector
+# pattern). Value: indexes of the branch arguments (None = all from there on).
+_SELECTORS = {
+    "IF": (1, None),      # IF(cond, a, b)
+    "CHOOSE": (1, None),  # CHOOSE(k, a, b, ...)
+    "INDEX": (0, 1),      # INDEX(range, i[, j]): picks from the range
+    "IFERROR": (0, None),  # IFERROR(a, b)
+}
+_EMPTY = frozenset()
+_BOTH = frozenset(["LB", "MB"])
+
+
+class _LbMbWalker(object):
+    """Tracks which LB/MB tags a (sub)expression's value can carry.
+
+    Each value is a set of alternatives; an alternative is the set of tags
+    that end up combined in that outcome. Arithmetic, comparison and every
+    non-selector function combine their operands (cartesian union); a
+    selector only unions the alternatives of its branches. A violation is any
+    alternative that holds both LB and MB, however deeply nested (CR-02).
+    """
+
+    def __init__(self, items, sheet, tags):
+        self.items = [t for t in items if t.type != Token.WSPACE]
+        self.sheet = sheet
+        self.tags = tags
+        self.pos = 0
+        self.bad = False
+
+    def _peek(self):
+        return self.items[self.pos] if self.pos < len(self.items) else None
+
+    def _combine(self, a, b):
+        out = frozenset(x | y for x in a for y in b)
+        if any(_BOTH <= x for x in out):
+            self.bad = True
+        return out
+
+    def _ends_expr(self, tok):
+        return tok is None or tok.type == Token.SEP or tok.subtype == Token.CLOSE
+
+    def expr(self):
+        """Returns (alternatives, raw tags if the expr is one range operand)."""
+        alts = frozenset([_EMPTY])
+        raw = None
+        terms = 0
+        while not self._ends_expr(self._peek()):
+            tok = self._peek()
+            if tok.type in (Token.OP_PRE, Token.OP_POST, Token.OP_IN):
+                self.pos += 1
+                continue
+            t_alts, t_raw = self.term()
+            terms += 1
+            if terms == 1:  # a lone operand is not yet a combination
+                alts, raw = t_alts, t_raw
+            else:
+                alts, raw = self._combine(alts, t_alts), None
+        return alts, raw
+
+    def term(self):
+        tok = self._peek()
+        self.pos += 1
+        if tok.type == Token.OPERAND:
+            if tok.subtype != Token.RANGE:
+                return frozenset([_EMPTY]), None
+            found = self.tags.tags_for(tok.value, self.sheet)
+            return frozenset([frozenset(found)]), found
+        if tok.type == Token.FUNC and tok.subtype == Token.OPEN:
+            return self.func(_func_name(tok.value)), None
+        if tok.subtype == Token.OPEN:  # parenthesis or array constant
+            args = self.args()
+            if len(args) == 1:
+                return args[0]
+            alts = frozenset([_EMPTY])
+            for a, _ in args:  # (F20,F21) union or {..} array: combined
+                alts = self._combine(alts, a)
+            return alts, None
+        return frozenset([_EMPTY]), None  # stray token: nothing tagged
+
+    def args(self):
+        out = []
+        while True:
+            out.append(self.expr())
+            tok = self._peek()
+            if tok is None:
+                return out
+            self.pos += 1
+            if tok.subtype == Token.CLOSE:
+                return out
+
+    def func(self, name):
+        args = self.args()
+        if name not in _SELECTORS:
+            alts = frozenset([_EMPTY])
+            for a, _ in args:
+                alts = self._combine(alts, a)
+            return alts
+        first, last = _SELECTORS[name]
+        branch_idx = set(range(first, len(args) if last is None else last))
+        result = set()
+        for i, (a, raw) in enumerate(args):
+            if i not in branch_idx:
+                if any(_BOTH <= x for x in a):
+                    self.bad = True
+                continue
+            if name == "INDEX" and raw is not None:
+                # INDEX picks one cell of the range: each tag on its own.
+                result |= set(frozenset([t]) for t in raw) or set([_EMPTY])
+            else:
+                result |= a
+        return frozenset(result or [_EMPTY])
+
+    def run(self):
+        alts, _ = self.expr()
+        while self._peek() is not None:  # unbalanced close: keep scanning
+            self.pos += 1
+            more, _ = self.expr()
+            alts = self._combine(alts, more)
+        if any(_BOTH <= x for x in alts):
+            self.bad = True
+        return self.bad
+
+
 def _lb_mb(items, sheet, tags):
-    seen = set()
-    for tok in items:
-        if tok.type == Token.OPERAND and tok.subtype == Token.RANGE:
-            seen |= tags.tags_for(tok.value, sheet)
-    if "LB" in seen and "MB" in seen:
-        first_func = next((t for t in items if t.type == Token.FUNC
-                           and t.subtype == Token.OPEN), None)
-        selector = first_func is not None and _func_name(first_func.value) in (
-            "CHOOSE", "INDEX")
-        arith = any(t.type == Token.OP_IN and t.value in "+-*/^&" for t in items)
-        if not selector or arith:
-            return ["formula combines LB- and MB-tagged ranges"]
+    if _LbMbWalker(items, sheet, tags).run():
+        return ["formula combines LB- and MB-tagged ranges"]
     return []
 
 

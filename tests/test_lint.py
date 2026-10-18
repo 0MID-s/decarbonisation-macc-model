@@ -66,9 +66,29 @@ class LbMb(unittest.TestCase):
             with self.subTest(f=f):
                 self.assertTrue(lint_formula(f, "Calc", tags), f)
 
+    def test_nested_mixes(self):
+        # CR-02: aggregation hidden inside a selector, however deep.
+        tags = make_tags()
+        for f in ["=CHOOSE(1,SUM(F20,F21))", "=INDEX(SUMPRODUCT(F20,F21),1)",
+                  "=CHOOSE(Idx,F20,F21)+F21", "=IF(A1,F20+F21,0)",
+                  "=IF(A1,F20,F21)*F21", "=CHOOSE(Idx,(F20*F21),F20)",
+                  "=IF(A1,CHOOSE(Idx,F20,MAX(F20:F21)),F21)",
+                  "=CHOOSE(Idx,F20:F21,F20)", "=F20:F21", "=SUM(Row_LB,Row_MB)",
+                  "=IF(F20>F21,Const_None,0)", "=ROUND(INDEX(F20:F21,Idx)+F21,0)",
+                  "=INDEX((F20,F21),Idx)", "=CHOOSE(Idx,F20 F21,F20)"]:
+            with self.subTest(f=f):
+                self.assertTrue(lint_formula(f, "Calc", tags), f)
+
     def test_selection_passes(self):
         tags = make_tags()
-        for f in ["=CHOOSE(Idx_Basis,F20,F21)", "=INDEX(F20:F21,Idx_Basis)"]:
+        for f in ["=CHOOSE(Idx_Basis,F20,F21)", "=INDEX(F20:F21,Idx_Basis)",
+                  "=IF(Basis_Sel=Const_None,F20,F21)",
+                  "=IF(Basis_Sel=Const_None,Row_LB,Row_MB)",
+                  "=CHOOSE(Idx,F20,F21)*Const_None",
+                  "=IF(A1,F20,F21)*Rate_Disc", "=IFERROR(F20,F21)",
+                  "=ROUND(CHOOSE(Idx,F20*Const_None,F21*Const_None),0)",
+                  "=IF(A1,CHOOSE(Idx,F20,F21),F21)",
+                  "=SUM(CHOOSE(Idx,F20,F21),G5)", "=F20*F20+G9"]:
             with self.subTest(f=f):
                 self.assertEqual(lint_formula(f, "Calc", tags), [], f)
 
