@@ -10,8 +10,12 @@ from qa.lint import RangeTagIndex, lint_or_raise
 MAX_TEXT = 32767
 VALID_TAGS = ("LB", "MB")
 
-FormulaRecord = NamedTuple("FormulaRecord", [
-    ("sheet", str), ("row", int), ("col", int), ("text", str)])
+class FormulaRecord(NamedTuple):
+    sheet: str
+    row: int
+    col: int
+    text: str
+    value: object = None  # cached value written with the formula
 
 
 class UnsafeCellError(ValueError):
@@ -78,7 +82,7 @@ class CellWriter(object):
         if isinstance(value, float) and not math.isfinite(value):
             raise UnsafeCellError("formula cached value is NaN or infinity")
         lint_or_raise(f, ws.get_name(), self.tags)
-        self._registry.append(FormulaRecord(ws.get_name(), row, col, f))
+        self._registry.append(FormulaRecord(ws.get_name(), row, col, f, value))
         ws.write_formula(row, col, f, fmt, value)
 
     def link(self, ws, row, col, url, fmt=None, string=None):

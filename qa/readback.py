@@ -58,6 +58,10 @@ def verify_workbook(data, registry, layouts):
     except (ValueError, KeyError, TypeError) as exc:
         raise ReadbackError(["openpyxl could not read the workbook: %s" % exc])
 
+    # XlsxWriter writes an empty cached string as <v></v>, which openpyxl
+    # reads as None; that is only a missing value if "" was not intended.
+    cached = dict(((r.sheet, xl_rowcol_to_cell(r.row, r.col)), r.value)
+                  for r in registry)
     found = Counter()
     for ws in wb.worksheets:
         wsv = wbv[ws.title]
@@ -66,7 +70,8 @@ def verify_workbook(data, registry, layouts):
                 if c.data_type != "f":
                     continue
                 found[(ws.title, c.coordinate, c.value)] += 1
-                if wsv[c.coordinate].value is None:
+                if (wsv[c.coordinate].value is None
+                        and cached.get((ws.title, c.coordinate)) != ""):
                     problems.append("%s!%s: formula has no cached value"
                                     % (ws.title, c.coordinate))
                 for p in lint_formula(c.value, ws.title):

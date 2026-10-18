@@ -98,6 +98,16 @@ class BuildTests(unittest.TestCase):
         self.assertTrue(any("could not read" in p for p in cm.exception.problems))
         self.assertFalse(os.path.exists(out))
 
+    def test_empty_string_cached_value_accepted(self):
+        # WR-03: =IF(..,"","") with value="" is a legitimate cached value.
+        def extra(wb, styles, cells):
+            ws = wb.add_worksheet("Empty")
+            ws.hide_gridlines(2)
+            ws.freeze_panes(1, 1)
+            cells.formula(ws, 2, 2, '=IF(B1,"","")', None, value="")
+        build.build_bytes("main", build.load_dataset("fixtures"),
+                          extra_builders=[extra])
+
     def test_main_workbook_clean_and_ordered(self):
         data, _ = build.build_bytes("main", build.load_dataset("config"))
         self.assertEqual(scan_xlsx_bytes(data), [])
