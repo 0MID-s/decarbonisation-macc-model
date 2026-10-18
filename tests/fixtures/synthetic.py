@@ -96,3 +96,6 @@ SYNTHETIC_MEASURES = (
     ("Synthetic M5", 1600, 0.4),
     ("Synthetic M6", 5900, 71.0),
 )
+
+# SYNTHETIC reference carbon price (EUR/tCO2e) for the spike line; not a real price.
+SYNTHETIC_REFERENCE_PRICE = 80.0
