@@ -45,9 +45,8 @@ class Base(unittest.TestCase):
 
 class PlanTargetTests(Base):
     def test_accepts_good(self):
-        p = plan_target(GOOD + "?x=1", "Src_Eurostat", self.root) if False else \
-            plan_target(GOOD, "Src_Eurostat", self.root, name="nrg_pc_205.json")
-        self.assertEqual(p, self.root / "Src_Eurostat" / "nrg_pc_205.json")
+        p = plan_target(GOOD, "Src_Eurostat", self.root, name="nrg_pc_205.json")
+        self.assertEqual(p, self.root.resolve() / "Src_Eurostat" / "nrg_pc_205.json")
 
     def test_filename_from_url(self):
         p = plan_target("https://www.gov.uk/files/factors.csv", "Src_Gov", self.root)
