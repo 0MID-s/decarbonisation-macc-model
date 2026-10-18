@@ -1,0 +1,12 @@
+.planning/
+.venv/
+.env
+.DS_Store
+~$*.xlsx
+dist/
+__pycache__/
+*.pyc
+*.xlsm
+*.egg-info/
+data_raw/*
+!data_raw/README.md
