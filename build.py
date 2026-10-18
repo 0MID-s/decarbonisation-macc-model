@@ -18,7 +18,7 @@ import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Dict, Sequence, Tuple
+from typing import Callable, Dict, Optional, Sequence, Tuple
 
 import xlsxwriter
 
@@ -33,6 +33,7 @@ from xl.sheets.cover import build_cover
 from xl.sheets.inputs import build_inputs
 from xl.sheets.lists import build_lists
 from xl.sheets.sources import build_sources
+from xl.sheets.spike import build_spike
 from xl.styles import Styles
 
 OPTIONS = {
@@ -51,6 +52,7 @@ class Dataset:
     inputs: Tuple[InputRecord, ...]
     measures: Tuple[Tuple[str, int, float], ...]
     synthetic: bool
+    reference_price: Optional[float] = None
 
 
 def load_dataset(name):
@@ -63,7 +65,8 @@ def load_dataset(name):
         from tests.fixtures import synthetic  # lazy: fixtures only
         return Dataset("fixtures", tuple(synthetic.SYNTHETIC_SOURCES),
                        tuple(synthetic.SYNTHETIC_INPUTS),
-                       tuple(synthetic.SYNTHETIC_MEASURES), True)
+                       tuple(synthetic.SYNTHETIC_MEASURES), True,
+                       synthetic.SYNTHETIC_REFERENCE_PRICE)
     raise ValueError("unknown dataset: %r" % (name,))
 
 
@@ -86,6 +89,7 @@ def register_target(name, default_out, builder):
 
 
 register_target("main", os.path.join("dist", "maison_veritas.xlsx"), _build_main)
+register_target("spike", os.path.join("dist", "spike_macc.xlsx"), build_spike)
 
 
 def build_bytes(target, dataset, cfg=BUILD, extra_builders=()):

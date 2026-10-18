@@ -80,6 +80,21 @@ class Offline(unittest.TestCase):
                     problems.append("%s imports xl" % rel)
         self.assertEqual(problems, [])
 
+    def test_checkmodel_audited_and_fixtures_only_via_dataset(self):
+        self.assertTrue(os.path.isdir(os.path.join(ROOT, "checkmodel")))
+        self.assertIn("checkmodel", PACKAGES)
+        self.assertIn("checkmodel", ALLOWED_IMPORTS)
+        audited = [os.path.relpath(p, ROOT) for p in _py_files()]
+        for rel in ("xl/sheets/spike.py", "xl/macc.py", "xl/charts.py",
+                    "checkmodel/macc_reference.py"):
+            self.assertIn(rel, audited)
+        for path in _py_files():
+            rel = os.path.relpath(path, ROOT)
+            if rel.startswith(("xl", "checkmodel", "qa", "config")):
+                self.assertFalse(
+                    [m for m in _imports(path) if m.split(".")[0] == "tests"],
+                    rel)
+
 
 if __name__ == "__main__":
     unittest.main()
