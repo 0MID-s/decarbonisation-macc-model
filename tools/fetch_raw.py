@@ -15,6 +15,7 @@ import os
 import re
 import sys
 import tempfile
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -28,7 +29,8 @@ from config.schema import ID_PATTERN  # noqa: E402
 from config.security import host_allowed  # noqa: E402
 
 MAX_BYTES = 50 * 1024 * 1024
-TIMEOUT_S = 60
+TIMEOUT_S = 60  # per blocking socket operation
+TOTAL_TIMEOUT_S = 300  # whole download (WR-11)
 CHUNK = 64 * 1024
 # Allowlist, not denylist (CR-03): data formats only. Macro-capable Office
 # files (.xlsm, .xltm, .xlam, .docm, legacy .xls), executables, scripts and
@@ -77,10 +79,15 @@ def plan_target(url, source_id, root, name=None):
     return target
 
 
-def fetch(url, source_id, root, name=None):
+def fetch(url, source_id, root, name=None, proxy=None):
     target = plan_target(url, source_id, root, name)
     target.parent.mkdir(parents=True, exist_ok=True)
-    opener = urllib.request.build_opener(AllowlistRedirectHandler())
+    # Environment proxies (HTTPS_PROXY, also honoured under -I) are ignored;
+    # a proxy is used only when passed explicitly (WR-11).
+    proxies = {"https": proxy} if proxy else {}
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler(proxies),
+                                         AllowlistRedirectHandler())
+    deadline = time.monotonic() + TOTAL_TIMEOUT_S
     req = urllib.request.Request(url, headers={"User-Agent": "maison-veritas-fetch/1"})
     fd, tmp = tempfile.mkstemp(dir=str(target.parent), prefix=".part-")
     try:
@@ -94,6 +101,8 @@ def fetch(url, source_id, root, name=None):
                 chunk = resp.read(CHUNK)
                 if not chunk:
                     break
+                if time.monotonic() > deadline:
+                    raise FetchError("download exceeded %d s total" % TOTAL_TIMEOUT_S)
                 total += len(chunk)
                 if total > MAX_BYTES:
                     raise FetchError("download exceeds %d bytes" % MAX_BYTES)
@@ -123,9 +132,11 @@ def main(argv=None):
     ap.add_argument("--url", required=True)
     ap.add_argument("--name")
     ap.add_argument("--root", default=str(DEFAULT_ROOT))
+    ap.add_argument("--proxy", help="explicit https proxy URL; environment "
+                    "proxy variables are ignored")
     a = ap.parse_args(argv)
     try:
-        p = fetch(a.url, a.source_id, Path(a.root), a.name)
+        p = fetch(a.url, a.source_id, Path(a.root), a.name, a.proxy)
     except (FetchError, urllib.error.URLError, OSError) as exc:
         print("fetch refused/failed: %s" % exc, file=sys.stderr)
         return 1

@@ -172,6 +172,33 @@ class FetchTests(Base):
         new = h.redirect_request(req, io.BytesIO(), 302, "Found", {}, "https://www.gov.uk/x")
         self.assertIsNotNone(new)
 
+    def test_total_deadline(self):
+        # WR-11: a trickling server cannot keep the download alive forever.
+        calls = []
+
+        def clock():  # first call sets the deadline, later calls are past it
+            calls.append(1)
+            return 0.0 if len(calls) == 1 else fetch_raw.TOTAL_TIMEOUT_S + 1.0
+        with mock.patch.object(fetch_raw.time, "monotonic", clock):
+            with self.assertRaises(FetchError):
+                self.run_fetch(b"x" * 10)
+        d = self.root / "Src_X"
+        self.assertEqual([f for f in d.iterdir()] if d.exists() else [], [])
+
+    def test_environment_proxy_ignored(self):
+        captured = []
+        real = urllib.request.build_opener
+
+        def spy(*handlers):
+            captured.extend(handlers)
+            return real(*handlers)
+        with mock.patch.dict(os.environ, {"HTTPS_PROXY": "http://proxy.invalid:1"}), \
+                mock.patch.object(urllib.request, "build_opener", spy):
+            self.run_fetch(b"1")
+        ph = [h for h in captured if isinstance(h, urllib.request.ProxyHandler)]
+        self.assertEqual(len(ph), 1)
+        self.assertEqual(ph[0].proxies, {})
+
     def test_cli_help(self):
         with self.assertRaises(SystemExit) as cm:
             fetch_raw.main(["--help"])
