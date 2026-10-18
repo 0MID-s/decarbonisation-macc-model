@@ -77,7 +77,31 @@ Adding a domain: a deliberate, reviewed change to `ALLOWED_DOMAINS`, made in its
 
 ## Approval log
 
-Pending user approval
+2026-10-18: the user chose option A in chat (create the venv, upgrade its pip to 26.0.1 from requirements-bootstrap.txt, then install requirements.txt), after seeing hashes, maintainers, licences and fresh OSV results. Approved in chat.
 
 ## Post-install evidence
+
+Installed 2026-10-18 with the exact commands under "Install procedure" (option A). Interpreter: Python 3.9.6. `.venv/pyvenv.cfg`: `include-system-site-packages = false`.
+
+`pip list --format=freeze`:
+
+```
+et_xmlfile==2.0.0
+openpyxl==3.1.5
+pip==26.0.1
+setuptools==58.0.4
+xlsxwriter==3.2.9
+```
+
+`pip check`: No broken requirements found.
+
+`ls .venv/bin`: Activate.ps1, activate, activate.csh, activate.fish, pip, pip3, pip3.9, python, python3, python3.9, vba_extract.py. The only non-standard entry is vba_extract.py, a helper script shipped by XlsxWriter (it extracts VBA from existing files). It is never run here, since macros are out of scope.
+
+Import check: xlsxwriter 3.2.9, openpyxl 3.1.5.
+
+## Accepted residual risks
+
+- pip 26.0.1 advisories that cannot be fixed on Python 3.9: CVE-2026-3219, CVE-2026-6357, CVE-2026-8643, CVE-2026-13346. All need a malicious index or archive or crafted console-script names; neutralised by hash pinning, PyPI-only installs and no further installs.
+- Python 3.9.6 is end of life (D-09). The generator runs offline in a venv; upgrade deferred to the user.
+- setuptools 58.0.4 (bundled by venv) is not used by the build; wheels-only installs never invoke it.
 
