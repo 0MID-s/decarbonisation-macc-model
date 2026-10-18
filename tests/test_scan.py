@@ -4,6 +4,7 @@ No real macro is created or run: mutated copies only add inert bytes/parts.
 """
 import io
 import unittest
+import warnings
 import zipfile
 
 import xlsxwriter
@@ -226,6 +227,52 @@ class FormulaBypassTests(unittest.TestCase):
     def test_clean_formula_ok(self):
         d = build(lambda wb, ws: ws.write_formula("D1", "=SUM(A1:A2)", None, 3), chart=False)
         self.assertEqual(scan_xlsx_bytes(d), [])
+
+
+class NonCellFormulaTests(unittest.TestCase):
+    """CR-01: formulas outside worksheet <f> elements are scanned too."""
+
+    def test_defined_name_dde(self):
+        d = build(lambda wb, ws: wb.define_name("Evil", "=cmd|' /C calc'!A0"),
+                  chart=False)
+        self.assertTrue(has(scan_xlsx_bytes(d), "DDE"))
+
+    def test_defined_name_banned_function(self):
+        d = build(lambda wb, ws: wb.define_name("Evil", '=WEBSERVICE("x")'),
+                  chart=False)
+        self.assertTrue(has(scan_xlsx_bytes(d), "WEBSERVICE"))
+
+    def test_data_validation_formula(self):
+        d = build(lambda wb, ws: ws.data_validation("D1", {
+            "validate": "custom", "value": '=WEBSERVICE("x")'}), chart=False)
+        self.assertTrue(has(scan_xlsx_bytes(d), "WEBSERVICE"))
+
+    def test_conditional_format_formula(self):
+        d = build(lambda wb, ws: ws.conditional_format("A1:A2", {
+            "type": "formula", "criteria": '=INDIRECT("A1")>0',
+            "format": wb.add_format({"bold": True})}), chart=False)
+        self.assertTrue(has(scan_xlsx_bytes(d), "INDIRECT"))
+
+    def test_chart_formula(self):
+        def fn(wb, ws):
+            ch = wb.add_chart({"type": "line"})
+            ch.add_series({"values": "=Sheet1!$A$1:$A$2"})
+            ch.set_title({"name": "=cmd|' /C calc'!A0"})
+            ws.insert_chart("E2", ch)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")  # XlsxWriter: unknown sheet 'cmd|..'
+            d = build(fn, chart=False)
+        self.assertTrue(has(scan_xlsx_bytes(d), "DDE"))
+
+    def test_clean_non_cell_formulas_pass(self):
+        def fn(wb, ws):
+            wb.define_name("Ok_Name", "=Sheet1!$A$1")
+            ws.data_validation("D1", {"validate": "list",
+                                      "source": ["Low", "High"]})
+            ws.conditional_format("A1:A2", {
+                "type": "cell", "criteria": "==", "value": '"OK"',
+                "format": wb.add_format({"bold": True})})
+        self.assertEqual(scan_xlsx_bytes(build(fn)), [])
 
 
 class StringBypassTests(unittest.TestCase):

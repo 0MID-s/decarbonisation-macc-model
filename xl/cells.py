@@ -89,6 +89,7 @@ class CellWriter(object):
     def define_name(self, name, ref):
         if not ref.startswith("=") or "[" in ref:
             raise UnsafeCellError("name reference must start with '=' and have no '[': %r" % ref)
+        lint_or_raise(ref, "", None)  # banned functions, DDE '|', literals
         if _looks_like_cell(name):
             raise UnsafeCellError("defined name looks like a cell reference: %r" % name)
         if self.workbook.define_name(name, ref) != 0:
@@ -118,11 +119,18 @@ class CellWriter(object):
         self.tags.add_name(name, sheet, *ext[1])
 
     def validation(self, ws, first_row, first_col, last_row, last_col, options):
-        src = options.get("source")
-        if isinstance(src, str):
-            if not src.startswith("=") or "[" in src:
-                raise UnsafeCellError("range source must start with '=' and have no '['")
-        elif isinstance(src, (list, tuple)):
-            if not all(isinstance(x, str) and not is_injection_string(x) for x in src):
-                raise UnsafeCellError("list source items must be safe strings")
+        # XlsxWriter writes any string in these keys into <formula1>/<formula2>,
+        # so every string is treated as a formula and linted (CR-01).
+        for key in ("value", "source", "minimum", "maximum"):
+            v = options.get(key)
+            if isinstance(v, str):
+                if not v.startswith("=") or "[" in v:
+                    raise UnsafeCellError(
+                        "validation %s must be a formula starting with '=' and "
+                        "have no '['" % key)
+                lint_or_raise(v, ws.get_name(), self.tags)
+            elif isinstance(v, (list, tuple)):
+                if not all(isinstance(x, str) and not is_injection_string(x)
+                           and not _has_bad_control(x) for x in v):
+                    raise UnsafeCellError("list source items must be safe strings")
         ws.data_validation(first_row, first_col, last_row, last_col, options)

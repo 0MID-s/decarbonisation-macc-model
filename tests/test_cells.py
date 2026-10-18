@@ -115,6 +115,35 @@ class LinkNameValidationTests(unittest.TestCase):
         with self.assertRaises(UnsafeCellError):
             cw.validation(ws, 2, 0, 2, 0, {"validate": "list", "source": "=[x]S!A1"})
 
+    def test_define_name_is_linted(self):
+        # CR-01: DDE, banned functions and literals in a name reference.
+        wb, ws, cw = make()
+        for ref in ("=cmd|' /C calc'!A0", '=WEBSERVICE("https://x")',
+                    "=INDIRECT(Inputs!$A$1)", "=Inputs!$A$1*1000"):
+            with self.subTest(ref=ref):
+                with self.assertRaises(ValueError):
+                    cw.define_name("Evil_Name", ref)
+        self.assertNotIn("Evil_Name", cw.names)
+
+    def test_validation_formulas_are_linted(self):
+        # CR-01: custom / min / max formulas go through the lint too.
+        wb, ws, cw = make()
+        bad = (
+            {"validate": "custom", "value": '=WEBSERVICE("https://x")'},
+            {"validate": "custom", "value": 'WEBSERVICE("https://x")'},
+            {"validate": "integer", "criteria": "between",
+             "minimum": "=INDIRECT(A1)", "maximum": "=A2"},
+            {"validate": "decimal", "criteria": ">", "value": "=A1*1000"},
+            {"validate": "list", "source": "=cmd|' /C calc'!A0"},
+        )
+        for opts in bad:
+            with self.subTest(opts=opts):
+                with self.assertRaises(ValueError):
+                    cw.validation(ws, 3, 0, 3, 0, opts)
+        cw.validation(ws, 4, 0, 4, 0, {"validate": "custom", "value": "=A1>0"})
+        cw.validation(ws, 5, 0, 5, 0, {"validate": "integer", "criteria": ">",
+                                        "value": 0})
+
     def test_blank(self):
         wb, ws, cw = make()
         cw.blank(ws, 0, 0, wb.add_format({"bold": True}))

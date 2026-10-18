@@ -72,6 +72,16 @@ class BuildTests(unittest.TestCase):
                               extra_builders=[extra])
         self.assertTrue(any("not in registry" in p for p in cm.exception.problems))
 
+    def test_readback_catches_unregistered_defined_name(self):
+        # CR-01: a name written outside CellWriter is a read-back problem.
+        def extra(wb, styles, cells):
+            wb.define_name("Raw_Name", "=Inputs!$A$1")
+        with self.assertRaises(ReadbackError) as cm:
+            build.build_bytes("main", build.load_dataset("fixtures"),
+                              extra_builders=[extra])
+        self.assertTrue(any("not written via CellWriter: Raw_Name" in p
+                            for p in cm.exception.problems))
+
     def test_main_workbook_clean_and_ordered(self):
         data, _ = build.build_bytes("main", build.load_dataset("config"))
         self.assertEqual(scan_xlsx_bytes(data), [])

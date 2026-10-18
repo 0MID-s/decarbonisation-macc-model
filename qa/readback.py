@@ -80,6 +80,16 @@ def verify_workbook(data, registry, layouts):
         _check_inputs(wb, layouts["inputs"], problems)
 
     names = layouts.get("names") or {}
+    # Two-way check (CR-01): every user name in the file must have been
+    # written through CellWriter.define_name. Built-in _xlnm names (print
+    # titles, print area, filters) are sheet settings, not user names.
+    file_names = set(n for n in wb.defined_names if not n.startswith("_xlnm."))
+    for ws in wb.worksheets:
+        file_names |= set("%s!%s" % (ws.title, n) for n in ws.defined_names
+                          if not n.startswith("_xlnm."))
+    for extra in sorted(file_names - set(names)):
+        problems.append("defined name in file not written via CellWriter: %s"
+                        % extra)
     for name in sorted(names):
         dn = wb.defined_names.get(name)
         if dn is None:

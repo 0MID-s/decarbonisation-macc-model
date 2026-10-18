@@ -2,7 +2,9 @@
 
 SET-03 / D-13 / D-14. Stdlib plus config.security only. A workbook passes only
 if every part, content type, relationship, formula and string is on a known-safe
-list; anything else is a finding. scan_xlsx_bytes returns findings (empty =
+list; anything else is a finding. Formulas are checked wherever they can
+appear: worksheet cells, defined names, data validations, conditional formats
+and chart references. scan_xlsx_bytes returns findings (empty =
 clean); scan_or_raise raises ScanError.
 """
 import io
@@ -39,6 +41,9 @@ FORBIDDEN_CT = ("vbaproject", "macroenabled", "macrosheet", "externallink", "ole
 FORBIDDEN_REL = ("vbaproject", "externallink", "oleobject", "macro", "connections")
 FORBIDDEN_WB_TAGS = ("externalReferences", "oleSize", "webPublishItems")
 FORBIDDEN_SHEET_TAGS = ("oleObjects", "controls", "legacyDrawing", "webPublishItems")
+# Formula-bearing elements in sheet parts: cell formulas, data-validation
+# formula1/formula2 and conditional-format formula (CR-01).
+FORMULA_TAGS = ("f", "formula", "formula1", "formula2")
 _ALLOW_RES = [re.compile("^" + p + "$") for p in PART_ALLOWLIST]
 _FUNC_RE = re.compile(
     r"\b(" + "|".join(re.escape(n) for n in sorted(BANNED_FUNCTIONS)) + r")\s*\(")
@@ -176,6 +181,8 @@ def scan_xlsx_bytes(data):
                 t = (el.text or "")
                 if "[" in t or "http" in t.lower() or "file:" in t.lower():
                     findings.append("definedName with external reference: %s" % el.get("name"))
+                findings.extend(_formula_findings(
+                    "xl/workbook.xml definedName %s" % el.get("name"), t))
 
     strings = []  # (origin, text)
     for n in sorted(trees):
@@ -189,7 +196,7 @@ def scan_xlsx_bytes(data):
                 tag = _local(el.tag)
                 if tag in FORBIDDEN_SHEET_TAGS:
                     findings.append("sheet %s contains %s" % (n, tag))
-                elif tag == "f":
+                elif tag in FORMULA_TAGS:
                     findings.extend(_formula_findings(n, el.text or ""))
                 elif tag == "is":
                     strings.append((n + " inline", _text(el)))
@@ -197,6 +204,10 @@ def scan_xlsx_bytes(data):
                     for v in el:
                         if _local(v.tag) == "v":
                             strings.append((n + " cached", _unescape(v.text or "")))
+        elif re.match(r"^xl/charts/chart\d+\.xml$", n):
+            for el in root.iter():
+                if _local(el.tag) == "f":
+                    findings.extend(_formula_findings(n, el.text or ""))
     for origin, s in strings:
         if is_injection_string(s):
             findings.append("injection-style string in %s: %r" % (origin, s[:40]))
