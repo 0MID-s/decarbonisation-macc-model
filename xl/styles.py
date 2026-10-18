@@ -91,8 +91,8 @@ def _role_props(role):
     table = {
         "title": {"font_size": 14, "bold": True, "font_color": P["title_font"],
                   "bg_color": P["title_fill"], "pattern": 1},
-        "purpose": {"italic": True, "text_wrap": True},
-        "note": {"font_color": P["index_font"], "italic": True, "text_wrap": True},
+        "purpose": {"italic": True},
+        "note": {"font_color": P["index_font"], "italic": True},
         "section": {"bold": True, "bg_color": P["section_fill"], "pattern": 1},
         "header": {"bold": True, "font_color": P["title_font"],
                    "bg_color": P["title_fill"], "pattern": 1, "bottom": 1,

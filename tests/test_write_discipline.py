@@ -26,7 +26,11 @@ def find_violations(source, path):
         name = node.func.attr
         owner = node.func.value
         if name in WRITE_METHODS and not in_cells:
-            if name == "define_name" and isinstance(owner, ast.Name) and owner.id == "self":
+            # CellWriter.define_name is the sanctioned wrapper: callers hold it
+            # as `cells` (or `self` inside CellWriter). Raw workbook.define_name
+            # (wb / workbook / anything else) is still a violation.
+            if (name == "define_name" and isinstance(owner, ast.Name)
+                    and owner.id in ("self", "cells")):
                 continue
             out.append("%s:%d: %s() outside xl/cells.py" % (path, node.lineno, name))
         if name == "add_format" and not in_styles:
@@ -54,6 +58,7 @@ class WriteDiscipline(unittest.TestCase):
         self.assertTrue(find_violations('ws.write_string(0,0,"x")', "xl/sheets/a.py"))
         self.assertTrue(find_violations("wb.add_format({})", "xl/sheets/a.py"))
         self.assertTrue(find_violations("wb.define_name('a','=b')", "build.py"))
+        self.assertEqual(find_violations("cells.define_name('a','=b')", "xl/sheets/a.py"), [])
         self.assertEqual(find_violations('ws.write_string(0,0,"x")', "xl/cells.py"), [])
         self.assertEqual(find_violations("wb.add_format({})", "xl/styles.py"), [])
 
