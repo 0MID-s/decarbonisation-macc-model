@@ -93,8 +93,12 @@ register_target("main", DELIVERABLE, _build_main)
 register_target("spike", os.path.join("dist", "spike_macc.xlsx"), build_spike)
 
 
-def build_bytes(target, dataset, cfg=BUILD, extra_builders=()):
-    # type: (str, Dataset, object, Sequence[Callable]) -> Tuple[bytes, Tuple[FormulaRecord, ...]]
+def build_bytes(target, dataset, extra_builders=()):
+    # type: (str, Dataset, Sequence[Callable]) -> Tuple[bytes, Tuple[FormulaRecord, ...]]
+    # The layout grid (xl/layout.py) is fixed to BUILD at import time, so the
+    # build config is not a parameter: another timeline would disagree with
+    # col_for_year (WR-09).
+    cfg = BUILD
     validate_provenance(dataset.sources, dataset.inputs, cfg.timeline_years)
     builder = TARGETS[target][1]
     buf = io.BytesIO()

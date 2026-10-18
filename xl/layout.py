@@ -25,7 +25,8 @@ TITLE_ROWS = (0, 2)
 
 FOOTER = "&L&A&CIllustrative model, fictitious company, real public data&RPage &P of &N"
 
-_TL_LAST = TIMELINE_FIRST_COL + len(BUILD.timeline_years) - 1
+TIMELINE_LAST_COL = TIMELINE_FIRST_COL + len(BUILD.timeline_years) - 1
+_TL_LAST = TIMELINE_LAST_COL
 
 
 def col_for_year(year):

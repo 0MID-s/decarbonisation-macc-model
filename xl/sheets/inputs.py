@@ -3,7 +3,10 @@ from dataclasses import dataclass
 from typing import Tuple
 
 from config.schema import SECTIONS, Kind, Status
-from xl.layout import LABEL_COL, TIMELINE_FIRST_COL, col_for_year, col_letter, setup_sheet
+from xl.layout import (
+    LABEL_COL, TIMELINE_FIRST_COL, TIMELINE_LAST_COL, col_for_year, col_letter,
+    setup_sheet,
+)
 from xl.sheets.common import (
     num_role_for_unit, write_legend_row, write_synthetic_banner,
     write_title_band,
@@ -15,7 +18,7 @@ INPUT_COLUMNS = ("ID", "Description", "Value as published", "Published unit",
                  "Price basis", "Source ID", "Status", "Rationale / notes")
 HEADER_ROW = 6
 FIRST_RECORD_ROW = 7
-LAST_COL = TIMELINE_FIRST_COL + 29  # AQ
+LAST_COL = TIMELINE_LAST_COL  # AQ for 2026-2055
 
 
 @dataclass(frozen=True)

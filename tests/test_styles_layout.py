@@ -115,6 +115,17 @@ class LayoutTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             layout.year_for_col(12)
 
+    def test_timeline_single_source(self):
+        # WR-09: Inputs and the shared grid derive the timeline from BUILD.
+        import inspect
+
+        import build
+        from xl.sheets import inputs
+        self.assertEqual(layout.TIMELINE_LAST_COL,
+                         layout.col_for_year(BUILD.timeline_end))
+        self.assertEqual(inputs.LAST_COL, layout.TIMELINE_LAST_COL)
+        self.assertNotIn("cfg", inspect.signature(build.build_bytes).parameters)
+
     def test_footer(self):
         self.assertIn("&CIllustrative", layout.FOOTER)
 
