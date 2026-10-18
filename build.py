@@ -1,0 +1,164 @@
+"""Single entry point: validates, builds, lints, scans and reads back the workbook.
+
+Usage: .venv/bin/python build.py [--target main] [--dataset config|fixtures] [--out PATH]
+
+Do NOT run this with ``python -I``: isolated mode drops the script directory
+from sys.path and the project packages (config, xl, qa) cannot be imported.
+
+Exit codes: 0 ok, 2 provenance, 3 lint or unsafe cell, 4 security scan,
+5 read-back. On any failure nothing is written to the output path.
+This module is the composition root: it is the only production module that
+imports tests (lazily, for the synthetic fixtures dataset).
+"""
+import argparse
+import hashlib
+import io
+import os
+import sys
+import tempfile
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Callable, Dict, Sequence, Tuple
+
+import xlsxwriter
+
+from config.build_config import BUILD
+from config.schema import InputRecord, ProvenanceError, Source
+from config.validate import validate_provenance
+from qa.lint import LintError, lint_or_raise
+from qa.readback import ReadbackError, verify_workbook
+from qa.scan import ScanError, part_names, scan_or_raise
+from xl.cells import CellWriter, FormulaRecord, UnsafeCellError
+from xl.sheets.cover import build_cover
+from xl.sheets.inputs import build_inputs
+from xl.sheets.lists import build_lists
+from xl.sheets.sources import build_sources
+from xl.styles import Styles
+
+OPTIONS = {
+    "in_memory": True,
+    "strings_to_formulas": False,
+    "strings_to_urls": False,
+    "strings_to_numbers": False,
+    "default_format_properties": {"font_name": "Arial", "font_size": 10},
+}
+
+
+@dataclass(frozen=True)
+class Dataset:
+    name: str
+    sources: Tuple[Source, ...]
+    inputs: Tuple[InputRecord, ...]
+    measures: Tuple[Tuple[str, int, float], ...]
+    synthetic: bool
+
+
+def load_dataset(name):
+    # type: (str) -> Dataset
+    if name == "config":
+        from config.inputs import INPUTS
+        from config.sources import SOURCES
+        return Dataset("config", tuple(SOURCES), tuple(INPUTS), (), False)
+    if name == "fixtures":
+        from tests.fixtures import synthetic  # lazy: fixtures only
+        return Dataset("fixtures", tuple(synthetic.SYNTHETIC_SOURCES),
+                       tuple(synthetic.SYNTHETIC_INPUTS),
+                       tuple(synthetic.SYNTHETIC_MEASURES), True)
+    raise ValueError("unknown dataset: %r" % (name,))
+
+
+MAIN_SHEETS = ("Cover", "Inputs", "Sources", "Lists")
+
+
+def _build_main(wb, styles, cells, dataset, cfg):
+    build_cover(wb, styles, cells, dataset, cfg, list(MAIN_SHEETS))
+    inputs = build_inputs(wb, styles, cells, dataset, cfg)
+    build_sources(wb, styles, cells, dataset, cfg)
+    lists = build_lists(wb, styles, cells, dataset, cfg)
+    return {"inputs": inputs, "lists": lists}
+
+
+TARGETS = {}  # type: Dict[str, Tuple[str, Callable]]
+
+
+def register_target(name, default_out, builder):
+    TARGETS[name] = (default_out, builder)
+
+
+register_target("main", os.path.join("dist", "maison_veritas.xlsx"), _build_main)
+
+
+def build_bytes(target, dataset, cfg=BUILD, extra_builders=()):
+    # type: (str, Dataset, object, Sequence[Callable]) -> Tuple[bytes, Tuple[FormulaRecord, ...]]
+    validate_provenance(dataset.sources, dataset.inputs, cfg.timeline_years)
+    builder = TARGETS[target][1]
+    buf = io.BytesIO()
+    wb = xlsxwriter.Workbook(buf, OPTIONS)
+    wb.set_properties({
+        "title": cfg.title,
+        "subject": cfg.subject,
+        "author": cfg.author,
+        "company": cfg.company,
+        "comments": "Version " + cfg.version,
+        "created": cfg.created,
+    })
+    styles = Styles(wb)
+    cells = CellWriter(wb)
+    layouts = dict(builder(wb, styles, cells, dataset, cfg))
+    for extra in extra_builders:
+        extra(wb, styles, cells)
+    wb.close()
+    data = buf.getvalue()
+    registry = cells.registry
+    for rec in registry:
+        lint_or_raise(rec.text, rec.sheet, cells.tags)
+    scan_or_raise(data)
+    layouts["names"] = dict(cells.names)
+    problems = verify_workbook(data, registry, layouts)
+    if problems:
+        raise ReadbackError(problems)
+    return data, registry
+
+
+def _write_atomic(out, data):
+    parent = os.path.dirname(os.path.abspath(out))
+    os.makedirs(parent, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=parent, suffix=".tmp")
+    os.close(fd)
+    try:
+        Path(tmp).write_bytes(data)
+        os.replace(tmp, out)
+    finally:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description="Build the workbook offline.")
+    ap.add_argument("--target", choices=sorted(TARGETS), default="main")
+    ap.add_argument("--dataset", choices=("config", "fixtures"), default="config")
+    ap.add_argument("--out", default=None)
+    args = ap.parse_args(argv)
+    out = args.out or TARGETS[args.target][0]
+    try:
+        data, _ = build_bytes(args.target, load_dataset(args.dataset))
+    except ProvenanceError as exc:
+        print("PROVENANCE ERROR\n%s\n" % exc, file=sys.stderr)
+        return 2
+    except (LintError, UnsafeCellError) as exc:
+        print("LINT ERROR\n%s\n" % exc, file=sys.stderr)
+        return 3
+    except ScanError as exc:
+        print("SCAN ERROR\n%s\n" % "\n".join(exc.findings), file=sys.stderr)
+        return 4
+    except ReadbackError as exc:
+        print("READBACK ERROR\n%s\n" % "\n".join(exc.problems), file=sys.stderr)
+        return 5
+    _write_atomic(out, data)
+    print("sha256 %s  %s" % (hashlib.sha256(data).hexdigest(), out))
+    print("parts %d" % len(part_names(data)))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
