@@ -72,6 +72,11 @@ class CellWriter(object):
 
     def formula(self, ws, row, col, f, fmt, *, value):
         # type: (object, int, int, str, object, Union[int, float, str, bool]) -> None
+        if not isinstance(value, (bool, int, float, str)):
+            raise UnsafeCellError("formula cached value must be a number, "
+                                  "text or bool, got %r" % (value,))
+        if isinstance(value, float) and not math.isfinite(value):
+            raise UnsafeCellError("formula cached value is NaN or infinity")
         lint_or_raise(f, ws.get_name(), self.tags)
         self._registry.append(FormulaRecord(ws.get_name(), row, col, f))
         ws.write_formula(row, col, f, fmt, value)

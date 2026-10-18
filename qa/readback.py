@@ -52,8 +52,11 @@ def _check_inputs(wb, layout, problems):
 def verify_workbook(data, registry, layouts):
     # type: (bytes, tuple, Dict[str, object]) -> List[str]
     problems = []  # type: List[str]
-    wb = openpyxl.load_workbook(io.BytesIO(data))
-    wbv = openpyxl.load_workbook(io.BytesIO(data), data_only=True)
+    try:
+        wb = openpyxl.load_workbook(io.BytesIO(data))
+        wbv = openpyxl.load_workbook(io.BytesIO(data), data_only=True)
+    except (ValueError, KeyError, TypeError) as exc:
+        raise ReadbackError(["openpyxl could not read the workbook: %s" % exc])
 
     found = Counter()
     for ws in wb.worksheets:

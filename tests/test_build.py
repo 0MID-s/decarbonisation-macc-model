@@ -82,6 +82,22 @@ class BuildTests(unittest.TestCase):
         self.assertTrue(any("not written via CellWriter: Raw_Name" in p
                             for p in cm.exception.problems))
 
+    def test_unreadable_workbook_is_readback_error(self):
+        # WR-02: an openpyxl load failure becomes exit code 5, not a traceback.
+        default_out, original = build.TARGETS["main"]
+
+        def builder(wb, styles, cells, dataset, cfg):
+            layouts = original(wb, styles, cells, dataset, cfg)
+            wb.add_worksheet("Raw").write_formula(0, 0, "=A2", None, float("nan"))
+            return layouts
+        out = self.path("nan.xlsx")
+        with mock.patch.dict(build.TARGETS, {"main": (default_out, builder)}):
+            with self.assertRaises(ReadbackError) as cm:
+                build.build_bytes("main", build.load_dataset("fixtures"))
+            self.assertEqual(_quiet_main(["--dataset", "fixtures", "--out", out]), 5)
+        self.assertTrue(any("could not read" in p for p in cm.exception.problems))
+        self.assertFalse(os.path.exists(out))
+
     def test_main_workbook_clean_and_ordered(self):
         data, _ = build.build_bytes("main", build.load_dataset("config"))
         self.assertEqual(scan_xlsx_bytes(data), [])

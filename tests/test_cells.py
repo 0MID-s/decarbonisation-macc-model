@@ -71,6 +71,17 @@ class FormulaTests(unittest.TestCase):
         self.assertEqual((rec.sheet, rec.row, rec.col, rec.text),
                          ("Calc", 1, 2, "=A1*Rate_Disc"))
 
+    def test_cached_value_checked(self):
+        # WR-02: NaN/inf would write <v>nan</v> and corrupt the file.
+        wb, ws, cw = make()
+        for bad in (float("nan"), float("inf"), float("-inf"), None, [1], object()):
+            with self.subTest(bad=bad):
+                with self.assertRaises(UnsafeCellError):
+                    cw.formula(ws, 0, 0, "=A1", None, value=bad)
+        self.assertEqual(cw.registry, ())
+        for ok in (0, 1.5, "text", True):
+            cw.formula(ws, 0, 0, "=A1", None, value=ok)
+
     def test_lb_mb_via_tags(self):
         wb, ws, cw = make()
         cw.tag("Calc", 19, 5, 19, 5, "LB")
