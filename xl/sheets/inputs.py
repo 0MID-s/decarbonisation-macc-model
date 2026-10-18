@@ -77,7 +77,7 @@ def build_inputs(wb, styles, cells, dataset, cfg):
 
     bands, rows = _assign_rows(dataset)
     const_values = dict((r.id, r.published_value) for r in dataset.inputs
-                        if r.section == "Constants")
+                        if r.section == "Constants" and r.kind is Kind.SCALAR)
     sec = styles.get("section")
     for name, row in bands:
         cells.text(ws, row, LABEL_COL, name, sec)

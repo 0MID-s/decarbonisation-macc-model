@@ -130,6 +130,16 @@ class ProvenanceTests(unittest.TestCase):
         ins = _swap_input("Finance_SynthWacc", conversion_ref="Const_Nope")
         self.assertFails(SYNTHETIC_SOURCES, ins, "Finance_SynthWacc")
 
+    def test_constants_must_be_scalar(self):
+        # WR-04: a Constants series broke Inputs at build time (TypeError).
+        sid = "Const_SynthKWhPerMWh"
+        ins = _swap_input(sid, kind=Kind.SERIES, published_value=None,
+                          series=((2026, 1000.0),))
+        e = self.assertFails(SYNTHETIC_SOURCES, ins, sid)
+        joined = "\n".join(e.problems)
+        self.assertIn("Constants record must be a scalar", joined)
+        self.assertIn("Baseline_SynthGasMWh: conversion_ref", joined)
+
     def test_price_basis_none(self):
         ins = _swap_input("Finance_SynthWacc", price_basis=None)
         self.assertFails(SYNTHETIC_SOURCES, ins, "Finance_SynthWacc")

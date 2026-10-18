@@ -77,6 +77,8 @@ def _check_input(r, source_ids, constants, years, problems):
         if r.conversion_ref is not None:
             problems.append("%s: Constants record must not set conversion_ref"
                             % rid)
+        if r.kind is Kind.SERIES:
+            problems.append("%s: Constants record must be a scalar" % rid)
     elif r.conversion_ref is None:
         problems.append("%s: conversion_ref required outside Constants" % rid)
     elif r.conversion_ref not in constants:
@@ -110,7 +112,9 @@ def validate_provenance(sources, inputs, timeline_years):
     source_ids = set(s.id for s in sources)
 
     seen = set()
-    constants = set(r.id for r in inputs if r.section == "Constants")
+    # Only scalar constants can serve as a conversion factor (WR-04).
+    constants = set(r.id for r in inputs
+                    if r.section == "Constants" and r.kind is not Kind.SERIES)
     for r in inputs:
         if r.id in seen:
             problems.append("%s: duplicate input id" % r.id)
