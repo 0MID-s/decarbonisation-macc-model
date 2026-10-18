@@ -282,6 +282,18 @@ class StringBypassTests(unittest.TestCase):
                 d = build(lambda wb, ws, s=s: ws.write_string("D1", s), chart=False)
                 self.assertTrue(has(scan_xlsx_bytes(d), "string"))
 
+    def test_control_characters(self):
+        # WR-10: the byte gate enforces the same rule as CellWriter.text.
+        for fn in (lambda wb, ws: ws.merge_range(3, 0, 3, 1, "a\x07b"),
+                   lambda wb, ws: ws.write_string("D1", "a\x01b"),
+                   lambda wb, ws: ws.write_string("D1", "a\x7fb"),
+                   lambda wb, ws: ws.write_string("D1", "a\rb")):
+            with self.subTest(fn=fn):
+                d = build(fn, chart=False)
+                self.assertTrue(has(scan_xlsx_bytes(d), "control character"))
+        d = build(lambda wb, ws: ws.write_string("D1", "line1\nline2"), chart=False)
+        self.assertEqual(scan_xlsx_bytes(d), [])
+
     def test_en_dash_ok(self):
         d = build(lambda wb, ws: ws.write_string("D1", "– ok"), chart=False)
         self.assertEqual(scan_xlsx_bytes(d), [])

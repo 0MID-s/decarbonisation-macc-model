@@ -211,6 +211,9 @@ def scan_xlsx_bytes(data):
     for origin, s in strings:
         if is_injection_string(s):
             findings.append("injection-style string in %s: %r" % (origin, s[:40]))
+        # Same rule as CellWriter.text (WR-10): only newline among controls.
+        if any((ord(c) < 32 and c != "\n") or ord(c) == 127 for c in s):
+            findings.append("control character in string in %s: %r" % (origin, s[:40]))
     return findings
 
 
