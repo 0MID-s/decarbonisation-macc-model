@@ -31,6 +31,11 @@ _REF_RE = re.compile(
     r"^" + _SHEET + r"(?:(?P<c1>" + _CELL + r")(?::(?P<c2>" + _CELL + r"))?"
     r"|(?P<k1>" + _COL + r"):(?P<k2>" + _COL + r")"
     r"|(?P<r1>" + _ROW + r"):(?P<r2>" + _ROW + r"))$")
+# Excel also accepts the sheet on both ends: Calc!F20:Calc!F21
+_SPLIT_SHEET_RE = re.compile(
+    r"^(?P<s1>'(?:[^']|'')+'|[A-Za-z0-9_.]+)!(?P<a>" + _CELL + r")"
+    r":(?P<s2>'(?:[^']|'')+'|[A-Za-z0-9_.]+)!(?P<b>" + _CELL + r")$")
+_NAME_RE = re.compile(r"^[A-Za-z_\\][A-Za-z0-9_.]*$")
 
 
 def _col_index(letters):
@@ -73,7 +78,25 @@ class RangeTagIndex(object):
                 found.add(tag)
         return frozenset(found)
 
+    def resolvable(self, operand):
+        # True for a cell/range reference this index can read, or a bare name.
+        return (self._normalise(operand) is not None
+                and (_REF_RE.match(self._normalise(operand)) is not None
+                     or _NAME_RE.match(operand) is not None))
+
+    @staticmethod
+    def _normalise(operand):
+        m = _SPLIT_SHEET_RE.match(operand)
+        if m is None:
+            return operand
+        if _unquote(m.group("s1")) != _unquote(m.group("s2")):
+            return None  # 3-D or cross-sheet span: never resolvable
+        return "%s!%s:%s" % (m.group("s1"), m.group("a"), m.group("b"))
+
     def _resolve(self, operand, current_sheet):
+        operand = self._normalise(operand)
+        if operand is None:
+            return None
         m = _REF_RE.match(operand)
         if m is None:
             return self._names.get(operand.upper())
@@ -161,6 +184,9 @@ def lint_formula(formula, sheet="", tags=None):
                                 % (pos, tok.value))
             if tok.value.endswith("#"):
                 problems.append("%s: spill reference %s" % (pos, tok.value))
+            if tags is not None and not tags.resolvable(tok.value):
+                problems.append("%s: unrecognised reference form %s"
+                                % (pos, tok.value))
         elif tok.type == Token.OPERAND and tok.subtype == Token.TEXT:
             low = tok.value.lower()
             if "://" in low or "file:" in low or tok.value.strip('"').startswith("\\\\"):

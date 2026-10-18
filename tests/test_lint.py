@@ -92,6 +92,16 @@ class LbMb(unittest.TestCase):
             with self.subTest(f=f):
                 self.assertTrue(lint_formula(f, "Calc", tags), f)
 
+    def test_sheet_on_both_ends(self):
+        # Excel accepts Calc!F20:Calc!F21; it must resolve, and a span
+        # across two sheets must fail closed rather than pass untagged.
+        tags = make_tags()
+        for f in ["=SUM(Calc!F20:Calc!F21)", "=SUM('Calc'!F20:'Calc'!F21)",
+                  "=SUM(Calc!F20:Other!F21)"]:
+            with self.subTest(f=f):
+                self.assertTrue(lint_formula(f, "Other", tags), f)
+        self.assertEqual(lint_formula("=SUM(Calc!F20:Calc!AI20)", "Other", tags), [])
+
     def test_selection_passes(self):
         tags = make_tags()
         for f in ["=CHOOSE(Idx_Basis,F20,F21)", "=INDEX(F20:F21,Idx_Basis)",
