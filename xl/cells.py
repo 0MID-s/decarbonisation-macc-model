@@ -96,6 +96,11 @@ class CellWriter(object):
             raise UnsafeCellError("invalid defined name: %r" % name)
         self.names[name] = ref
 
+    def insert_chart(self, ws, cell, chart):
+        """Place a chart. Chart formulas are checked by the final-bytes scan."""
+        if ws.insert_chart(cell, chart) != 0:
+            raise UnsafeCellError("chart could not be inserted at %s" % cell)
+
     def tag(self, sheet, first_row, first_col, last_row, last_col, tag):
         if tag not in VALID_TAGS:
             raise UnsafeCellError("tag must be one of %s" % (VALID_TAGS,))

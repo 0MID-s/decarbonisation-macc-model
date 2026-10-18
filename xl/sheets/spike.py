@@ -130,14 +130,14 @@ def build_spike(wb, styles, cells, dataset, cfg):
                  "both charts re-order.", 12)
     a_layout = write_macc_a_block(cells, styles, wsa, dataset.measures,
                                   dataset.reference_price)
-    wsa.insert_chart("N6", macc_area_chart(wb, a_layout))
+    cells.insert_chart(wsa, "N6", macc_area_chart(wb, a_layout))
 
     wsc = _sheet(wb, cells, styles, "MACC_C", SheetKind.CALC, dataset,
                  "MACC spike: technique C (200-bin columns)",
                  "Fallback: gapless columns driven by MATCH on cumulative starts",
                  "Reads the sorted table on MACC_A.", 10)
     c_layout = write_macc_c_block(cells, styles, wsc, a_layout, srt)
-    wsc.insert_chart("L6", macc_column_chart(wb, c_layout))
+    cells.insert_chart(wsc, "L6", macc_column_chart(wb, c_layout))
 
     _dropdowns(wb, styles, cells, dataset)
     lists = build_lists(wb, styles, cells, dataset, cfg)

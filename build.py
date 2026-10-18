@@ -17,7 +17,6 @@ import os
 import sys
 import tempfile
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Callable, Dict, Optional, Sequence, Tuple
 
 import xlsxwriter
@@ -128,9 +127,9 @@ def _write_atomic(out, data):
     parent = os.path.dirname(os.path.abspath(out))
     os.makedirs(parent, exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=parent, suffix=".tmp")
-    os.close(fd)
     try:
-        Path(tmp).write_bytes(data)
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(data)
         os.replace(tmp, out)
     finally:
         if os.path.exists(tmp):
@@ -147,16 +146,16 @@ def main(argv=None):
     try:
         data, _ = build_bytes(args.target, load_dataset(args.dataset))
     except ProvenanceError as exc:
-        print("PROVENANCE ERROR\n%s\n" % exc, file=sys.stderr)
+        sys.stderr.write("PROVENANCE ERROR\n%s\n\n" % exc)
         return 2
     except (LintError, UnsafeCellError) as exc:
-        print("LINT ERROR\n%s\n" % exc, file=sys.stderr)
+        sys.stderr.write("LINT ERROR\n%s\n\n" % exc)
         return 3
     except ScanError as exc:
-        print("SCAN ERROR\n%s\n" % "\n".join(exc.findings), file=sys.stderr)
+        sys.stderr.write("SCAN ERROR\n%s\n\n" % "\n".join(exc.findings))
         return 4
     except ReadbackError as exc:
-        print("READBACK ERROR\n%s\n" % "\n".join(exc.problems), file=sys.stderr)
+        sys.stderr.write("READBACK ERROR\n%s\n\n" % "\n".join(exc.problems))
         return 5
     _write_atomic(out, data)
     print("sha256 %s  %s" % (hashlib.sha256(data).hexdigest(), out))
