@@ -21,8 +21,8 @@ class LiteralRules(unittest.TestCase):
                 self.assertTrue(lint_formula(f), f)
 
     def test_inf_name_pinned(self):
-        # Pins current behaviour for a defined name called Inf.
-        self.assertEqual(lint_formula("=A1*Inf"), [])
+        # Tokenizer reads Inf as a NUMBER; the lint flags it (pinned).
+        self.assertTrue(lint_formula("=A1*Inf"))
 
 
 class BannedFunctions(unittest.TestCase):
