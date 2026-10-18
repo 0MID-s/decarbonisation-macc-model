@@ -5,6 +5,8 @@ import zipfile
 
 import xlsxwriter
 
+from xl import layout
+from config.build_config import BUILD
 from xl.styles import (
     NUM_FORMATS, OKABE_ITO, PALETTE, ROLES, TAB_COLOURS, SheetKind, Styles,
     apply_check_format,
@@ -97,6 +99,47 @@ class StylesTests(unittest.TestCase):
             self.assertIn(token, xml)
         sheet = z.read("xl/worksheets/sheet1.xml").decode("utf-8")
         self.assertEqual(sheet.count("<cfRule"), 2)
+
+
+class LayoutTests(unittest.TestCase):
+    def test_columns(self):
+        self.assertEqual(layout.col_for_year(2026), 13)
+        self.assertEqual(layout.col_for_year(2055), 42)
+        self.assertEqual(layout.col_letter(13), "N")
+        self.assertEqual(layout.col_letter(42), "AQ")
+        for y in (2025, 2056):
+            with self.assertRaises(ValueError):
+                layout.col_for_year(y)
+        for y in BUILD.timeline_years:
+            self.assertEqual(layout.year_for_col(layout.col_for_year(y)), y)
+        with self.assertRaises(ValueError):
+            layout.year_for_col(12)
+
+    def test_footer(self):
+        self.assertIn("&CIllustrative", layout.FOOTER)
+
+    def test_setup_sheet(self):
+        wb, buf = new_workbook()
+        a = wb.add_worksheet("Calc")
+        b = wb.add_worksheet("Inputs")
+        layout.setup_sheet(a, SheetKind.CALC, freeze_row=4, freeze_col=3)
+        layout.setup_sheet(b, SheetKind.INPUTS, freeze_row=5, freeze_col=2)
+        z = close_and_read(wb, buf)
+        calc = z.read("xl/worksheets/sheet1.xml").decode("utf-8")
+        inp = z.read("xl/worksheets/sheet2.xml").decode("utf-8")
+        for x in (calc, inp):
+            self.assertIn('showGridLines="0"', x)
+            self.assertIn('orientation="landscape"', x)
+            self.assertIn('paperSize="9"', x)
+            self.assertIn('fitToPage="1"', x)  # fitToWidth=1 is the OOXML default, omitted
+            self.assertIn('fitToHeight="0"', x)
+            self.assertIn("<pane", x)
+            self.assertIn("Illustrative model, fictitious company, real public data", x)
+        self.assertIn('xSplit="3"', calc)
+        self.assertIn('ySplit="4"', calc)
+        self.assertIn('rgb="FFFFC000"', inp)
+        self.assertNotIn("tabColor", calc)
+        self.assertIn("_xlnm.Print_Titles", z.read("xl/workbook.xml").decode("utf-8"))
 
 
 if __name__ == "__main__":
