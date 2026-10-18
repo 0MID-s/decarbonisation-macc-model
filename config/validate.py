@@ -4,12 +4,14 @@ import math
 import re
 
 from config.schema import (
-    ID_PATTERN, NOT_APPLICABLE, RESERVED_IDS, SECTIONS, Kind, ProvenanceError,
+    ID_PATTERN, RESERVED_IDS, SECTIONS, Kind, ProvenanceError,
     Status,
 )
 from config.security import host_allowed
 
 _ID_RE = re.compile(ID_PATTERN)
+# Monetary units (WR-05): euro sign, ISO codes, and NGFS-style "US$2010".
+_MONEY_RE = re.compile(r"€|EUR|USD|US\$|GBP")
 
 
 def _blank(s):
@@ -85,13 +87,22 @@ def _check_input(r, source_ids, constants, years, problems):
         problems.append("%s: conversion_ref '%s' is not a Constants record"
                         % (rid, r.conversion_ref))
 
-    if r.price_basis is None:
+    pb = r.price_basis
+    if pb is None:
         problems.append("%s: price_basis is None" % rid)
     else:
         units = "%s %s" % (r.published_unit or "", r.model_unit or "")
-        if (("EUR" in units or "USD" in units)
-                and r.price_basis == NOT_APPLICABLE):
+        if _MONEY_RE.search(units) and pb.currency == "n/a":
             problems.append("%s: monetary unit needs a price basis" % rid)
+        if pb.currency != "n/a":
+            if _blank(pb.currency):
+                problems.append("%s: price basis currency is empty" % rid)
+            if isinstance(pb.year, bool) or not isinstance(pb.year, int):
+                problems.append("%s: monetary price basis needs an integer "
+                                "base year" % rid)
+            if pb.real_nominal not in ("real", "nominal"):
+                problems.append("%s: price basis must be 'real' or 'nominal'"
+                                % rid)
 
     if r.kind is Kind.SERIES:
         _check_series(r, years, problems)

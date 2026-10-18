@@ -148,6 +148,24 @@ class ProvenanceTests(unittest.TestCase):
         ins = _swap_input("Energy_SynthElecPrice", price_basis=NOT_APPLICABLE)
         self.assertFails(SYNTHETIC_SOURCES, ins, "Energy_SynthElecPrice")
 
+    def test_monetary_basis_complete(self):
+        # WR-05: a monetary basis needs a base year and real/nominal.
+        for basis in (PriceBasis("EUR", None, "nominal"),
+                      PriceBasis("EUR", "2025", "real"),
+                      PriceBasis("EUR", True, "real"),
+                      PriceBasis("EUR", 2025, "n/a"),
+                      PriceBasis("EUR", 2025, "Real"),
+                      PriceBasis("", 2025, "real")):
+            with self.subTest(basis=basis):
+                ins = _swap_input("Energy_SynthElecPrice", price_basis=basis)
+                self.assertFails(SYNTHETIC_SOURCES, ins, "Energy_SynthElecPrice")
+
+    def test_monetary_unit_variants_detected(self):
+        for unit in ("€/kWh", "US$2010/tCO2", "GBP/t", "USD/t"):
+            with self.subTest(unit=unit):
+                ins = _swap_input("EF_SynthGas", published_unit=unit)
+                self.assertFails(SYNTHETIC_SOURCES, ins, "monetary unit")
+
     def test_scalar_rules(self):
         for changes in ({"published_value": None},
                         {"published_value": float("nan")},
