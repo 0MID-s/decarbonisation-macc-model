@@ -43,6 +43,13 @@ def _has_bad_control(s):
     return any((ord(c) < 32 and c != "\n") or ord(c) == 127 for c in s)
 
 
+def _check_rc(rc, what, row, col):
+    """XlsxWriter only warns on -1 (out of range) / -2 (too long); fail instead."""
+    if rc not in (0, None):
+        raise UnsafeCellError("%s at (%d, %d) was rejected by XlsxWriter (code %r)"
+                              % (what, row, col, rc))
+
+
 class CellWriter(object):
     def __init__(self, workbook):
         self.workbook = workbook
@@ -62,17 +69,18 @@ class CellWriter(object):
             raise UnsafeCellError("text contains a control character")
         if len(s) > MAX_TEXT:
             raise UnsafeCellError("text longer than %d characters" % MAX_TEXT)
-        ws.write_string(row, col, s, fmt)
+        _check_rc(ws.write_string(row, col, s, fmt), "write_string", row, col)
 
     def number(self, ws, row, col, x, fmt=None):
         if isinstance(x, bool) or not isinstance(x, (int, float)):
             raise UnsafeCellError("number() needs int or float, got %r" % (x,))
         if isinstance(x, float) and (math.isnan(x) or math.isinf(x)):
             raise UnsafeCellError("NaN and infinity are not allowed")
-        ws.write_number(row, col, x, fmt)
+        _check_rc(ws.write_number(row, col, x, fmt), "write_number", row, col)
 
     def date(self, ws, row, col, d, fmt):
-        ws.write_datetime(row, col, datetime.datetime(d.year, d.month, d.day), fmt)
+        _check_rc(ws.write_datetime(row, col, datetime.datetime(d.year, d.month, d.day), fmt),
+                  "write_datetime", row, col)
 
     def formula(self, ws, row, col, f, fmt, *, value):
         # type: (object, int, int, str, object, Union[int, float, str, bool]) -> None
@@ -82,18 +90,18 @@ class CellWriter(object):
         if isinstance(value, float) and not math.isfinite(value):
             raise UnsafeCellError("formula cached value is NaN or infinity")
         lint_or_raise(f, ws.get_name(), self.tags)
+        _check_rc(ws.write_formula(row, col, f, fmt, value), "write_formula", row, col)
         self._registry.append(FormulaRecord(ws.get_name(), row, col, f, value))
-        ws.write_formula(row, col, f, fmt, value)
 
     def link(self, ws, row, col, url, fmt=None, string=None):
         if not host_allowed(url):
             raise UnsafeCellError("link host not on allowlist: %s" % url)
         if string is not None and (is_injection_string(string) or _has_bad_control(string)):
             raise UnsafeCellError("unsafe link display text")
-        ws.write_url(row, col, url, fmt, string)
+        _check_rc(ws.write_url(row, col, url, fmt, string), "write_url", row, col)
 
     def blank(self, ws, row, col, fmt):
-        ws.write_blank(row, col, None, fmt)
+        _check_rc(ws.write_blank(row, col, None, fmt), "write_blank", row, col)
 
     def define_name(self, name, ref):
         if not ref.startswith("=") or "[" in ref:
@@ -147,4 +155,5 @@ class CellWriter(object):
                 if not all(isinstance(x, str) and not is_injection_string(x)
                            and not _has_bad_control(x) for x in v):
                     raise UnsafeCellError("list source items must be safe strings")
-        ws.data_validation(first_row, first_col, last_row, last_col, options)
+        _check_rc(ws.data_validation(first_row, first_col, last_row, last_col, options),
+                  "data_validation", first_row, first_col)

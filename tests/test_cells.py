@@ -155,6 +155,33 @@ class LinkNameValidationTests(unittest.TestCase):
         cw.validation(ws, 5, 0, 5, 0, {"validate": "integer", "criteria": ">",
                                         "value": 0})
 
+    def test_rejected_writes_raise(self):
+        # WR-07: XlsxWriter return codes -1/-2 must not drop content silently.
+        import warnings
+        wb, ws, cw = make()
+        fmt = wb.add_format({"num_format": "yyyy-mm-dd"})
+        too_far = 1048576  # one past the last row
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            calls = (
+                lambda: cw.text(ws, too_far, 0, "x"),
+                lambda: cw.number(ws, too_far, 0, 1.0),
+                lambda: cw.date(ws, too_far, 0, datetime.date(2026, 1, 1), fmt),
+                lambda: cw.formula(ws, too_far, 0, "=A1", None, value=0),
+                lambda: cw.link(ws, too_far, 0, "https://ec.europa.eu/"),
+                lambda: cw.blank(ws, too_far, 0, fmt),
+                lambda: cw.validation(ws, 0, 0, 0, 0, {
+                    "validate": "list", "source": ["x" * 300]}),
+                lambda: cw.validation(ws, 0, 0, 0, 0, {
+                    "validate": "list", "source": ["a"],
+                    "input_title": "t" * 40}),
+            )
+            for i, call in enumerate(calls):
+                with self.subTest(i=i):
+                    with self.assertRaises(UnsafeCellError):
+                        call()
+        self.assertEqual(cw.registry, ())
+
     def test_blank(self):
         wb, ws, cw = make()
         cw.blank(ws, 0, 0, wb.add_format({"bold": True}))
