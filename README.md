@@ -7,7 +7,7 @@ manufacturer, built only from cited public data or labelled analyst assumptions.
 ## Build
 
     .venv/bin/python build.py                      # main workbook, config data -> dist/maison_veritas.xlsx
-    .venv/bin/python build.py --dataset fixtures   # synthetic test data (SYNTHETIC banner on every sheet)
+    .venv/bin/python build.py --dataset fixtures   # synthetic test data (SYNTHETIC banner) -> dist/maison_veritas_SYNTHETIC.xlsx
 
 The build is offline and deterministic (same bytes on every run). Do not run it
 with `python -I`. `dist/` is gitignored and not tracked in Phase 1.

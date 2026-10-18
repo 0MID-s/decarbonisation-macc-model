@@ -87,7 +87,9 @@ def register_target(name, default_out, builder):
     TARGETS[name] = (default_out, builder)
 
 
-register_target("main", os.path.join("dist", "maison_veritas.xlsx"), _build_main)
+DELIVERABLE = os.path.join("dist", "maison_veritas.xlsx")
+SYNTHETIC_MAIN_OUT = os.path.join("dist", "maison_veritas_SYNTHETIC.xlsx")
+register_target("main", DELIVERABLE, _build_main)
 register_target("spike", os.path.join("dist", "spike_macc.xlsx"), build_spike)
 
 
@@ -143,6 +145,13 @@ def main(argv=None):
     ap.add_argument("--out", default=None)
     args = ap.parse_args(argv)
     out = args.out or TARGETS[args.target][0]
+    if args.dataset == "fixtures":
+        # Synthetic data must never land on the client deliverable path (WR-08).
+        if args.out is None and out == DELIVERABLE:
+            out = SYNTHETIC_MAIN_OUT
+        if os.path.abspath(out) == os.path.abspath(DELIVERABLE):
+            ap.error("refusing to write synthetic fixtures data to the client "
+                     "deliverable %s; pass another --out" % DELIVERABLE)
     try:
         data, _ = build_bytes(args.target, load_dataset(args.dataset))
     except ProvenanceError as exc:

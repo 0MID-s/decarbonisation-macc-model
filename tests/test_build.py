@@ -40,6 +40,21 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(_quiet_main(["--dataset", "fixtures", "--out", out]), 0)
         self.assertTrue(os.path.exists(out))
 
+    def test_fixtures_never_written_to_deliverable(self):
+        # WR-08: synthetic data must not land on dist/maison_veritas.xlsx.
+        cwd = os.getcwd()
+        os.chdir(self.tmp.name)
+        self.addCleanup(os.chdir, cwd)
+        self.assertEqual(_quiet_main(["--dataset", "fixtures"]), 0)
+        self.assertTrue(os.path.exists(build.SYNTHETIC_MAIN_OUT))
+        self.assertFalse(os.path.exists(build.DELIVERABLE))
+        with self.assertRaises(SystemExit) as cm:
+            _quiet_main(["--dataset", "fixtures", "--out", build.DELIVERABLE])
+        self.assertNotEqual(cm.exception.code, 0)
+        self.assertFalse(os.path.exists(build.DELIVERABLE))
+        self.assertEqual(_quiet_main(["--target", "spike", "--dataset", "fixtures"]), 0)
+        self.assertTrue(os.path.exists(os.path.join("dist", "spike_macc.xlsx")))
+
     def test_placeholder_blocks_and_writes_nothing(self):
         ds = build.load_dataset("fixtures")
         bad = dataclasses.replace(ds.inputs[3], status=Status.PLACEHOLDER)
