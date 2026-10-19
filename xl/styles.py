@@ -41,6 +41,12 @@ NUM_FORMATS = {
     "factor": "0.0000",
     "int": "0",
     "general": "General",
+    "mwh": '#,##0;(#,##0);"–"',
+    "count": "#,##0",
+    "dec2": "#,##0.00",
+    "dec3": "#,##0.000",
+    "dec5": "0.00000",
+    "eur_m": "#,##0.00",
     "date": "yyyy-mm-dd",
 }  # type: Dict[str, str]
 
