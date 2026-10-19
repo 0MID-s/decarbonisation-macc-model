@@ -93,7 +93,8 @@ class FisherTests(unittest.TestCase):
 class ImportTests(unittest.TestCase):
     def test_stdlib_only(self):
         import checkmodel.carbon_reference as m
-        src = open(m.__file__).read()
+        with open(m.__file__) as fh:
+            src = fh.read()
         for line in src.splitlines():
             if line.startswith(("import ", "from ")):
                 self.assertRegex(line, r"^(from|import) (typing|config|checkmodel)")

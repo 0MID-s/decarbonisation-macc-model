@@ -51,3 +51,16 @@ def hicp_ratio(v, year):
 def restate_eur2025(v, input_id, year):
     # type: (Dict[str, float], str, int) -> float
     return v[input_id] * hicp_ratio(v, year)
+
+
+def fisher_real(nominal, inflation):
+    # type: (float, float) -> float
+    """Fisher: (1 + nominal) / (1 + inflation) - 1 (D-19, D-42)."""
+    return (1.0 + nominal) / (1.0 + inflation) - 1.0
+
+
+def discount_rate_real(v):
+    # type: (Dict[str, float]) -> float
+    """Real discount rate from the Damodaran Euros column (no currency
+    adjustment, D-42) and the ECB 2% target."""
+    return fisher_real(v["Fin_CoC_ChemSpecialty"], v["Fin_InflationLongRun"])
