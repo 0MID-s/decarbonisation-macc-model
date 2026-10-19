@@ -1,0 +1,338 @@
+# DATA_LOG: fetched files, hashes and parsed values (Phase 2)
+
+`data_raw/` is gitignored (only its README is tracked), so this file is the committed provenance trail for every machine-readable Phase 2 source. The build stays offline: values are copied into `config/inputs_*.py` by hand from this reviewed log (plans 02-05 to 02-07).
+
+- All files were fetched on 2026-10-19 through `python3 -I tools/fetch_all.py` (allowlisted hosts, sha256 manifest in `data_raw/<Src_ID>/MANIFEST.jsonl`).
+- Downloaded files are untrusted data. They were only read by the read-only parsers under `python -I`, with the data path passed as an argument and never from inside `data_raw/`. Nothing was opened in Excel or any other application.
+- "Status" compares the live value with the 02-RESEARCH.md value: `match` = identical; `revised` = live value differs and wins; `new` = not in research, logged now.
+- Parser commands (from the repo root): `PE` = `.venv/bin/python -W ignore -I tools/parse_eurostat.py`, `PX` = `.venv/bin/python -W ignore -I tools/parse_xlsx.py`, `PM` = `.venv/bin/python -W ignore -I tools/parse_misc.py`.
+- Eurostat addresses use the printed key `freq|indicator-or-nrg_bal|NACE-or-siec|size-or-unit|geo|time`. Eurostat flag `-` means no status flag on the cell; `i` means imputed.
+- Summary: no research value was revised by the live data. New values: C20 and C21 net turnover, the full Eurostat price-band lists, DESNZ row IDs, RVO and PBL cell addresses, the LED/VSD lifetime search result.
+
+## Src_EurostatSBS
+
+- File: `sbs_sc_ovw_BE_C20_C21.json`
+- sha256: `e8f38afb04113a358437f3efbf7bebe64611489d163a41698fee4bdc0467cd0a`
+- retrieved_utc: 2026-10-19T19:52:04Z (26,628 bytes)
+- Command: `PE data_raw/Src_EurostatSBS/sbs_sc_ovw_BE_C20_C21.json`
+- All cells below carry no status flag.
+
+| Item | Live value | Research value | Status | Address |
+|---|---|---|---|---|
+| C20 50-249 enterprises, 2024 | 110 | 110 | match | A\|ENT_NR\|C20\|50-249\|BE\|2024 |
+| C20 50-249 persons employed, 2024 | 13,960 | 13,960 | match | A\|EMP_NR\|C20\|50-249\|BE\|2024 |
+| C20 50-249 value added AV_MEUR, 2024 | 2,536.48 | 2,536.48 | match | A\|AV_MEUR\|C20\|50-249\|BE\|2024 |
+| C20 50-249 net turnover NETTUR_MEUR, 2024 | 12,396.76 | 12,396.76 | match | A\|NETTUR_MEUR\|C20\|50-249\|BE\|2024 |
+| C20 TOTAL AV_MEUR, 2024 | 8,911.42 | 8,911.42 | match | A\|AV_MEUR\|C20\|TOTAL\|BE\|2024 |
+| C20 TOTAL NETTUR_MEUR, 2024 (D-03 sector turnover) | **42,576.38** | not in research | new | A\|NETTUR_MEUR\|C20\|TOTAL\|BE\|2024 |
+| C21 TOTAL AV_MEUR, 2024 | 16,919.86 | 16,919.86 | match | A\|AV_MEUR\|C21\|TOTAL\|BE\|2024 |
+| C21 TOTAL NETTUR_MEUR, 2024 (D-03 sector turnover) | **48,554.13** | not in research | new | A\|NETTUR_MEUR\|C21\|TOTAL\|BE\|2024 |
+| C20 50-249 AV_MEUR 2021 / 2022 / 2023 | 2,063.44 / 2,388.30 / 2,397.82 | same | match | A\|AV_MEUR\|C20\|50-249\|BE\|2021..2023 |
+| C20 50-249 ENT_NR 2021 / 2022 / 2023 | 98 / 105 / 112 | same | match | A\|ENT_NR\|C20\|50-249\|BE\|2021..2023 |
+| C20 50-249 NETTUR_MEUR 2021 / 2022 / 2023 | 8,874.36 / 13,107.24 / 10,769.24 | same | match | A\|NETTUR_MEUR\|C20\|50-249\|BE\|2021..2023 |
+| Value added per enterprise EUR m, 2021 / 2022 / 2023 / 2024 (stability note) | 21.06 / 22.75 / 21.41 / 23.06 | 21.1 / 22.7 / 21.4 / 23.1 | match | computed AV_MEUR / ENT_NR |
+| Turnover per enterprise EUR m, C20 50-249, 2024 | 112.70 (12,396.76 / 110) | 112.7 | match | computed |
+
+Notes for the D-03 cross-check: C20 TOTAL 634 enterprises (A\|ENT_NR\|C20\|TOTAL\|BE\|2024), C21 TOTAL 165 enterprises (same key with C21). The "NETTUR_MEUR" sector values above are Belgium totals, not per firm.
+
+## Src_EurostatEnergyBalance
+
+- File: `nrg_bal_c_BE_FC_IND_CPC_E_TJ.json`
+- sha256: `fc77c63d6ea455a5633c53f1262f40f6bd1fd9fa1f2effe046e8e3a860730fc4`
+- retrieved_utc: 2026-10-19T19:52:05Z (40,183 bytes)
+- Command: `PE data_raw/Src_EurostatEnergyBalance/nrg_bal_c_BE_FC_IND_CPC_E_TJ.json`
+- Unit printed: TJ (net calorific value basis per research 3.2). All cells flag `-`.
+
+| Item (BE, 2024, TJ) | Live value | Research value | Status | Address |
+|---|---|---|---|---|
+| TOTAL | 162,119.849 | 162,119.849 | match | A\|FC_IND_CPC_E\|TOTAL\|TJ\|BE\|2024 |
+| G3000 natural gas | 62,515.885 | 62,515.885 | match | A\|FC_IND_CPC_E\|G3000\|TJ\|BE\|2024 |
+| E7000 electricity | 48,458.52 | 48,458.52 | match | A\|FC_IND_CPC_E\|E7000\|TJ\|BE\|2024 |
+| H8000 derived heat | 8,030.8 | 8,030.8 | match | A\|FC_IND_CPC_E\|H8000\|TJ\|BE\|2024 |
+| O4630 LPG | 11,356.73 | 11,356.73 | match | A\|FC_IND_CPC_E\|O4630\|TJ\|BE\|2024 |
+| O4640 naphtha | 29,361.1 | 29,361.1 | match | A\|FC_IND_CPC_E\|O4640\|TJ\|BE\|2024 |
+| O4671XR5220B gas oil / diesel | 1,143.8 | 1,143.8 | match | A\|FC_IND_CPC_E\|O4671XR5220B\|TJ\|BE\|2024 |
+| Sum of the five main carriers (G3000+E7000+H8000+O4630+O4640) | 160,866.835 | 160,866.835 | match | computed |
+| Remainder = TOTAL minus the five carriers | 2,396.814 (1.48% of total) | 2,396.8 | match | computed; equals 1,143.8 + 513.08 + 379.834 + 260.1 + 100 per research |
+
+Sum check: five carriers + remainder = 162,119.849 exactly (remainder derived as the difference; the research itemised remainder (gas oil 1,143.8 + fuel oil 513.08 + coke 379.834 + renewables 260.1 + waste 100) adds to the same 2,396.814).
+
+## Src_EurostatAirAccounts
+
+- File: `env_ac_ainah_r2_BE_C20_C21_GHG.json`
+- sha256: `cafccb7208ce9fc3f3c54b11731ae2de0c499116bb91a55104a65a5c3575e3ef`
+- retrieved_utc: 2026-10-19T19:52:06Z (6,720 bytes)
+- Command: `PE data_raw/Src_EurostatAirAccounts/env_ac_ainah_r2_BE_C20_C21_GHG.json`
+- Unit code printed: `T` (tonne). The dataset also exposes G_HAB, KG_HAB, THS_T and I15; use `T`.
+
+| Item (BE, 2024) | Live value | Research value | Status | Address |
+|---|---|---|---|---|
+| C20 GHG tonnes | 9,173,823.08, flag `i` (imputed) | 9,173,823.08, flag i | match | A\|GHG\|C20\|T\|BE\|2024 |
+| C21 GHG tonnes | 238,898.76, flag `i` (imputed) | 238,898.76, flag i | match | A\|GHG\|C21\|T\|BE\|2024 |
+
+## Src_EurostatElecPrice
+
+- File: `nrg_pc_205_BE_X_VAT.json`
+- sha256: `319b25f3d84cdc740b13c647913a7dce2e50053d21601a6e2e075a33c966a8f2`
+- retrieved_utc: 2026-10-19T19:52:07Z (15,758 bytes); dataset `updated` field 2026-10-19
+- Command: `PE data_raw/Src_EurostatElecPrice/nrg_pc_205_BE_X_VAT.json`
+- Unit KWH, tax X_VAT, currency EUR, product E7000, geo BE. All cells flag `-`. Address key: `S|E7000|<band code>|KWH|X_VAT|EUR|BE|<semester>`.
+- Band codes and labels (annual consumption; lower bound in MWh): IA `MWH_LT20` (<20, lower bound 0); IB `MWH20-499` (20); IC `MWH500-1999` (500); ID `MWH2000-19999` (2,000); IE `MWH20000-69999` (20,000); IF `MWH70000-149999` (70,000); IG `MWH_GE150000` (150,000).
+
+| Band (EUR/kWh) | 2025-S1 live | 2025-S2 live | 2026-S1 live | Research (S1 / S2 / 2026-S1) | Status |
+|---|---|---|---|---|---|
+| IA MWH_LT20 | 0.3138 | 0.2808 | 0.3172 | 0.3138 / 0.2808 / 0.3172 | match |
+| IB MWH20-499 | 0.2314 | 0.2158 | 0.2318 | same | match |
+| IC MWH500-1999 | 0.1940 | 0.1866 | 0.1902 | same | match |
+| ID MWH2000-19999 | 0.1659 | 0.1571 | 0.1600 | same | match |
+| IE MWH20000-69999 | 0.1348 | 0.1311 | 0.1332 | same | match |
+| IF MWH70000-149999 | 0.1155 | 0.1141 | 0.1148 | same | match |
+| IG MWH_GE150000 | 0.0982 | 0.0920 | 0.1014 | same | match |
+| TOT_KWH (all bands) | 0.1666 | 0.1587 | 0.1678 | same | match |
+
+D-21 check: mean of ID 2025-S1 and 2025-S2 = (0.1659 + 0.1571) / 2 = 0.1615 EUR/kWh, as in research.
+
+## Src_EurostatGasPrice
+
+- File: `nrg_pc_203_BE_X_VAT.json`
+- sha256: `9aea07af850898fe6aca6581828ed0728cdf522577c238b9f0c0264d95774c36`
+- retrieved_utc: 2026-10-19T19:52:08Z (16,372 bytes); dataset `updated` 2026-10-19
+- Command: `PE data_raw/Src_EurostatGasPrice/nrg_pc_203_BE_X_VAT.json`
+- Product G3000, tax X_VAT, currency EUR, geo BE. Both unit codes are present: `KWH` (kilowatt-hour; used here) and `GJ_GCV` (gigajoule, gross calorific value). Eurostat prices per kWh are therefore on a GCV basis (research 3.6). All cells flag `-`. Address key: `S|G3000|<band>|KWH|X_VAT|EUR|BE|<semester>`.
+- Band codes (annual consumption in GJ GCV; lower bound in GJ): I1 `GJ_LT1000` (<1,000; 0); I2 `GJ1000-9999` (1,000); I3 `GJ10000-99999` (10,000); I4 `GJ100000-999999` (100,000); I5 `GJ1000000-3999999` (1,000,000); I6 `GJ_GE4000000` (4,000,000).
+
+| Band (EUR/kWh GCV) | 2025-S1 live | 2025-S2 live | 2026-S1 live | Research | Status |
+|---|---|---|---|---|---|
+| I1 | 0.0749 | 0.0700 | 0.0677 | 0.0749 / 0.0700 / 0.0677 | match |
+| I2 | 0.0689 | 0.0603 | 0.0548 | same | match |
+| I3 | 0.0505 | 0.0481 | 0.0439 | same | match |
+| I4 | 0.0428 | 0.0399 | 0.0389 | same | match |
+| I5 | 0.0415 | 0.0376 | 0.0389 | same | match |
+| I6 | 0.0424 | 0.0345 | 0.0392 | same | match |
+
+D-21 check: mean of I3 2025-S1 and 2025-S2 = (0.0505 + 0.0481) / 2 = 0.0493 EUR/kWh GCV, as in research.
+
+## Src_EurostatHICP
+
+- File: `prc_hicp_aind_EA_CP00.json`
+- sha256: `080757eb93d26b42c2d713f3fe8117cc5d88a89426fb6e879dfd687ae251b1ec`
+- retrieved_utc: 2026-10-19T19:52:08Z (4,287 bytes)
+- Command: `PE data_raw/Src_EurostatHICP/prc_hicp_aind_EA_CP00.json`
+- Euro-area HICP annual average index (2015=100), coicop CP00, unit INX_A_AVG. Flags `-`. Address key: `A|INX_A_AVG|CP00|EA|<year>`.
+
+| Year | Live value | Research value | Status |
+|---|---|---|---|
+| 2010 (D-41 NGFS conversion base) | 93.14 | 93.14 | match |
+| 2019 | 104.8 | 104.80 | match |
+| 2020 | 105.06 | 105.06 | match |
+| 2021 | 107.78 | 107.78 | match |
+| 2022 | 116.82 | 116.82 | match |
+| 2023 | 123.15 | 123.15 | match |
+| 2024 | 126.07 | 126.07 | match |
+| 2025 | 128.75 | 128.75 | match |
+
+Derived (not stored): 2025/2020 = 128.75 / 105.06 = 1.2255 (as in research); 2025/2010 = 128.75 / 93.14 = 1.3823.
+
+## Src_EurostatFX
+
+- File: `ert_bil_eur_a_USD_AVG.json`
+- sha256: `3c96ca57c15266d07e1976d90ba806a5bb90ab46a503b6311df3aaa9f5ba66c7`
+- retrieved_utc: 2026-10-19T19:52:08Z (4,488 bytes)
+- Command: `PE data_raw/Src_EurostatFX/ert_bil_eur_a_USD_AVG.json`
+- Annual average USD per EUR (ert_bil_eur_a, statinfo AVG, currency USD). Address key: `A|AVG|NAC|USD|<year>`. The D-41 route (NGFS US$2010 to EUR via Eurostat 2010 FX and euro HICP) uses only Eurostat series; no other exchange-rate or price-index host is fetched or logged.
+
+| Year | Live value (USD per EUR) | Research value | Status | Flag |
+|---|---|---|---|---|
+| 2010 (D-41) | 1.3257 | 1.3257 | match | none (`-`) |
+| 2024 | 1.0824 | 1.0824 | match | none |
+| 2025 | 1.13 | 1.1300 | match | none |
+
+The live 2010 value has no more decimals than the research value (1.3257).
+
+## Src_EEAGridIntensity
+
+- File: `eea_co2_emission_intensity_15.csv`
+- sha256: `530d94a536bea86696048cb639d663f5b26bc0d2ca42212e979eed08600f9e85`
+- retrieved_utc: 2026-10-19T19:52:08Z (18,552 bytes)
+- Command: `PM eea data_raw/Src_EEAGridIntensity/eea_co2_emission_intensity_15.csv --country Belgium`
+- Unit gCO2e/kWh of gross electricity generation; Belgium block is rows 334-366 of the CSV (years 1990-2022). The older map edition ends in 2022; 2023 and 2024 are not in this file.
+
+| Belgium | Live value | Research value | Status | Address |
+|---|---|---|---|---|
+| 2015 | 219 | 219 | match | CSV row 359 |
+| 2016 | 161 | 161 | match | CSV row 360 |
+| 2017 | 169 | 169 | match | CSV row 361 |
+| 2018 | 197 | 197 | match | CSV row 362 |
+| 2019 | 170 | 170 | match | CSV row 363 |
+| 2020 | 166 | 166 | match | CSV row 364 |
+| 2021 | 138 | 138 | match | CSV row 365 |
+| 2022 (latest in file) | 154 | 154 | match | CSV row 366 |
+
+## Src_AIBResidualMix
+
+- File: `aib_residual_mix_2025.xlsx`
+- sha256: `0933ebb4c348442a238ef7174fcb968516bf1ce7f4e94b0b8548149528fe20f2` (equals the hash computed in research)
+- retrieved_utc: 2026-10-19T19:52:08Z (79,337 bytes)
+- Commands: `PX data_raw/Src_AIBResidualMix/aib_residual_mix_2025.xlsx --list-sheets`; `PX ... --sheet CO2 --match BE`
+- Sheet `CO2`, row 4 (header: country code, production mix, residual mix, supplier mix), unit gCO2/kWh.
+
+| Item (BE) | Live value | Research value | Status | Address |
+|---|---|---|---|---|
+| Residual mix | 171.01 | 171.01 | match | CO2!A4 (column C) |
+| Production mix | 121.86 | 121.86 | match | CO2!A4 (column B) |
+| Supplier mix | 114.13 | 114.13 | match | CO2!A4 (column D) |
+
+Licence: the AIB site states no reuse terms (research); cite one figure with source and edition.
+
+## Src_DESNZ2026
+
+- File: `ghg-conversion-factors-2026-flat-format-revised.xlsx`
+- sha256: `a9a455ab396dae226d510c7be6233748416d490c41a5d20f3dc7a0c45feecd5e`
+- retrieved_utc: 2026-10-19T19:52:09Z (515,426 bytes)
+- Command: `PX data_raw/Src_DESNZ2026/ghg-conversion-factors-2026-flat-format-revised.xlsx --sheet "Factors by Category" --match <row ID>`
+- Front page: Version 1.2, Year 2026, status Final, updated 2026-07-10, next publication 2027-06-01. Open Government Licence v3.0 per the publication page (research). Unit kg CO2e per stated unit. Value is in the last column (`GHG Conversion Factor 2026`); the address below is the sheet row.
+
+| Item | Row ID | Live value | Research value | Status | Address |
+|---|---|---|---|---|---|
+| Natural gas, kWh (Net CV) | 1_100_1004_7_1 | 0.20199 | 0.20199 | match | Factors by Category!A79 |
+| Natural gas, kWh (Gross CV) | 1_100_1004_6_1 | 0.18231 | 0.18231 | match | Factors by Category!A83 |
+| LPG, kWh (Net CV) | 1_100_1003_7_1 | 0.23032 | 0.23032 | match | Factors by Category!A63 |
+| Naphtha, kWh (Net CV) | 1_101_1016_7_1 | 0.24891 | 0.24891 | match | Factors by Category!A271 |
+| Gas oil, kWh (Net CV) | 1_101_1014_7_1 | 0.27288 | 0.27288 | match | Factors by Category!A239 |
+| Diesel (average biofuel blend), per litre | 1_101_1011_8_1 | 2.58354 | 2.58354 | match | Factors by Category!A187 |
+| Diesel (average biofuel blend), kWh (Net CV) | 1_101_1011_7_1 | 0.26071 | 0.26071 | match | Factors by Category!A191 |
+| District heat and steam, kWh (Scope 2, UK average) | 10_401_4003_5_1 | 0.17529 | 0.17529 | match | Factors by Category!A3454 |
+
+Derived: GCV/NCV for natural gas = 0.18231 / 0.20199 = 0.90257; NCV/GCV = 1.10795 (research 1.1079). Not re-parsed here (not needed by this plan's list): fuel oil, coal, petrol; research values stand unchecked for those.
+
+## Src_DEAProcessHeat
+
+- File: `technology_data_for_industrial_process_heat.xlsx`
+- sha256: `8b2fd0ec97b985eb22dbae291aa550c93d67bc17057645b633ee326a938baad7`
+- retrieved_utc: 2026-10-19T19:52:09Z (206,481 bytes)
+- Commands: `PX <file> --list-sheets`; `PX <file> --sheet "<sheet>"` for the four sheets below, and `--sheet Index`.
+- Index sheet: "All cost data is in 2025€" (Index!C2); change log entry dated 2026-01-05, sheet "All": "Update and simplification of datasheets on heat pumps ... Adjusted all prices to be 2025 Euro, instead of 2019" (Index!A8).
+- Licence: the Index, Notes and Ref sheets contain no licence line (0 hits for licen/attribution/creative). Licence of this file stays **UNVERIFIED** (same publisher as the electricity file, which states CC BY 4.0). Do not claim a licence in the Source register for this file beyond "published by the Danish Energy Agency".
+- Values are the 2025 `ctrl` (central) column (column C); lower/upper range 2025 in columns H, I. Note: sheet `1.2 heat_cool hp 80 C 75 K ` has a trailing space in its name.
+
+| Sheet / parameter | Live value (2025 ctrl) | Research value | Status | Address |
+|---|---|---|---|---|
+| 1.1: annual average COP ("Total efficiency, net [%], annual average", values are COP) | 5.28 (range 5.28 to 5.5465) | 5.28 | match | 1.1 Traditional heat pump!C8 |
+| 1.1: nominal investment M EUR/MW | 0.95 (range 0.91-0.95) | 0.95 | match | !C19 |
+| 1.1: fixed O&M EUR/MW/yr | 2,127 | 2,127 | match | !C22 |
+| 1.1: variable O&M EUR/MWh | 3.07 | 3.07 | match | !C23 |
+| 1.1: technical lifetime, years | 25 (range 15-40) | 25 | match | !C12 |
+| 1.1: indirect investment cost M EUR/MW (memo) | 0.19 | 0.19 | match | !C25 |
+| 1.1: unit size MW | 3 (0.5-5) | 3 | match | !C6 |
+| 1.2: annual average COP | 3.30 (3.3000000000000003 stored; range 3.28-3.47) | 3.30 | match | 1.2 heat_cool hp 80 C 75 K !C8 |
+| 1.2: nominal investment M EUR/MW | 0.95 | 0.95 | match | !C19 |
+| 1.2: fixed O&M / variable O&M / lifetime | 2,127 / 3.07 / 25 | same as 1.1 | match | !C22, !C23, !C12 |
+| 2.a: annual average COP | 2.70 (range 2.2-3.95) | 2.70 | match | 2.a High temp. hp Up to 125C!C8 |
+| 2.a: nominal investment (*total) M EUR/MW | 1.2 (range 0.9-1.5) | 1.20 | match | !C22 |
+| 2.a: fixed O&M EUR/MW/yr | 2,494 | 2,494 | match | !C25 |
+| 2.a: variable O&M EUR/MWh | 3.6 | 3.60 | match | !C26 |
+| 2.a: technical lifetime, years | 20 (range 15-30) | 20 | match | !C12 |
+| 2.a: indirect investment cost M EUR/MW (memo) | 0.23 | 0.23 | match | !C29 |
+| 6.1 boiler: annual efficiency | 0.939 (nominal load 0.94) | 0.939 | match | 6.1 Boiler, gas and oil!C8 (C7) |
+| 6.1 boiler: nominal investment M EUR/MW | 0.09 | 0.09 | match | !C22 |
+| 6.1 boiler: fixed O&M EUR/MW/yr | 2,000 | 2,000 | match | !C25 |
+| 6.1 boiler: variable O&M EUR/MWh | 1.23 | 1.23 | match | !C26 |
+| 6.1 boiler: technical lifetime, years | 25 | 25 | match | !C12 |
+| 6.1 boiler: indirect investment cost M EUR/MW (memo) | 0.23 | 0.23 | match | !C28 |
+
+Open point carried from research: whether "Nominal investment" already includes the "indirect investment cost" memo line is not stated in the sheets; treat the headline as total and keep the memo as a flagged item.
+
+## Src_DEAElectricity
+
+- File: `technology_data_for_el_and_dh_alldatalong.xlsx`
+- sha256: `edfdb4c773f779c8b9d4e47b42004f09f0dd13e23fa3ef3de9f61fb24fdeb992`
+- retrieved_utc: 2026-10-19T19:52:10Z (1,846,974 bytes)
+- Commands: `PX <file> --sheet "22 Rooftop PV comm.&industrial"`, `PX <file> --sheet alldata_long --match "22 Rooftop PV comm"`, `PX <file> --sheet Intro`.
+- Intro sheet: Version 0019 (Intro!A3); "License: This work is licensed under Attribution 4.0 International" (Intro!A15-A16).
+- Price year of the per-DC investment and fixed O&M rows: 2020 (column `priceyear` on alldata_long rows A10993 and A11092). Values below are the 2025 column (column C).
+
+| Item | Live value | Research value | Status | Address |
+|---|---|---|---|---|
+| Nominal investment (*total, per DC) M EUR/MWp | 0.6365236818588025 | 0.6365 | match | 22 Rooftop PV comm.&industrial!C18; alldata_long!A10993 |
+| Fixed O&M (*total, per DC) EUR/MWp/yr | 2,190 | 2,190 | match | !C38; alldata_long!A11092 |
+| Technical lifetime, years | 40 (range 34-50) | 40 | match | !C10 |
+| Inverter lifetime, years | 15 | 15 | match | !C47 |
+| Average annual degradation of full-load hours | 0.003 (0.3 %/yr) | 0.3 %/yr | match | !C41 |
+| Price year (`priceyear`) | 2020 | 2020 | match | alldata_long!A10993 |
+| Unit size (DC) MWp | 0.11 | 110 kWp | match | !C29 |
+| Full-load context: GHI kWh/m2/y; transposition factor; performance ratio | 1,068; 1.1; 0.9 | GHI 1,068 | match | !C42, !C43, !C45 |
+| 2030 nominal investment (per DC) M EUR/MWp | 0.5885 | 0.5885 | match | !D18 |
+
+Note P (!A77): O&M includes regular inverter replacement, annualised over the 15-year lifetime and included in fixed O&M. HICP uplift 2020 to 2025 (x1.2255) is applied in config, not here: 0.6365 x 1.2255 = 0.780 M EUR/MWp = EUR 780/kWp.
+
+## Src_PVGIS
+
+- Files: `pvgis_antwerp_tilt10.json` (sha256 `f6ee7ca85a9c68d7601d8b2aebf730a8fc5a9b60c3ec7ea09b9d33ec06c44c8d`, 5,193 bytes, retrieved_utc 2026-10-19T19:52:11Z) and `pvgis_antwerp_tilt35.json` (sha256 `da95e543ab54980f4b69a594f98210033b53348fe84244d1c8d8b1c8ca3f355d`, 5,199 bytes, retrieved_utc 2026-10-19T19:52:11Z).
+- Commands: `PM pvgis data_raw/Src_PVGIS/pvgis_antwerp_tilt10.json` and `... tilt35.json`.
+- Query: lat 51.2, lon 4.4, 1 kWp, crystalline Si, losses 14 %, azimuth 0 (south), PVGIS-SARAH3, 2005-2023. No HTTP 529 occurred; both fetches succeeded first time.
+
+| Item | Live value | Research value | Status | Address |
+|---|---|---|---|---|
+| Tilt 10, E_y kWh/kWp/yr | 942.09 | 942.09 | match | outputs.totals.fixed.E_y |
+| Tilt 10, H(i)_y kWh/m2; SD_y | 1,188.05; 42.57 | 1,188.05; 42.57 | match | outputs.totals.fixed.H(i)_y, SD_y |
+| Tilt 35, E_y kWh/kWp/yr | 1,038.15 | 1,038.15 | match | outputs.totals.fixed.E_y |
+| Tilt 35, H(i)_y kWh/m2; SD_y | 1,295.35; 49.78 | 1,295.35; 49.78 | match | outputs.totals.fixed.H(i)_y, SD_y |
+
+Terms of use not read (UNVERIFIED); cite as European Commission, Joint Research Centre, PVGIS 5.3.
+
+## Src_RVOEML
+
+- Workbook: `rvo_eml_2023_berekeningen_v1-4.xlsx`
+- sha256: `bc94c284bf1927fbcf97a0a87950a84b7a9f80db46cfcbbf6d6b5fda34e1bfb0`
+- retrieved_utc: 2026-10-19T19:52:12Z (153,510 bytes)
+- Also fetched as text (HTML saved with a `.txt` name through `tools/fetch_raw.py`, host rvo.nl allowlisted, treated as data only): `rvo_eml_informatiebank_index.txt` (sha256 `2564e83e15c79060cb6c910edbbae75d35b93399429e902aede80198b390a79d`, 176,856 bytes, retrieved_utc 2026-10-19T19:54:14Z) and `rvo_eml_page.txt` (sha256 `73480e7ab4d532104bef35111588944a1303cb115e4fd624a47a08945fc5bad8`, 251,518 bytes, retrieved_utc 2026-10-19T19:54:26Z).
+- Commands: `PX <workbook> --list-sheets` (sheets: Maatregelenlijst, Zonnepanelen orientatie O-W, Samengevoegde maatregelen); `PX <workbook> --sheet "Samengevoegde maatregelen"`.
+- Sheet `Samengevoegde maatregelen` columns: A measure number, B name, C calculation unit, D moment (NM natural moment / ZM independent moment), E labour EUR, F material EUR, G equipment EUR, H net benefits EUR, I gas saving m3/yr, J electricity saving kWh/yr, K total investment EUR, L financing cost EUR, M total saving EUR/yr. Each measure has an NM row and a ZM row (ZM directly below, name cell blank). The price year is not stated in the sheet (record "not stated; assumed 2023 list year" as an assumption). RVO licence/terms not read (UNVERIFIED).
+
+| Measure (NM row) | Unit | Labour / material / equipment EUR | Net benefits EUR | kWh/yr saved | Total investment EUR | Total saving EUR/yr | Research | Status | Address |
+|---|---|---|---|---|---|---|---|---|---|
+| Vervang halogeenlampen door ledlampen | per lamp (53 W) | 0 / 5.856 / 0 | 2.351 | 118.625 | 6.79296 | 27.26225 | material 5.86, 118.62 kWh, saving 27.26 | match | rows 10 (NM) and 11 (ZM); cells E10:M10 |
+| Vervang lichtlijnen met dubbele TL-buizen door led-armaturen | per fixture | 0 / 0.001 / 0 | 1.033 | 215.75 | 0.00116 | 46.3405 | 215.75 kWh | match | row 14 (NM), 15 (ZM); the near-zero material cost and total investment (EUR 0.00116) are as published; treat this row as unreliable for CAPEX and prefer the halogen-to-LED row |
+| Frequentieregelaar op de compressoren van de koelinstallatie | per piece (40 kW) | 560 / 3,000 / 200 | 0 | 15,360 | 4,361.60 | 3,225.60 | labour 560, material 3,000, equipment 200, 15,360 kWh | match | row 2 (NM), 3 (ZM, material 4,000, total 5,521.60) |
+| Frequentieregelaar op centrifugaalpomp | per pump (3 kW) | 1,040 / 1,765 / 0 | 0 | 7,740 | 3,253.80 | 1,625.40 | not in research | new | row 28 (NM) |
+| Frequentieregelaar kneed-/mengmachine | per motor (5.3 kW) | 325 / 1,300 / 0 | 0 | 2,049.6 | 1,885.00 | 430.42 | not in research | new | row 20 (NM) |
+| Frequentieregelaar elektromotor | per motor (4 kW) | 280 / 1,100 / 0 | -70 | 5,400 | 1,600.80 | 1,064.00 | not in research | new | row 26 (NM) |
+
+Other frequency-controller rows exist on rows 4, 6, 18, 22, 24, 32, 34 and 36. Compressed air ("perslucht"): on `Samengevoegde maatregelen` rows 42 and 44 (air duct so the compressor draws cold outside air; 60 kW: labour 3,330 / material 3,770 / equipment 394, 7,679.181 kWh saved; 30 kW: 560 / 700 / 0, 2,532.87 kWh saved). On `Maatregelenlijst` there are 16 rows with Activiteit "Perslucht" (rows 2-17, measures FA1 onward, for example FA1 "Vergroot de persluchtbuffer", FA2 shut-off valve with timer, FA3 flow pressure regulator); these are qualitative conditions with no cost columns.
+
+### Lifetime search for LED and frequency controller (DATA-08, for plan 02-06: Meas_LED_Life and Meas_VSD_Life)
+
+- LED lifetime (Meas_LED_Life): **Lifetime not found.** Searched: workbook sheets `Maatregelenlijst`, `Zonnepanelen orientatie O-W` and `Samengevoegde maatregelen` with the keywords levensduur, afschrijving, technische, gebruiksduur and jaar. Zero hits for levensduur, afschrijving, technische and gebruiksduur in all three sheets. "jaar" hits are unrelated (kWh/jaar, "once per 5 years" heat measurement, "roof need not be renovated within 10 years", and a solar-panel yield sheet with a 0.5 %/yr degradation note). Also searched the static text of the RVO pages https://www.rvo.nl/onderwerpen/energiebesparingsplicht/eml/informatiebank and https://www.rvo.nl/onderwerpen/energiebesparingsplicht/eml: the informatiebank is client-side rendered (the HTML contains `BAILOUT_TO_CLIENT_SIDE_RENDERING`) and has no measure text in the static page; the EML page states only the 5-year payback rule and no lifetimes. The WebFetch page-read route in the plan was not available in this run, so the static fetch through `tools/fetch_raw.py` was used instead; two page reads were made. Plan 02-06 applies its labelled analyst-assumption fallback.
+- Frequency controller lifetime (Meas_VSD_Life): **Lifetime not found.** Same places searched, same result. Plan 02-06 applies its labelled analyst-assumption fallback.
+
+## Src_PBLSDE2026
+
+- File: `pbl_ot_model_eindadvies_sde_2026.xlsx`
+- sha256: `02da21c35827714bf27e769b87fbc59d80cd52633ca42c08fb571db3f375636a`
+- retrieved_utc: 2026-10-19T19:52:14Z (5,844,422 bytes)
+- Commands: `PX <file> --list-sheets` (180 sheets: Colofon, Overzicht, Correcties, Wordtabellen, 1-175, Rangschikking); `PX <file> --sheet Overzicht`; `PX <file> --sheet 16`; `PX <file> --sheet 98`; `PX <file> --sheet Colofon`.
+- Colofon: "SDE++ 2026", date 2026-06-29, version "Eindadvies SDE++ 2026 - 1" (Colofon!A13-A16). Values are in column C of each category sheet.
+- Price-level year: **not found in OT-model** (keywords prijspeil, prijsniveau, prijsjaar, constante, reeel, prijzen searched in Colofon, Overzicht, sheet 16 and Wordtabellen; no hit). Record "price level not stated in the workbook" and do not infer a year.
+
+| Item | Live value | Research value | Status | Address |
+|---|---|---|---|---|
+| Category 16 "Zon-pv >=15 kWp en <1 MWp, gebouwgebonden": investment cost (input based) | 531 EUR/kW (power unit kW as labelled in the sheet) | not read in research | new | 16!C39 |
+| Category 16: total investment, EUR million (reference project) | 0.133612875 | n/a | new | 16!C41 |
+| Category 16: fixed operating cost | 15.2 EUR/kW/yr | n/a | new | 16!C42 |
+| Category 16: full-load hours | 840 | n/a | new | 16!C30 |
+| Category 16: economic lifetime | 20 years | n/a | new | 16!C73 |
+| Category 16: base amount (basisbedrag) | 0.0945 EUR/kWh | n/a | new | 16!C5 (Overzicht!A25) |
+| Category 98 "Industriele warmtepomp, gesloten systeem (8.000 uur)": investment cost (output based) | 1,476 EUR/kW | n/a | new | 98!C40 |
+| Category 98: total investment, EUR million (reference project) | 2.0808648 | n/a | new | 98!C41 |
+| Category 98: fixed operating cost (output based) | 89.9 EUR/kW/yr | n/a | new | 98!C43 |
+| Category 98: full-load hours / electricity use / economic lifetime | 8,000 h / 3,200 MWh/yr / 12 years | n/a | new | 98!C29, !C56, !C73 |
+| WACC used by PBL for category 16 (nominal / real) | 5.2 % / 3.1 % | n/a | new | 16!A154 (text "5,2% / 3,1%") |
+
+Cross-check observations (D-31, informational; the live DEA values remain the config source): PBL rooftop PV investment 531 EUR/kW is well below the DEA 2025 figure of about EUR 780/kWp (after HICP uplift), a gap of about 32 %, plausibly because of different unit scope, size class and price level; PBL industrial heat pump 1,476 EUR/kW (output) is above DEA 1.1 at 950 EUR/kW plus 190 indirect (1,140), a gap of about 29 %. Sub-par agreement is a limitation to mention, not a reason to change the DEA-based inputs.
+
+## Not fetched here (by design)
+
+- NGFS Phase V carbon prices: user-supplied (`data_raw/Src_NGFSPhaseV/`, D-43), handled in plan 02-11 and the NGFS parser.
+- Damodaran waccEurope: user-supplied (D-42); EUR-Lex ETS2 parameters and EEX auction data: hand entry (D-37 and D-14 route 3), plan 02-07.
+
+## User-supplied data (filled in plan 02-11)
