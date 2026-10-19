@@ -4,6 +4,9 @@ Prose carries no figures that are also input values; it refers to input ids.
 Lists are generated from the dataset (transcribed inputs, ETS2 projection).
 """
 from xl.layout import LABEL_COL, setup_sheet
+from xl.sheets.carbon import (
+    EUA_NOTE, NGFS_ATTRIBUTION, NGFS_LICENCE, NGFS_MODIFIED,
+    ngfs_model_text)
 from xl.sheets.common import disclaimer_text, write_title_band
 from xl.styles import SheetKind
 
@@ -55,6 +58,16 @@ LIMITATIONS = (
     "The DEA indirect-investment line is to be resolved in Phase 3.",
     "No size or illiquidity premium is added to the discount rate; this is "
     "covered by the Phase 4 rank-stability test (D-20).",
+    "Discount-rate basis: the Euros column of Damodaran's waccEurope.xls "
+    "(January 2026 update, read from the official file with a read-only "
+    "parser after a macro check, D-42). That column embeds 1.5% expected euro "
+    "inflation while the model deflates with the ECB target held in "
+    "Fin_InflationLongRun, an inflation mismatch that makes the real rate "
+    "slightly lower.",
+    "The NGFS region OECD & EU (R5) is used as the EU proxy (D-27).",
+    "Alternative conversion route (D-41): a US-CPI route would give a factor "
+    "of about 1.31 instead of the Eurostat route factor, so carbon prices "
+    "about a quarter higher; a candidate Phase 4 sensitivity.",
 )
 ETS2_UNVERIFIED = (
     "ETS2 legal parameters were read from Directive (EU) 2023/959 as enacted "
@@ -110,6 +123,23 @@ def ets2_projection_line(inputs, sources):
             "calculations (D-30).")
 
 
+def carbon_notes(sources):
+    return (
+        "NGFS carbon prices are model shadow prices (marginal abatement "
+        "costs), not market prices.",
+        "Scenario mapping (D-26): Low = Current Policies, Central = Nationally "
+        "Determined Contributions (NDCs), High = Net Zero 2050.",
+        "Pinned model and region (D-27): " + ngfs_model_text(sources) + ".",
+        "Conversion route (D-41): US$2010 divided by the 2010 average US "
+        "dollars per euro (Eurostat), then multiplied by euro-area HICP 2025 "
+        "over 2010. Limitation: it assumes the US dollar kept its 2010 real "
+        "value against the euro; a US-CPI route would give about 1.31, so "
+        "prices about 25% higher, a candidate Phase 4 sensitivity.",
+        "EUA anchor (D-29): " + EUA_NOTE + ".",
+        NGFS_ATTRIBUTION, NGFS_MODIFIED, NGFS_LICENCE,
+    )
+
+
 def build_notes(wb, styles, cells, dataset, cfg):
     ws = wb.add_worksheet("Notes")
     setup_sheet(ws, SheetKind.NOTES, freeze_row=4, freeze_col=1)
@@ -136,11 +166,14 @@ def build_notes(wb, styles, cells, dataset, cfg):
         n.para(t)
     n.section("Carbon price notes")
     n.para(ets2_projection_line(dataset.inputs, dataset.sources))
+    if not dataset.synthetic:
+        for t in carbon_notes(dataset.sources):
+            n.para(t)
     n.section("Transcribed inputs (D-14 route 3)")
     for r in dataset.inputs:
         if (r.note.startswith("Transcribed")
                 or r.rationale.startswith("Transcribed")):
             n.para("%s: %s" % (r.id, r.description))
     n.section("Version log")
-    n.para("Phase 2: real cited data, Baseline, Rates and Notes")
+    n.para("Phase 2: real cited data, Baseline, Rates, Carbon and Notes")
     return None

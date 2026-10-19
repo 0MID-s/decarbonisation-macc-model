@@ -7,7 +7,7 @@ import openpyxl
 import build
 from checkmodel.baseline_reference import model_values
 from checkmodel.rates_reference import (
-    EXEMPT_PREFIXES, eur2025_conversions, hicp_ratio, restate_eur2025)
+    EXEMPT_PREFIXES, discount_rate_real, fisher_real, eur2025_conversions, hicp_ratio, restate_eur2025)
 from config.schema import Kind
 
 
@@ -81,6 +81,48 @@ class RatesSheet(unittest.TestCase):
     def test_ets2_stab_price(self):
         got = self._addr(self.wbv, "Carbon_ETS2_StabPrice_EUR2025").value
         self.assertAlmostEqual(got, 55.15, places=2)
+
+    def test_discount_rate_real(self):
+        c = self._addr(self.wb, "Rate_DiscountReal")
+        self.assertEqual(c.value, "=(1+D%d)/(1+Fin_InflationLongRun)-1"
+                         % (c.row - 2))
+        cv = self._addr(self.wbv, "Rate_DiscountReal").value
+        self.assertAlmostEqual(cv, discount_rate_real(self.v), delta=1e-15)
+        self.assertAlmostEqual(cv, 0.05697058823529411, delta=1e-12)
+
+    def test_memo_rows_and_context(self):
+        ws = self.wb["Rates"]
+        texts = [ws.cell(row=r, column=2).value or ""
+                 for r in range(1, ws.max_row + 1)]
+        self.assertTrue(any("(Basic)" in t for t in texts))
+        self.assertTrue(any("(Diversified)" in t for t in texts))
+        self.assertTrue(any("September 2026" in t for t in texts))
+        self.assertNotIn("02-13", ws["B2"].value)
+        wsv = self.wbv["Rates"]
+        want = fisher_real(self.v["Fin_CoC_ChemBasic"],
+                           self.v["Fin_InflationLongRun"])
+        found = [wsv.cell(row=r, column=4).value
+                 for r in range(1, wsv.max_row + 1)
+                 if "(Basic)" in (wsv.cell(row=r, column=2).value or "")]
+        self.assertAlmostEqual(found[0], want, delta=1e-15)
+
+    def test_notes_carbon_text(self):
+        ws = self.wb["Notes"]
+        allt = " ".join(str(ws.cell(row=r, column=2).value or "")
+                        for r in range(1, ws.max_row + 1))
+        self.assertIn("shadow prices", allt)
+        self.assertIn("2010 real value", allt)
+        self.assertIn("REMIND-MAgPIE 3.3-4.8", allt)
+        self.assertIn("NGFS Phase 5 Scenario Explorer, hosted by IIASA", allt)
+        self.assertIn("https://data.ene.iiasa.ac.at/ngfs/#/license", allt)
+        self.assertIn("modified", allt)
+        for sheet in ("Notes", "Carbon"):
+            w = self.wb[sheet]
+            for row in w.iter_rows():
+                for c in row:
+                    if isinstance(c.value, str):
+                        self.assertNotIn("CPI-U", c.value)
+                        self.assertNotIn("BLS", c.value)
 
 
 if __name__ == "__main__":

@@ -8,7 +8,8 @@ from typing import Tuple
 
 from checkmodel.baseline_reference import model_values
 from checkmodel.rates_reference import (
-    eur2025_conversions, hicp_ratio, restate_eur2025)
+    discount_rate_real, eur2025_conversions, fisher_real, hicp_ratio,
+    restate_eur2025)
 from xl.layout import LABEL_COL, UNIT_COL, setup_sheet
 from xl.sheets.common import num_role_for_unit, write_title_band
 from xl.styles import SheetKind
@@ -32,8 +33,8 @@ def build_rates(wb, styles, cells, dataset, cfg):
                 header_last_row=4)
     write_title_band(
         cells, styles, ws, "Rates",
-        "Price-index restatements to EUR 2025 (and, from plan 02-13, the "
-        "discount-rate derivation)",
+        "Price-index restatements to EUR 2025 and the discount-rate "
+        "derivation (Damodaran Europe, Fisher to real)",
         "Euro-area HICP (prc_hicp_aind, 2015=100). EUR 2025 = value x HICP "
         "2025 / HICP price year (D-01)", LAST_COL)
     hdr = styles.get("header")
@@ -86,4 +87,65 @@ def build_rates(wb, styles, cells, dataset, cfg):
                "Exempt from restatement: Eurostat SBS values (used only in "
                "ratios, price year cancels), 2026-S1 context prices, and "
                "exchange rates (not euro amounts).", styles.get("note"))
+    r = _discount_block(ws, cells, styles, v, r + 2, rows)
     return RatesLayout(tuple(rows))
+
+
+def _discount_block(ws, cells, styles, v, r, rows):
+    sec = styles.get("section")
+    note = styles.get("note")
+    label, unit = styles.get("label"), styles.get("unit")
+    cells.text(ws, r, LABEL_COL,
+               "Discount rate (Damodaran Europe, Fisher to real, D-18/D-19)",
+               sec)
+    for c in range(LABEL_COL + 1, LAST_COL + 1):
+        cells.blank(ws, r, c, sec)
+    pct = "pct"
+    r += 1
+    cells.text(ws, r, LABEL_COL, "Nominal cost of capital, Chemical "
+               "(Specialty), Europe (Damodaran, Euros column)", label)
+    cells.text(ws, r, UNIT_COL, "%", unit)
+    cells.formula(ws, r, ORIG_COL, "=Fin_CoC_ChemSpecialty",
+                  styles.get("link", pct), value=v["Fin_CoC_ChemSpecialty"])
+    nom = "D%d" % (r + 1)
+    r += 1
+    cells.text(ws, r, LABEL_COL, "Long-run euro inflation (ECB target)", label)
+    cells.text(ws, r, UNIT_COL, "%", unit)
+    cells.formula(ws, r, ORIG_COL, "=Fin_InflationLongRun",
+                  styles.get("link", pct), value=v["Fin_InflationLongRun"])
+    r += 1
+    cells.text(ws, r, LABEL_COL, "Real discount rate = (1 + nominal) / "
+               "(1 + inflation) - 1", label)
+    cells.text(ws, r, UNIT_COL, "%", unit)
+    cells.formula(ws, r, ORIG_COL,
+                  "=(1+%s)/(1+Fin_InflationLongRun)-1" % nom,
+                  styles.get("calc", pct), value=discount_rate_real(v))
+    cells.define_name("Rate_DiscountReal", "=Rates!$D$%d" % (r + 1))
+    rows.append(("Rate_DiscountReal", r))
+    cells.text(ws, r, ORIG_COL + 1,
+               "Damodaran's Euros column embeds 1.5% expected euro inflation; "
+               "the model uses the ECB 2.0% target, so the real rate is lower "
+               "than with Damodaran's own assumption (D-42)", note)
+    for iid, text in (("Fin_CoC_ChemBasic", "Memo: real rate, Chemical (Basic)"),
+                      ("Fin_CoC_ChemDiversified",
+                       "Memo: real rate, Chemical (Diversified)")):
+        r += 1
+        cells.text(ws, r, LABEL_COL, text, label)
+        cells.text(ws, r, UNIT_COL, "%", unit)
+        cells.formula(ws, r, ORIG_COL,
+                      "=(1+%s)/(1+Fin_InflationLongRun)-1" % iid,
+                      styles.get("calc", pct),
+                      value=fisher_real(v[iid], v["Fin_InflationLongRun"]))
+    r += 1
+    cells.text(ws, r, LABEL_COL, "Context: euro-area HICP inflation, "
+               "September 2026", label)
+    cells.text(ws, r, UNIT_COL, "%", unit)
+    cells.formula(ws, r, ORIG_COL, "=Fin_HICP_EA_Sep2026",
+                  styles.get("link", pct), value=v["Fin_HICP_EA_Sep2026"])
+    cells.text(ws, r, ORIG_COL + 1,
+               "context only, Phase 4 sensitivity (D-19)", note)
+    r += 2
+    cells.text(ws, r, LABEL_COL,
+               "No size or illiquidity premium (D-20); 6%/8%/10% "
+               "rank-stability test in Phase 4", note)
+    return r
