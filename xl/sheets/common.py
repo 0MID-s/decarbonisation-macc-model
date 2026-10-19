@@ -1,5 +1,14 @@
 """Shared sheet helpers: title band, legend row, synthetic banner (D-02, D-12)."""
+import re
+
 from xl.styles import Styles
+
+FICTITIOUS_NOTE = ("Maison Veritas is a fictitious company. All figures are "
+                   "built from cited public data or labelled analyst "
+                   "assumptions.")
+BASELINE_SOURCE_IDS = ("Src_EurostatSBS", "Src_EurostatEnergyBalance",
+                       "Src_EurostatAirAccounts")
+_CODE = re.compile(r"\(([a-z][a-z0-9_]*)\)")
 
 SYNTHETIC_TEXT = ("SYNTHETIC FIXTURE DATA - not real figures, "
                   "for pipeline testing only")
@@ -101,3 +110,26 @@ def write_synthetic_banner(cells, styles, ws, row, last_col):
     cells.text(ws, row, 1, SYNTHETIC_TEXT, styles.get("synthetic_banner"))
     for c in range(2, last_col + 1):
         cells.blank(ws, row, c, styles.get("synthetic_banner"))
+
+
+def disclaimer_text(sources):
+    """D-33 disclaimer assembled from the Sources register (BASE-06).
+
+    Falls back to FICTITIOUS_NOTE when the baseline Eurostat sources are not
+    all present (synthetic fixtures).
+    """
+    by_id = dict((s.id, s) for s in sources)
+    if not all(i in by_id for i in BASELINE_SOURCE_IDS):
+        return FICTITIOUS_NOTE
+    codes, dates = [], []
+    for i in BASELINE_SOURCE_IDS:
+        m = _CODE.search(by_id[i].dataset)
+        if not m:
+            return FICTITIOUS_NOTE
+        codes.append(m.group(1))
+        dates.append(by_id[i].retrieved)
+    return ("\u2018Maison Veritas\u2019 is a fictitious company. Its baseline "
+            "is a representative Belgian NACE C20 mid-sized manufacturer "
+            "derived from official Eurostat statistics (%s, retrieved %s). "
+            "It does not represent any real company."
+            % (", ".join(codes), max(dates).isoformat()))

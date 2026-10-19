@@ -1,11 +1,10 @@
 """Cover shell: title, legend, contents, version (D-02)."""
 from xl.layout import setup_sheet
-from xl.sheets.common import write_synthetic_banner, write_title_band
+from xl.sheets.common import (
+    FICTITIOUS_NOTE, disclaimer_text, write_synthetic_banner, write_title_band)
 from xl.styles import SheetKind
 
-FICTITIOUS_NOTE = ("Maison Veritas is a fictitious company. All figures are "
-                   "built from cited public data or labelled analyst "
-                   "assumptions.")
+__all__ = ["FICTITIOUS_NOTE", "LEGEND_MEANINGS", "build_cover"]
 LEGEND_MEANINGS = (
     ("legend_input", "Input: change these"),
     ("legend_calc", "Formula on this sheet"),
@@ -25,7 +24,7 @@ def build_cover(wb, styles, cells, dataset, cfg, sheet_names):
                      LAST_COL)
     if dataset.synthetic:
         write_synthetic_banner(cells, styles, ws, 3, LAST_COL)
-    cells.text(ws, 4, 1, FICTITIOUS_NOTE, styles.get("label"))
+    cells.text(ws, 4, 1, disclaimer_text(dataset.sources), styles.get("label"))
     for i, (role, meaning) in enumerate(LEGEND_MEANINGS):
         cells.text(ws, 6 + i, 1, "Sample", styles.get(role))
         cells.text(ws, 6 + i, 2, meaning, styles.get("label"))
