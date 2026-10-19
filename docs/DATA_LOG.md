@@ -336,3 +336,42 @@ Cross-check observations (D-31, informational; the live DEA values remain the co
 - Damodaran waccEurope: user-supplied (D-42); EUR-Lex ETS2 parameters and EEX auction data: hand entry (D-37 and D-14 route 3), plan 02-07.
 
 ## User-supplied data (filled in plan 02-11)
+
+### NGFS Phase V (D-40, D-43; user paste of the IIASA explorer table, route 3)
+
+- File: `data_raw/Src_NGFSPhaseV/ngfs_price_carbon_user_paste.tsv` (gitignored), 2,228 bytes, .tsv suffix, sha256 `42bd29b4b90294beeb9548235dbedf75954186caf5a7b4855ad860e3f6396281`.
+- Method: sha256 computed with a stdlib script under `python3 -I` (path as argument); parsed read-only with `.venv/bin/python -W ignore -I tools/parse_ngfs.py` using `--model "REMIND-MAgPIE 3.3-4.8" --region "OECD & EU (R5)"`. Exactly three rows returned; all values compared one by one with the RESEARCH addendum (all equal).
+- Model: REMIND-MAgPIE 3.3-4.8. Region: OECD & EU (R5) (note: R5 aggregate used as the EU proxy; limitation). Variable: `Price|Carbon`. Unit: US$2010/t CO2.
+- Footer in the export: "© NGFS Phase 5 Scenario Explorer https://data.ene.iiasa.ac.at/ngfs".
+
+| Scenario | 2025 | 2030 | 2035 | 2040 | 2045 | 2050 | 2055 |
+|---|---|---|---|---|---|---|---|
+| Current Policies | 23.28186044073566 | 23.27705035642764 | 23.31220235560375 | 23.39144477859998 | 23.52964512661944 | 23.71263250865933 | 23.94119902155565 |
+| Nationally Determined Contributions (NDCs) | 121.5670480013598 | 216.911391375443 | 215.9468030914937 | 214.9804569215596 | 213.8716366193923 | 211.1302917041736 | 206.8712342559588 |
+| Net Zero 2050 | 152.3844736690992 | 282.2098852376754 | 452.7636315503082 | 623.9807303273395 | 795.3846925061491 | 870.0502582689974 | 898.2429363719594 |
+
+Excluded rows and why:
+- GCAM 6.0 NGFS (3 rows): Current Policies is identically 0.
+- MESSAGEix-GLOBIOM 2.0-M-R12-NGFS (2 rows): no Net Zero 2050 row.
+- REMIND-MAgPIE 3.3-4.8 IntegratedPhysicalDamages (median) (2 rows): damage variants, not the baseline scenarios.
+
+The explorer snapshot ngfs_snapshot_1792416458.csv (sha256 15d8e1eaf46989f6cab3f19243fd66e375781e1d2221011cf09e747ea175639f) and its .zip (sha256 7d62bf5b45d5c4f2ab11fb014aa2b72fae83d0e4ed2582e42fe243939144983b) matched this paste and were deleted at the user's request on 2026-10-19 (D-43); the .zip was never extracted by code.
+
+Licence: pending (Task 2)
+
+### Damodaran Europe (D-42; D-14 route 3, read from the official file)
+
+- Source URL: https://pages.stern.nyu.edu/~adamodar/pc/datasets/waccEurope.xls
+- sha256: `05caa5715824c0855d42f6726e8b7f52f77b220cd5d2893af9cbbc71c4abcf5e`; sheet "Industry Averages"; date updated 2026-01-05 (serial 46027); file saved 2026-01-09.
+- Method: OLE streams checked first: only Workbook and summary information, no VBA or macro storage; read through a read-only stdlib parser; file deleted at the user's request. Claude's fetcher was not used and no .xls exception was added (D-16).
+
+| Industry | Firms | Cost of capital (US$) | Cost of capital (Euros) |
+|---|---|---|---|
+| Chemical (Specialty) (base) | 92 | 8.873% | 7.811% |
+| Chemical (Basic) | 58 | 6.180% | 5.144% |
+| Chemical (Diversified) | 7 | 8.668% | 7.608% |
+| Total market (without financials), context | 5,757 | 7.644% | 6.594% |
+
+Sheet inputs (context): long-term treasury 3.95%, equity risk premium 5.27%, global default spread 0.68%, expected euro inflation 1.5% (used by Damodaran's Euros column).
+
+Fisher (D-19, D-42): 1.07811 / 1.02 - 1 = 5.70% real. Mismatch to state in the rationale: Damodaran's Euros column embeds 1.5% expected euro inflation; the model's Fisher step uses the ECB 2.0% target.
