@@ -128,7 +128,7 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(scan_xlsx_bytes(data), [])
         wb = openpyxl.load_workbook(io.BytesIO(data))
         self.assertEqual(wb.sheetnames,
-                         ["Cover", "Inputs", "Sources", "Lists", "Baseline", "Rates"])
+                         ["Cover", "Inputs", "Sources", "Lists", "Baseline", "Rates", "Notes"])
         self.assertEqual(list(build.main_sheets(build.load_dataset("config"))),
                          wb.sheetnames)
 

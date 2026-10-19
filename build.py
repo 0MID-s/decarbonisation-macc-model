@@ -32,6 +32,7 @@ from xl.sheets.baseline import build_baseline
 from xl.sheets.cover import build_cover
 from xl.sheets.inputs import build_inputs
 from xl.sheets.lists import build_lists
+from xl.sheets.notes import build_notes
 from xl.sheets.rates import build_rates
 from xl.sheets.sources import build_sources
 from xl.sheets.spike import build_spike
@@ -73,10 +74,12 @@ def load_dataset(name):
 
 MAIN_SHEETS_BASE = ("Cover", "Inputs", "Sources", "Lists")
 REAL_DATA_SHEETS = ("Baseline", "Rates")
+NOTES_SHEETS = ("Notes",)
 
 
 def main_sheets(dataset):
-    return MAIN_SHEETS_BASE + (() if dataset.synthetic else REAL_DATA_SHEETS)
+    return (MAIN_SHEETS_BASE + (() if dataset.synthetic else REAL_DATA_SHEETS)
+            + NOTES_SHEETS)
 
 
 def _build_main(wb, styles, cells, dataset, cfg):
@@ -89,6 +92,7 @@ def _build_main(wb, styles, cells, dataset, cfg):
         out["baseline"] = build_baseline(wb, styles, cells, dataset, cfg,
                                          inputs)
         out["rates"] = build_rates(wb, styles, cells, dataset, cfg)
+    out["notes"] = build_notes(wb, styles, cells, dataset, cfg)
     return out
 
 
