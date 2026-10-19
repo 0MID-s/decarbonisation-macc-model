@@ -1,5 +1,5 @@
 """Carbon prices section inputs (02-07): EUA 2025 average, ETS2 and ETS1 legal
-parameters. NGFS paths are added in 02-12.
+parameters. NGFS paths were added in 02-12.
 
 Legal values were transcribed in 02-RESEARCH 3.11 from the ELI pages on
 EUR-Lex (enacted Directive (EU) 2023/959, Regulation (EU) 2026/667). Plan
@@ -9,7 +9,7 @@ Directive 2003/87/EC was not available.
 import datetime
 from typing import Tuple
 
-from config._helpers import NA, Status, scalar
+from config._helpers import NA, Status, scalar, series
 from config.schema import PriceBasis, Source
 
 _D = datetime.date(2026, 10, 19)
@@ -39,6 +39,21 @@ SOURCES = (
            "https://eur-lex.europa.eu/eli/reg/2026/667/oj/eng",
            "OJ L 2026/667, 18.3.2026", _D,
            "EU legal text; reuse with source acknowledged"),
+    Source("Src_NGFSPhaseV",
+           "Network for Greening the Financial System (NGFS); data hosted by "
+           "IIASA",
+           "NGFS long-term climate scenarios Phase V (v5.0), variable "
+           "Price|Carbon, model REMIND-MAgPIE 3.3-4.8, region OECD & EU (R5)",
+           "https://data.ene.iiasa.ac.at/ngfs/",
+           "Phase V, November 2024; explorer table pasted by the user on "
+           "2026-10-19 (TSV sha256 42bd29b4b902... in DATA_LOG); the explorer "
+           "CSV snapshot matched and was deleted at the user's request "
+           "(sha256 15d8e1ea...639f, D-43)", _D,
+           "Adapted CC BY 4.0 (NGFS Phase 5 Scenario Explorer licence, "
+           "transcribed by the user, D-44): parts and adapted material may "
+           "be shared with attribution (\"NGFS Phase 5 Scenario Explorer, "
+           "hosted by IIASA\", (c) NGFS Phase 5 Scenario Explorer), a "
+           "statement that values were modified, and no implied endorsement"),
 )  # type: Tuple[Source, ...]
 
 _ENACTED = "(text read: Directive (EU) 2023/959 as enacted, OJ L 130, 16.5.2023)"
@@ -135,4 +150,49 @@ INPUTS = (
            extra="; Annex I wording was not re-read in plan 02-07 and the "
                  "20 MW figure is UNVERIFIED against the article text in "
                  "this run (it is the D-07 design value)"),
+)
+
+
+_NGFS_BASIS = PriceBasis("USD", 2010, "real")
+_NGFS_NOTE = ("Transcribed (D-14 route 3): NGFS Phase V explorer table pasted "
+              "by the user, model REMIND-MAgPIE 3.3-4.8, region OECD & EU "
+              "(R5), variable Price|Carbon, unit US$2010/t CO2; see "
+              "docs/DATA_LOG.md \"NGFS Phase V (D-40, D-43\"")
+_NGFS_RAT = ("%s scenario = NGFS %s (D-26); one IAM for all three scenarios, "
+             "EU region (D-27). NGFS carbon prices are model shadow prices "
+             "(marginal abatement costs), not market prices. Converted to EUR "
+             "2025 on the Carbon sheet by the 2010 average USD per EUR rate, "
+             "then euro-area HICP 2025/2010 (D-41), and interpolated to "
+             "annual values to 2055. The OECD & EU (R5) region is used as the "
+             "EU proxy (limitation)")
+_NGFS_UNIT = "US$2010/tCO2"
+
+
+def _ngfs(key, label, tier, y0, pts):
+    rat = _NGFS_RAT % (tier, label)
+    return (
+        scalar("Carbon_NGFS_%s_Y0" % key, _SEC,
+               "NGFS Price|Carbon, %s, 2025 (pre-timeline anchor)" % label,
+               y0, _NGFS_UNIT, "Const_None", _NGFS_UNIT, _NGFS_BASIS,
+               "Src_NGFSPhaseV", _S, rat, _NGFS_NOTE),
+        series("Carbon_NGFS_%s" % key, _SEC,
+               "NGFS Price|Carbon, %s, 2030-2055 points" % label, pts,
+               _NGFS_UNIT, "Const_None", _NGFS_UNIT, _NGFS_BASIS,
+               "Src_NGFSPhaseV", _S, rat, _NGFS_NOTE),
+    )
+
+_CP = _ngfs('CP', 'Current Policies', 'Low', 23.28186044073566,
+      ((2030, 23.27705035642764), (2035, 23.31220235560375), (2040, 23.39144477859998), (2045, 23.52964512661944), (2050, 23.71263250865933), (2055, 23.94119902155565)))
+_NDC = _ngfs('NDC', 'Nationally Determined Contributions (NDCs)', 'Central', 121.5670480013598,
+      ((2030, 216.911391375443), (2035, 215.9468030914937), (2040, 214.9804569215596), (2045, 213.8716366193923), (2050, 211.1302917041736), (2055, 206.8712342559588)))
+_NZ50 = _ngfs('NZ50', 'Net Zero 2050', 'High', 152.3844736690992,
+      ((2030, 282.2098852376754), (2035, 452.7636315503082), (2040, 623.9807303273395), (2045, 795.3846925061491), (2050, 870.0502582689974), (2055, 898.2429363719594)))
+
+INPUTS = INPUTS + (
+    scalar("Carbon_NGFS_Y0Year", _SEC,
+           "NGFS anchor year before the 2026 timeline start", 2025, "year",
+           "Const_None", "year", NA, "Src_NGFSPhaseV", _S,
+           "First NGFS point before the 2026 timeline start; anchors the "
+           "2026-2029 interpolation", _NGFS_NOTE),
+    _CP[0], _NDC[0], _NZ50[0], _CP[1], _NDC[1], _NZ50[1],
 )

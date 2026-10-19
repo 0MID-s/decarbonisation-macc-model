@@ -80,5 +80,57 @@ class CarbonTests(unittest.TestCase):
         self.assertGreaterEqual(len(CAR), 16)
 
 
+# Values typed from docs/DATA_LOG.md, sections "NGFS Phase V (D-40, D-43" and
+# "Damodaran Europe (D-42" (threat T-02-36).
+NGFS_LOG = {
+    "CP": (23.28186044073566, (23.27705035642764, 23.31220235560375,
+                               23.39144477859998, 23.52964512661944,
+                               23.71263250865933, 23.94119902155565)),
+    "NDC": (121.5670480013598, (216.911391375443, 215.9468030914937,
+                                214.9804569215596, 213.8716366193923,
+                                211.1302917041736, 206.8712342559588)),
+    "NZ50": (152.3844736690992, (282.2098852376754, 452.7636315503082,
+                                 623.9807303273395, 795.3846925061491,
+                                 870.0502582689974, 898.2429363719594)),
+}
+NGFS_YEARS = (2030, 2035, 2040, 2045, 2050, 2055)
+
+
+class NGFSAndDamodaranTests(unittest.TestCase):
+    def test_ngfs_values_match_data_log(self):
+        self.assertEqual(BY_ID["Carbon_NGFS_Y0Year"].published_value, 2025)
+        for k, (y0, pts) in NGFS_LOG.items():
+            s = BY_ID["Carbon_NGFS_" + k + "_Y0"]
+            self.assertEqual(s.published_value, y0)
+            r = BY_ID["Carbon_NGFS_" + k]
+            self.assertEqual(r.series, tuple(zip(NGFS_YEARS, pts)))
+            for x in (s, r):
+                self.assertEqual(x.source_id, "Src_NGFSPhaseV")
+                self.assertEqual(x.published_unit, "US$2010/tCO2")
+                self.assertEqual(x.price_basis.label, "USD 2010 real")
+                self.assertEqual(x.status, Status.SOURCED)
+
+    def test_ngfs_source_pins_model_and_region(self):
+        src = [s for s in SOURCES if s.id == "Src_NGFSPhaseV"][0]
+        self.assertIn("REMIND-MAgPIE 3.3-4.8", src.dataset)
+        self.assertIn("OECD & EU (R5)", src.dataset)
+        self.assertIn("Price|Carbon", src.dataset)
+
+    def test_damodaran_values(self):
+        exp = {"Fin_CoC_ChemSpecialty": 7.811, "Fin_CoC_ChemBasic": 5.144,
+               "Fin_CoC_ChemDiversified": 7.608}
+        for i, v in exp.items():
+            r = BY_ID[i]
+            self.assertEqual((r.published_value, r.model_unit,
+                              r.source_id, r.conversion_ref),
+                             (v, "%", "Src_Damodaran", "Const_PctToFrac"))
+            self.assertTrue(r.note.startswith("Transcribed"))
+        self.assertIn("8.873%", BY_ID["Fin_CoC_ChemSpecialty"].note)
+        self.assertIn("1.5%", BY_ID["Fin_CoC_ChemSpecialty"].rationale)
+
+    def test_no_currency_adjustment(self):
+        self.assertNotIn("Fin_CoC_CurrencyAdj", BY_ID)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,6 +1,6 @@
 """Finance section inputs (02-07): HICP, 2010 USD per EUR rate, inflation target.
 
-Damodaran cost of capital is added in 02-12. Values are transcribed from
+Damodaran cost of capital was added in 02-12. Values are transcribed from
 docs/DATA_LOG.md (Eurostat files) and 02-RESEARCH 3.9 (ECB, Eurostat flash).
 """
 import datetime
@@ -41,6 +41,16 @@ SOURCES = (
            "https://ec.europa.eu/eurostat/databrowser/view/ert_bil_eur_a/default/table",
            "annual averages, fetched 2026-10-19 (sha256 in "
            "docs/DATA_LOG.md)", _D, _EUROSTAT_LIC),
+    Source("Src_Damodaran",
+           "Aswath Damodaran, NYU Stern School of Business (Damodaran "
+           "Online)",
+           "Cost of Capital by Industry Sector, Europe (waccEurope.xls), "
+           "sheet Industry Averages, column Cost of Capital (Euros)",
+           "https://pages.stern.nyu.edu/~adamodar/pc/datasets/waccEurope.xls",
+           "January 2026 update; date updated 2026-01-05; file saved "
+           "2026-01-09; sha256 05caa571...cf5e", _D,
+           "Damodaran Online data, free to use with attribution (usage-terms "
+           "wording not verified); only three industry rows are cited"),
 )  # type: Tuple[Source, ...]
 
 
@@ -99,4 +109,37 @@ INPUTS = (
            "Phase 4 sensitivity)",
            "Transcribed from docs/DATA_LOG.md (Src_EurostatFX, address "
            "A|AVG|NAC|USD|2010, flag none)"),
+)
+
+_NOTE = ("Transcribed (D-14 route 3): read from the official waccEurope.xls "
+         "(sheet Industry Averages, date updated 2026-01-05, sha256 "
+         "05caa571...) with a read-only stdlib parser after a check found no "
+         "VBA or macro streams; file deleted afterwards (D-42). US$ column: ")
+
+INPUTS = INPUTS + (
+    scalar("Fin_CoC_ChemSpecialty", _SEC,
+           "Cost of capital, Chemical (Specialty), Europe, Euros column (base)",
+           7.811, "per cent", "Const_PctToFrac", "%", NA, "Src_Damodaran", _S,
+           "D-18: a mid-sized C20 household-products firm is closer to specialty "
+           "chemicals than to basic petrochemicals. Nominal cost of capital in "
+           "euros (Damodaran's Euros column, 92 firms), converted to real on the "
+           "Rates sheet by the Fisher formula with the ECB 2% target: "
+           "1.07811/1.02 - 1 = 5.70% (D-19, D-42). Basic 5.144% (58 firms) and "
+           "Diversified 7.608% (7 firms) are memo rows; Total market (without "
+           "financials) 6.594% for context. No size or illiquidity premium "
+           "(D-20). Mismatch: Damodaran's Euros column embeds 1.5% expected "
+           "euro inflation, while the Fisher step uses the ECB 2.0% target, so "
+           "the real rate is about 0.5 points lower than with Damodaran's own "
+           "assumption",
+           _NOTE + "8.873%"),
+    scalar("Fin_CoC_ChemBasic", _SEC,
+           "Cost of capital, Chemical (Basic), Europe, Euros column (memo)",
+           5.144, "per cent", "Const_PctToFrac", "%", NA, "Src_Damodaran", _S,
+           "D-42 memo row (not used in the base case): Chemical (Basic), Damodaran Euros column; the 1.5% euro inflation embedded in it differs from the 2.0% Fisher assumption",
+           _NOTE + "6.180%"),
+    scalar("Fin_CoC_ChemDiversified", _SEC,
+           "Cost of capital, Chemical (Diversified), Europe, Euros column (memo)",
+           7.608, "per cent", "Const_PctToFrac", "%", NA, "Src_Damodaran", _S,
+           "D-42 memo row (not used in the base case): Chemical (Diversified), Damodaran Euros column; the 1.5% euro inflation embedded in it differs from the 2.0% Fisher assumption",
+           _NOTE + "8.668%"),
 )
