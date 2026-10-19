@@ -1,26 +1,13 @@
-"""Input register. Structural constants only in Phase 1; real inputs in Phase 2."""
+"""Input register aggregator over the seven section modules."""
 from typing import Tuple
 
-from config.schema import NOT_APPLICABLE, InputRecord, Status
+from config import (inputs_baseline, inputs_carbon, inputs_constants,
+                    inputs_factors, inputs_finance, inputs_measures,
+                    inputs_prices)
+from config.schema import InputRecord
 
 INPUTS = (
-    InputRecord(
-        id="Const_None", section="Constants",
-        description="Identity conversion factor (no unit change)",
-        published_value=1.0, published_unit="factor", conversion_ref=None,
-        model_unit="factor", price_basis=NOT_APPLICABLE, source_id=None,
-        status=Status.ASSUMPTION,
-        rationale=("Identity factor used where the published unit already "
-                   "equals the model unit, so every Model value keeps one "
-                   "formula pattern (D-11)."),
-    ),
-    InputRecord(
-        id="Time_FirstYear", section="Constants",
-        description="First model year (timeline column 1)",
-        published_value=2026.0, published_unit="year", conversion_ref=None,
-        model_unit="year", price_basis=NOT_APPLICABLE, source_id=None,
-        status=Status.ASSUMPTION,
-        rationale=("Analyst choice: appraisal timeline 2026-2055 starts in "
-                   "the current year."),
-    ),
+    inputs_constants.INPUTS + inputs_baseline.INPUTS + inputs_prices.INPUTS
+    + inputs_factors.INPUTS + inputs_carbon.INPUTS + inputs_finance.INPUTS
+    + inputs_measures.INPUTS
 )  # type: Tuple[InputRecord, ...]
