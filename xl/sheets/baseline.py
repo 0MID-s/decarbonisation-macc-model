@@ -4,7 +4,6 @@ Every cell is a live formula on named Inputs; cached values come from the
 independent reference model (checkmodel.baseline_reference.compute_baseline).
 Location-based (column D) and market-based (column E) Scope 2 are never added.
 """
-import textwrap
 from dataclasses import dataclass
 from typing import Tuple
 
@@ -61,6 +60,19 @@ def _band_range(inputs_layout, prefix, first, last, codes):
         raise ValueError("band block %s is not on consecutive Inputs rows"
                          % prefix)
     return "=Inputs!$G$%d:$G$%d" % (idx[0] + 1, idx[-1] + 1)
+
+
+def _wrap(text, width):
+    lines, cur = [], ""
+    for word in text.split():
+        if cur and len(cur) + 1 + len(word) > width:
+            lines.append(cur)
+            cur = word
+        else:
+            cur = (cur + " " + word) if cur else word
+    if cur:
+        lines.append(cur)
+    return lines
 
 
 class _Sheet(object):
@@ -120,7 +132,7 @@ class _Sheet(object):
         return r + 1
 
     def text_block(self, text, role="note"):
-        for part in textwrap.wrap(text, 120, break_on_hyphens=False):
+        for part in _wrap(text, 120):
             r = self.next()
             self.cells.text(self.ws, r, LABEL_COL, part, self.styles.get(role))
 

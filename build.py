@@ -28,6 +28,7 @@ from qa.lint import LintError, lint_or_raise
 from qa.readback import ReadbackError, verify_workbook
 from qa.scan import ScanError, part_names, scan_or_raise
 from xl.cells import CellWriter, FormulaRecord, UnsafeCellError
+from xl.sheets.baseline import build_baseline
 from xl.sheets.cover import build_cover
 from xl.sheets.inputs import build_inputs
 from xl.sheets.lists import build_lists
@@ -69,15 +70,24 @@ def load_dataset(name):
     raise ValueError("unknown dataset: %r" % (name,))
 
 
-MAIN_SHEETS = ("Cover", "Inputs", "Sources", "Lists")
+MAIN_SHEETS_BASE = ("Cover", "Inputs", "Sources", "Lists")
+REAL_DATA_SHEETS = ("Baseline",)
+
+
+def main_sheets(dataset):
+    return MAIN_SHEETS_BASE + (() if dataset.synthetic else REAL_DATA_SHEETS)
 
 
 def _build_main(wb, styles, cells, dataset, cfg):
-    build_cover(wb, styles, cells, dataset, cfg, list(MAIN_SHEETS))
+    build_cover(wb, styles, cells, dataset, cfg, list(main_sheets(dataset)))
     inputs = build_inputs(wb, styles, cells, dataset, cfg)
     build_sources(wb, styles, cells, dataset, cfg)
     lists = build_lists(wb, styles, cells, dataset, cfg)
-    return {"inputs": inputs, "lists": lists}
+    out = {"inputs": inputs, "lists": lists}
+    if not dataset.synthetic:
+        out["baseline"] = build_baseline(wb, styles, cells, dataset, cfg,
+                                         inputs)
+    return out
 
 
 TARGETS = {}  # type: Dict[str, Tuple[str, Callable]]

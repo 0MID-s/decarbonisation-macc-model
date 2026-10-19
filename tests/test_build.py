@@ -127,7 +127,15 @@ class BuildTests(unittest.TestCase):
         data, _ = build.build_bytes("main", build.load_dataset("config"))
         self.assertEqual(scan_xlsx_bytes(data), [])
         wb = openpyxl.load_workbook(io.BytesIO(data))
-        self.assertEqual(wb.sheetnames, ["Cover", "Inputs", "Sources", "Lists"])
+        self.assertEqual(wb.sheetnames,
+                         ["Cover", "Inputs", "Sources", "Lists", "Baseline"])
+        self.assertEqual(list(build.main_sheets(build.load_dataset("config"))),
+                         wb.sheetnames)
+
+    def test_fixtures_main_has_no_baseline(self):
+        data, _ = build.build_bytes("main", build.load_dataset("fixtures"))
+        wb = openpyxl.load_workbook(io.BytesIO(data))
+        self.assertNotIn("Baseline", wb.sheetnames)
 
     def test_creates_missing_output_directories(self):
         out = self.path("missing", "nested", "out.xlsx")

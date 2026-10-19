@@ -3,19 +3,10 @@ import io
 import unittest
 
 import openpyxl
-import xlsxwriter
 
 import build
+from qa.lint import LintError
 from checkmodel.baseline_reference import compute_baseline, model_values
-from config.build_config import BUILD
-from qa.lint import LintError, lint_or_raise
-from qa.scan import scan_or_raise
-from xl.cells import CellWriter
-from xl.sheets.baseline import build_baseline
-from xl.sheets.inputs import build_inputs
-from xl.sheets.lists import build_lists
-from xl.sheets.sources import build_sources
-from xl.styles import Styles
 
 NAME_TO_FIELD = {
     "BL_FirmVA": "firm_va_meur", "BL_SectorVA": "sector_va_meur",
@@ -36,31 +27,18 @@ RANGE_NAMES = ("Rng_ElecLower", "Rng_ElecS1", "Rng_ElecS2", "Rng_Elec26S1",
                "Rng_GasLower", "Rng_GasS1", "Rng_GasS2", "Rng_Gas26S1")
 
 
-def _local_build(extra=()):
-    """Task 1 local builder: Inputs, Sources, Lists, then Baseline."""
-    dataset = build.load_dataset("config")
-    buf = io.BytesIO()
-    wb = xlsxwriter.Workbook(buf, build.OPTIONS)
-    styles = Styles(wb)
-    cells = CellWriter(wb)
-    inputs = build_inputs(wb, styles, cells, dataset, BUILD)
-    build_sources(wb, styles, cells, dataset, BUILD)
-    build_lists(wb, styles, cells, dataset, BUILD)
-    build_baseline(wb, styles, cells, dataset, BUILD, inputs)
-    for e in extra:
-        e(wb, styles, cells)
-    wb.close()
-    data = buf.getvalue()
-    for rec in cells.registry:
-        lint_or_raise(rec.text, rec.sheet, cells.tags)
-    scan_or_raise(data)
-    return data, cells
+def _bad_builder(formula):
+    def bad(wb, styles, cells):
+        ws = wb.get_worksheet_by_name("Baseline")
+        cells.formula(ws, 150, 3, formula, styles.get("calc", "tco2e"),
+                      value=0.0)
+    return bad
 
 
 class BaselineSheet(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.data, cls.cells = _local_build()
+        cls.data, _ = build.build_bytes("main", build.load_dataset("config"))
         cls.wb = openpyxl.load_workbook(io.BytesIO(cls.data))
         cls.wbv = openpyxl.load_workbook(io.BytesIO(cls.data), data_only=True)
         cls.ws = cls.wb["Baseline"]
@@ -68,9 +46,11 @@ class BaselineSheet(unittest.TestCase):
         cls.ref = compute_baseline(
             model_values(build.load_dataset("config").inputs))
 
+    def _ref(self, name):
+        return self.wb.defined_names[name].attr_text
+
     def _cell(self, name, wb):
-        ref = self.cells.names[name]
-        sheet, addr = ref[1:].split("!")
+        sheet, addr = self._ref(name).split("!")
         return wb[sheet][addr.replace("$", "")]
 
     def test_title_and_note(self):
@@ -79,7 +59,7 @@ class BaselineSheet(unittest.TestCase):
 
     def test_names_defined(self):
         for n in tuple(NAME_TO_FIELD) + RANGE_NAMES:
-            self.assertIn(n, self.cells.names)
+            self.assertIn(n, self.wb.defined_names)
 
     def test_band_formulas_exact(self):
         self.assertEqual(self._cell("BL_ElecBand", self.wb).value,
@@ -104,18 +84,11 @@ class BaselineSheet(unittest.TestCase):
                                          c.coordinate)
 
     def test_scope2_columns_adjacent(self):
-        lb = self.cells.names["BL_S2_LB"]
-        mb = self.cells.names["BL_S2_MB"]
-        self.assertTrue(lb.startswith("=Baseline!$D$"))
-        self.assertTrue(mb.startswith("=Baseline!$E$"))
+        lb = self._ref("BL_S2_LB")
+        mb = self._ref("BL_S2_MB")
+        self.assertTrue(lb.startswith("Baseline!$D$"))
+        self.assertTrue(mb.startswith("Baseline!$E$"))
         self.assertEqual(lb.split("$")[-1], mb.split("$")[-1])
-
-    def test_lb_mb_tags(self):
-        t = self.cells.tags
-        for n, tag in (("EF_GridLB", "LB"), ("BL_S2_LB", "LB"),
-                       ("BL_S12_LB", "LB"), ("EF_ResidualMB", "MB"),
-                       ("BL_S2_MB", "MB"), ("BL_S12_MB", "MB")):
-            self.assertEqual(t.tags_for(n, "Baseline"), frozenset([tag]), n)
 
     def test_no_formula_adds_lb_and_mb(self):
         for row in self.ws.iter_rows():
@@ -125,12 +98,11 @@ class BaselineSheet(unittest.TestCase):
                     self.assertFalse("S2_LB" in v and "S2_MB" in v)
 
     def test_lb_plus_mb_negative(self):
-        def bad(wb, styles, cells):
-            ws = wb.get_worksheet_by_name("Baseline")
-            cells.formula(ws, 150, 3, "=BL_S2_LB+BL_S2_MB",
-                          styles.get("calc", "tco2e"), value=0.0)
-        with self.assertRaises(LintError):
-            _local_build((bad,))
+        ds = build.load_dataset("config")
+        for f in ("=BL_S2_LB+BL_S2_MB", "=EF_GridLB+EF_ResidualMB",
+                  "=BL_S12_LB+BL_S12_MB"):
+            with self.assertRaises(LintError, msg=f):
+                build.build_bytes("main", ds, (_bad_builder(f),))
 
     def test_text_statements(self):
         texts = [c.value for row in self.ws.iter_rows() for c in row
