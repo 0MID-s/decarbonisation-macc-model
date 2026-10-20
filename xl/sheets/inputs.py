@@ -26,7 +26,7 @@ class InputsLayout:
     header_row: int
     record_rows: Tuple[Tuple[str, int], ...]
     series_model_rows: Tuple[Tuple[str, int], ...]
-    series_year_rows: Tuple[Tuple[str, int], ...] = ()
+    series_year_rows: Tuple[Tuple[str, int], ...]  # required (IN-08)
 
 
 def _assign_rows(dataset):
