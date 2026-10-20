@@ -376,6 +376,12 @@ Sheet inputs (context): long-term treasury 3.95%, equity risk premium 5.27%, glo
 
 Fisher (D-19, D-42): 1.07811 / 1.02 - 1 = 5.70% real. Mismatch to state in the rationale: Damodaran's Euros column embeds 1.5% expected euro inflation; the model's Fisher step uses the ECB 2.0% target.
 
+## EEX 2025 auctions (WR-01, plan 02-16)
+
+Parameter: Carbon_EUA_Avg2025 = 73.43 EUR/tCO2 (2025 volume-weighted mean auction clearing price, EU ETS1 primary market, EEX).
+
+Route-3 history: the figure (and the simple mean 73.45, 213 successful auctions, last auction 15 Dec 2025 at 84.60) was computed during research on 2026-10-18 from the EEX auction history file. The inputs were not retained and the code never opens the EEX .zip (D-37), so the arithmetic cannot be reproduced from this repository. The user chose not to supply the 2025 auction rows on 2026-10-20 (option A2). Outcome: status downgraded to Analyst assumption, rationale begins "Unverified transcription:", value unchanged at 73.43. No sha256, sums or row-level data are logged because no file was supplied.
+
 ## Legal texts (WR-02 re-read, plan 02-15)
 
 Read date: 2026-10-20. Method: HTTP GET of the HTML page only, nothing saved to disk. The WebFetch tool was not available in the executor session, so a plain GET was used. Outcome words: VERIFIED (sentence read and equal to config), NOT READ (page empty, blocked or without the sentence), MISMATCH (sentence read and different).

@@ -99,7 +99,11 @@ INPUTS = (
            "Observed EU ETS1 allowance price, 2025 volume-weighted mean "
            "auction clearing price",
            73.43, "EUR/tCO2", "Const_None", "EUR/tCO2",
-           PriceBasis("EUR", 2025, "nominal"), "Src_EEXAuctions", _S,
+           PriceBasis("EUR", 2025, "nominal"), "Src_EEXAuctions",
+           Status.ASSUMPTION,
+           "Unverified transcription: not reproducible from the repository "
+           "(WR-01); the user chose on 2026-10-20 not to supply the EEX rows, "
+           "see docs/DATA_LOG.md, EEX 2025 auctions (plan 02-16). "
            "Transcribed (D-14 route 3): volume-weighted mean of the 2025 EU "
            "ETS1 primary auction clearing prices from the EEX auction "
            "history file, retrieved 2026-10-18; the archive is a .zip, which "

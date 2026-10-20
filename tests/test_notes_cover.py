@@ -55,7 +55,8 @@ class Notes(unittest.TestCase):
         t = self._text()
         for r in self.ds.inputs:
             if (r.note.startswith("Transcribed")
-                    or r.rationale.startswith("Transcribed")):
+                    or r.rationale.startswith(("Transcribed",
+                                           "Unverified transcription"))):
                 self.assertIn(r.id + ":", t)
         self.assertIn("Carbon_EUA_Avg2025", t)
 

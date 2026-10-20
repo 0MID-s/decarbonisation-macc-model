@@ -175,7 +175,8 @@ def build_notes(wb, styles, cells, dataset, cfg):
     n.section("Transcribed inputs (D-14 route 3)")
     for r in dataset.inputs:
         if (r.note.startswith("Transcribed")
-                or r.rationale.startswith("Transcribed")):
+                or r.rationale.startswith(("Transcribed",
+                                           "Unverified transcription"))):
             n.para("%s: %s" % (r.id, r.description))
     n.section("Version log")
     n.para("Phase 2: real cited data, Baseline, Rates, Carbon and Notes")

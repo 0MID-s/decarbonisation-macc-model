@@ -46,6 +46,9 @@ class CarbonTests(unittest.TestCase):
         r = BY_ID["Carbon_EUA_Avg2025"]
         self.assertEqual(r.published_value, 73.43)
         self.assertIn("73.45", r.note)
+        self.assertEqual(r.status, Status.ASSUMPTION)
+        self.assertTrue(r.rationale.startswith("Unverified transcription:"))
+        self.assertIn("docs/DATA_LOG.md", r.rationale)
         self.assertEqual(r.price_basis.label, "EUR 2025 nominal")
 
     def test_ets2_values(self):
