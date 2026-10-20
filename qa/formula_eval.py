@@ -256,7 +256,9 @@ def _unquote(s):
 class FormulaEvaluator(object):
     def __init__(self, wb_formulas, overrides=None):
         self.wb = wb_formulas
-        self.overrides = dict(overrides or {})
+        # keys normalised like cell lookups, so ("Inputs", "$D$182") works
+        self.overrides = {(k[0], k[1].replace("$", "").upper()): v
+                          for k, v in (overrides or {}).items()}
         self._cache = {}  # type: Dict[Tuple[str, str], object]
         self._busy = set()
         self._names = {}

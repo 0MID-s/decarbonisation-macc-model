@@ -78,6 +78,9 @@ class EvaluatorUnit(unittest.TestCase):
     def test_overrides(self):
         e = self.ev({("Sheet1", "A1"): 10})
         self.assertEqual(e.value("Sheet1", "C1"), 13)
+        # override keys are normalised like cell lookups (IN-07)
+        e = self.ev({("Sheet1", "$a$1"): 10})
+        self.assertEqual(e.value("Sheet1", "C1"), 13)
         e = self.ev({("Sheet1", "C1"): 99})
         self.assertEqual(e.value("Sheet1", "C1"), 99)
 
@@ -223,8 +226,8 @@ class FirstYearRobustness(unittest.TestCase):
         self.assertEqual(ev.value("Carbon", "N5"), 2027)
         ws = self.wf["Carbon"]
         for key in self.KEYS:
-            ays, avs, _ann = self.paths[key]
-            sheet, first = self._cell(ev, "Path_Carbon_" + key)
+            ays, avs, _ = self.paths[key]
+            _, first = self._cell(ev, "Path_Carbon_" + key)
             row = ws[first].row
             yr_row = row - 6
             self.assertEqual(ws.cell(row=yr_row, column=2).value,
@@ -233,7 +236,6 @@ class FirstYearRobustness(unittest.TestCase):
                          for i in range(len(ays))]
             self.assertEqual(got_years, [2025, 2030, 2035, 2040, 2045, 2050, 2055])
             want = self.interp(ays, avs, list(range(2027, 2057)))
-            _, ref = ev.name_target("Path_Carbon_" + key)
             c0 = ws[first].column
             for k, w in enumerate(want):
                 g = ev.value("Carbon", ws.cell(row=row, column=c0 + k).coordinate)
