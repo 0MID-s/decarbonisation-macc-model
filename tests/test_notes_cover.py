@@ -88,13 +88,31 @@ class Notes(unittest.TestCase):
         from checkmodel.baseline_reference import model_values
         vals = set(model_values(self.ds.inputs).values())
         prose = " ".join(nt.ABOUT + nt.CONVENTIONS + nt.LIMITATIONS
-                         + nt.EXCLUSIONS + (nt.ETS2_UNVERIFIED,))
+                         + nt.EXCLUSIONS
+                         + (nt.legal_status_note(self.ds.inputs),))
         prose = re.sub(r"(Phase|Scope) \d", "", prose)
         for tok in re.findall(r"(?<![\w.-])\d+(?:\.\d+)?(?![\w.-])", prose):
             x = float(tok)
             if 1900 <= x <= 2100:
                 continue
             self.assertNotIn(x, vals, tok)
+
+    def test_legal_status_note_follows_config(self):
+        """IN-05: the Notes legal paragraph is generated from the statuses."""
+        import xl.sheets.notes as nt
+        from config.schema import Status
+        text = nt.legal_status_note(self.ds.inputs)
+        self.assertIn(" ".join(text.split()), " ".join(self._text().split()))
+        legal = [r for r in self.ds.inputs
+                 if r.id.startswith(nt.LEGAL_PREFIXES)
+                 or r.id in nt.LEGAL_EXTRA_IDS]
+        self.assertGreaterEqual(len(legal), 16)
+        head, _, tail = text.partition("Analyst assumptions")
+        for r in legal:
+            self.assertIn(r.id, head if r.status is Status.SOURCED else tail,
+                          r.id)
+        self.assertIn("Dir. (EU) 2023/959 as enacted", text)
+        self.assertIn("original 2003 Annex I wording", text)
 
 
 if __name__ == "__main__":

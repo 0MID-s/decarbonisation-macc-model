@@ -3,6 +3,10 @@
 Prose carries no figures that are also input values; it refers to input ids.
 Lists are generated from the dataset (transcribed inputs, ETS2 projection).
 """
+import re
+from typing import Dict, List
+
+from config.schema import Status
 from xl.layout import LABEL_COL, setup_sheet
 from xl.sheets.carbon import (
     EUA_NOTE, NGFS_ATTRIBUTION, NGFS_LICENCE, NGFS_MODIFIED,
@@ -70,18 +74,41 @@ LIMITATIONS = (
     "about a quarter higher (an indicative analyst estimate, not a sourced "
     "input; see docs/DATA_LOG.md); a candidate Phase 4 sensitivity.",
 )
-ETS2_UNVERIFIED = (
-    "Legal parameters whose text the user supplied from EUR-Lex on "
-    "2026-10-20 are shown as Sourced (ETS2 start year 2028, price-stability "
-    "threshold, months and release volume, the price-multiple trigger "
-    "and release, read in Dir. (EU) 2023/959 as enacted, later amendments "
-    "(2026) not checked; and the EU ETS1 thermal threshold, read in the "
-    "original 2003 Annex I wording, consolidated text not read). "
-    "The enacted ETS2 start year, "
-    "the fuel scope flags, and the chemical-sector NACE coverage of the "
-    "energy balance sector remain analyst assumptions pending verification: "
-    "no legal text was supplied for them. The log is in docs/DATA_LOG.md, "
-    "Legal texts (WR-02 re-read and plan 02-16).")
+LEGAL_PREFIXES = ("Carbon_ETS2_", "Carbon_ETS1_")
+LEGAL_EXTRA_IDS = ("Base_NRG_IncludesC21",)
+_TEXT_READ = re.compile(r"^Text read: (.+?)\. Text supplied by the user")
+
+
+def legal_status_note(inputs):
+    """Notes paragraph on legal parameters, generated from the config
+    statuses (IN-05) so it cannot drift from the Inputs Status column."""
+    legal = [r for r in inputs
+             if r.id.startswith(LEGAL_PREFIXES) or r.id in LEGAL_EXTRA_IDS]
+    if not legal:
+        return "No legal parameters in this dataset."
+    sourced = [r for r in legal if r.status is Status.SOURCED]
+    assumed = [r for r in legal if r.status is Status.ASSUMPTION]
+    parts = []
+    if sourced:
+        parts.append("Legal parameters whose text the user supplied from "
+                     "EUR-Lex on 2026-10-20 are Sourced: %s."
+                     % ", ".join(r.id for r in sourced))
+        by_read = {}  # type: Dict[str, List[str]]
+        for r in sourced:
+            m = _TEXT_READ.match(r.rationale)
+            if m:
+                by_read.setdefault(m.group(1), []).append(r.id)
+        for q, ids in by_read.items():
+            parts.append("Text read for %s: %s." % (", ".join(ids), q))
+    if assumed:
+        parts.append("Analyst assumptions pending verification, because no "
+                     "legal text was supplied for them: %s."
+                     % ", ".join(r.id for r in assumed))
+    parts.append("The log is in docs/DATA_LOG.md, Legal texts (WR-02 re-read "
+                 "and plan 02-16).")
+    return " ".join(parts)
+
+
 EXCLUSIONS = (
     "Scope 3 is excluded: no official sector-level Scope 3 intensity for "
     "Belgian chemicals was found and no synthetic figure is used (D-13).",
@@ -168,7 +195,7 @@ def build_notes(wb, styles, cells, dataset, cfg):
     n.section("Limitations")
     for t in LIMITATIONS:
         n.para(t)
-    n.para(ETS2_UNVERIFIED)
+    n.para(legal_status_note(dataset.inputs))
     n.section("Exclusions")
     for t in EXCLUSIONS:
         n.para(t)
