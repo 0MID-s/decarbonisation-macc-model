@@ -300,13 +300,13 @@ def build_baseline(wb, styles, cells, dataset, cfg, inputs_layout):
       "=BL_Gas_MWh*BL_GasPriceNCV", x.gas_cost_eur, "eur")
 
     # 6 Fleet
-    s.section("Fleet block (Analyst assumption, not Eurostat data, D-10)")
+    s.section("Fleet block (Analyst assumption for vehicle count and distance, D-10)")
     nv = L("Vehicles (analyst assumption)", "vehicles", "=Base_Fleet_Vehicles",
            v["Base_Fleet_Vehicles"], "count", link=True)
     kv = L("Distance per vehicle (analyst assumption)", "km/yr",
            "=Base_Fleet_KmPerVehicle", v["Base_Fleet_KmPerVehicle"], "count",
            link=True)
-    gk = L("Fleet CO2 per km (analyst assumption)", "gCO2/km",
+    gk = L("Fleet CO2 per km (EEA new vans 2024)", "gCO2/km",
            "=Base_Fleet_gCO2PerKm", v["Base_Fleet_gCO2PerKm"], "dec2",
            link=True)
     km = L("Fleet distance", "km/yr", "=Base_Fleet_Vehicles*"
