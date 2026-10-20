@@ -19,7 +19,7 @@ SOURCES = (
            "Structural business statistics by size class of employment "
            "(sbs_sc_ovw)",
            "https://ec.europa.eu/eurostat/databrowser/view/sbs_sc_ovw/default/table",
-           "data updated 2026-09-30 (per DATA_LOG); reference year 2024",
+           "data updated 2026-09-30 (see docs/DATA_LOG.md); reference year 2024",
            _D, _LIC),
     Source("Src_EurostatEnergyBalance", "Eurostat",
            "Complete energy balances (nrg_bal_c), final consumption "
@@ -160,8 +160,14 @@ INPUTS = (
            "Analyst assumption (D-10): typical annual distance for a "
            "delivery van; fleet is kept apart from the Eurostat lines"),
     scalar("Base_Fleet_gCO2PerKm", _SEC, "Tailpipe emissions of a new van (diesel-heavy anchor)",
-           184.9, "gCO2/km", "Const_None", "gCO2/km", NA, "Src_EEAVans", _S,
-           "",
+           184.9, "gCO2/km", "Const_None", "gCO2/km", NA, "Src_EEAVans",
+           Status.ASSUMPTION,
+           "Unverified transcription: 184.9 read on the EEA page by the "
+           "orchestrator on 2026-10-19 and in 02-RESEARCH; not re-read in "
+           "plan 02-18 (WebFetch unavailable in executor session); to be "
+           "verified. The 2024 figure is the diesel-heavy anchor because "
+           "the 2025 provisional 172.1 includes about 10% battery-electric "
+           "vans (see docs/DATA_LOG.md)",
            "Transcribed: EEA 2024 new-van average (WLTP); 2025 provisional "
            "172.1 includes about 10% battery-electric vans, so 2024 is the "
            "diesel-heavy anchor; WLTP understates real-world use"),

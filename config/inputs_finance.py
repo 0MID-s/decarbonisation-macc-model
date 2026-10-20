@@ -79,9 +79,13 @@ INPUTS = (
     scalar("Fin_InflationLongRun", _SEC,
            "Long-run inflation for the Fisher conversion (ECB medium-term "
            "target)",
-           2.0, "per cent", "Const_PctToFrac", "%", NA, "Src_ECBTarget", _S,
-           "D-19: long-run inflation for the Fisher conversion of the "
-           "nominal cost of capital = ECB medium-term target",
+           2.0, "per cent", "Const_PctToFrac", "%", NA, "Src_ECBTarget",
+           Status.ASSUMPTION,
+           "Unverified transcription: ECB 2% sentence read in 02-RESEARCH "
+           "(2026-10-18); not re-read in plan 02-18 (WebFetch unavailable "
+           "in executor session); to be verified. D-19: long-run inflation "
+           "for the Fisher conversion of the nominal cost of capital = ECB "
+           "medium-term target (see docs/DATA_LOG.md)",
            "Transcribed: ECB page, \"price stability is best maintained by "
            "aiming for 2% inflation over the medium term\" (strategy review "
            "concluded July 2021). Sentence read in 02-RESEARCH 3.9; page not "
@@ -89,8 +93,11 @@ INPUTS = (
     scalar("Fin_HICP_EA_Sep2026", _SEC,
            "Euro-area annual HICP inflation, September 2026 (context)",
            3.8, "per cent", "Const_PctToFrac", "%", NA, "Src_EurostatFlash",
-           _S,
-           "Context only (D-19): the 2026 energy-driven spike; flagged for "
+           Status.ASSUMPTION,
+           "Unverified transcription: 3.8% (Belgium 4.5%) read in "
+           "02-RESEARCH (2026-10-18); not re-read in plan 02-18 (WebFetch "
+           "unavailable in executor session); to be verified (see "
+           "docs/DATA_LOG.md). Context only (D-19): the 2026 energy-driven spike; flagged for "
            "the Phase 4 inflation sensitivity; not used in the base case",
            "Transcribed: Eurostat euro indicator release 2-16102026-AP, "
            "euro area 3.8% in September 2026 (Belgium 4.5%). Read in "
@@ -105,8 +112,9 @@ INPUTS = (
            "with euro-area HICP (combined factor about 1.0427 EUR 2025 per "
            "US$2010). Limitation: the route assumes the dollar kept its "
            "2010 real value against the euro; the US-CPI route would give a "
-           "factor of about 1.31, i.e. prices about 25% higher (candidate "
-           "Phase 4 sensitivity)",
+           "factor of about 1.31, i.e. prices about 25% higher (an "
+           "indicative analyst estimate, not a sourced input; see "
+           "docs/DATA_LOG.md; candidate Phase 4 sensitivity)",
            "Transcribed from docs/DATA_LOG.md (Src_EurostatFX, address "
            "A|AVG|NAC|USD|2010, flag none)"),
 )

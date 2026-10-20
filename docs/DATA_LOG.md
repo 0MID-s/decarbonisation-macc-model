@@ -428,3 +428,26 @@ Read date: 2026-10-20. File: data_raw/Src_ETSDirective/legal_text_user_paste.txt
 Read but not used: Art. 30h(1) (price more than twice, or 1.5 times for 2027 and 2028, the six-month average; 50 million allowances). It verifies none of the model's ids (the model's TripleTrigger 3 and TripleRelease 150 refer to Art. 30h(3), which was not supplied). The paste's 1.5x/2x/50 million values differ from the model's 3/150 ids, so these remain unverified analyst assumptions and are flagged for review rather than changed.
 
 Counts after this plan: VERIFIED 5 (user paste), NOT READ 11 ids (2 + 7 + 1 + 1 with StartYearEnacted, Triple pair, 7 scope flags, Base_NRG_IncludesC21), MISMATCH 0 (no value was contradicted by a supplied text).
+
+## Context figures and dates (WR-01, plan 02-18)
+
+Executor session 2026-10-20. No web reader (WebFetch) was available in this session, so web figures could not be re-read today; they are downgraded to Analyst assumption ("Unverified transcription") and listed for user follow-up. Dataset dates were read from local files with a stdlib script (python3 -I, path as argument, prints only the top-level `updated` field).
+
+| Item | URL | Read date | Outcome | Value |
+|---|---|---|---|---|
+| Src_EurostatSBS dataset date | https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/sbs_sc_ovw?geo=BE&nace_r2=C20&nace_r2=C21&format=JSON&lang=EN | 2026-10-20 (file fetched 2026-10-19) | VERIFIED | sbs_sc_ovw_BE_C20_C21.json, sha256 e8f38afb04113a358437f3efbf7bebe64611489d163a41698fee4bdc0467cd0a, `updated` = 2026-09-30T11:00:00+0200 |
+| Src_EurostatElecPrice dataset date | https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nrg_pc_205?geo=BE&tax=X_VAT&currency=EUR&format=JSON&lang=EN | 2026-10-20 (file fetched 2026-10-19) | VERIFIED | nrg_pc_205_BE_X_VAT.json, sha256 319b25f3d84cdc740b13c647913a7dce2e50053d21601a6e2e075a33c966a8f2, `updated` = 2026-10-19T11:00:00+0200. The earlier edition text "2026-10-16" was wrong and is corrected to 2026-10-19. |
+| Base_Fleet_gCO2PerKm 184.9 gCO2/km (2024; 2025 provisional 172.1) | https://www.eea.europa.eu/en/newsroom/news/average-co2-emissions-from-new-cars-and-vans-significantly-decreased-in-2025 (published 25 June 2026) | not re-read | NOT READ in this session | Seen on the page by the orchestrator on 2026-10-19 and in 02-RESEARCH. Status Analyst assumption (unverified transcription), to be verified. |
+| Fin_HICP_EA_Sep2026 3.8% (Belgium 4.5%) | https://ec.europa.eu/eurostat/web/products-euro-indicators/w/2-16102026-ap | not re-read | NOT READ in this session | From 02-RESEARCH 3.9 (2026-10-18). Status Analyst assumption (unverified transcription), to be verified. Context only, not used in the base case. |
+| Fin_InflationLongRun 2.0% | https://www.ecb.europa.eu/mopo/strategy/pricestab/html/index.en.html | not re-read | NOT READ in this session | Sentence recorded in 02-RESEARCH: "price stability is best maintained by aiming for 2% inflation over the medium term". Status Analyst assumption (unverified transcription), to be verified. |
+
+Reason for NOT READ rows: WebFetch unavailable in executor session. No numeric value was changed.
+
+### US-CPI comparison factor (indicative, D-41)
+
+The workbook says a US-CPI route "would give about 1.31, so prices about 25% higher". This is an indicative analyst estimate, not a sourced input.
+
+- Research record: 02-RESEARCH 3.9, read 2026-10-18, from the US statistics agency API (api.bls.gov, text only). US CPI-U series CUUR0000SA0, annual average: 2010 = 218.056, 2025 = 321.943.
+- Ratio 321.943 / 218.056 = 1.47638.
+- Divided by the 2025 average USD per EUR: research used 1.12998, giving 1.47638 / 1.12998 = 1.3066; with the Eurostat 2025 average of 1.13 in this log, 1.47638 / 1.13 = 1.3065. Rounded: about 1.31.
+- That host is not allowlisted (D-41) and the values were not re-fetched, which is why the figure is labelled indicative. There is no US CPI input and no source row for it in the workbook.

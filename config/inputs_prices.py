@@ -17,7 +17,7 @@ SOURCES = (
            "(nrg_pc_205), tax = X_VAT (excluding VAT and other recoverable "
            "taxes and levies), currency EUR",
            "https://ec.europa.eu/eurostat/databrowser/view/nrg_pc_205/default/table",
-           "updated 2026-10-16 (per DATA_LOG); semesters 2025-S1, 2025-S2, "
+           "dataset updated 2026-10-19 (see docs/DATA_LOG.md); semesters 2025-S1, 2025-S2, "
            "2026-S1", _D, _LIC),
     Source("Src_EurostatGasPrice", "Eurostat",
            "Gas prices for non-household consumers, bi-annual data "

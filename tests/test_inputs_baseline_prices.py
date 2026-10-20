@@ -40,11 +40,23 @@ class BaselineTests(unittest.TestCase):
             # Base_NRG_IncludesC21: DATA_LOG WR-02 outcome NOT READ
             exp = (Status.ASSUMPTION if r.id in (
                 "Base_Fleet_Vehicles", "Base_Fleet_KmPerVehicle",
-                "Base_NRG_IncludesC21")
+                "Base_NRG_IncludesC21", "Base_Fleet_gCO2PerKm")
                 else Status.SOURCED)
             self.assertEqual(r.status, exp, r.id)
             if exp is Status.ASSUMPTION:
                 self.assertTrue(r.rationale)
+
+
+class TestDataLogCitations(unittest.TestCase):
+    def test_no_dangling_edition_dates(self):
+        import os
+        from config.sources import SOURCES
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        log = open(os.path.join(root, "docs", "DATA_LOG.md")).read()
+        for s in SOURCES:
+            if "2026-10-16" in s.edition:
+                self.assertIn("2026-10-16", log, s.id)
+            self.assertNotIn("per DATA_LOG", s.edition, s.id)
 
 
 PRICE = [r for r in INPUTS if r.section == "Energy prices"]
