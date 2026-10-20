@@ -245,10 +245,6 @@ class ProvenanceTests(unittest.TestCase):
         self.assertEqual(BUILD.timeline_years[-1], 2055)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class NgfsY0Guard(unittest.TestCase):
     def test_y0_must_precede_timeline(self):
         ins = tuple(dataclasses.replace(r, published_value=2026.0)
@@ -260,3 +256,7 @@ class NgfsY0Guard(unittest.TestCase):
     def test_real_config_and_absent_record_pass(self):
         validate_provenance(SOURCES, INPUTS, YEARS)
         validate_provenance(SYNTHETIC_SOURCES, SYNTHETIC_INPUTS, YEARS)
+
+
+if __name__ == "__main__":
+    unittest.main()
