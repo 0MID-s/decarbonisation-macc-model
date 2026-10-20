@@ -247,3 +247,16 @@ class ProvenanceTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NgfsY0Guard(unittest.TestCase):
+    def test_y0_must_precede_timeline(self):
+        ins = tuple(dataclasses.replace(r, published_value=2026.0)
+                    if r.id == "Carbon_NGFS_Y0Year" else r for r in INPUTS)
+        with self.assertRaises(ProvenanceError) as cm:
+            validate_provenance(SOURCES, ins, YEARS)
+        self.assertIn("Carbon_NGFS_Y0Year", "\n".join(cm.exception.problems))
+
+    def test_real_config_and_absent_record_pass(self):
+        validate_provenance(SOURCES, INPUTS, YEARS)
+        validate_provenance(SYNTHETIC_SOURCES, SYNTHETIC_INPUTS, YEARS)

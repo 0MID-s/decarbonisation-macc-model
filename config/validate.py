@@ -148,6 +148,11 @@ def validate_provenance(sources, inputs, timeline_years):
             or first.published_value != float(timeline_years[0])):
         problems.append("Time_FirstYear: required record missing or not equal "
                         "to first timeline year")
+    y0 = by_id.get("Carbon_NGFS_Y0Year")
+    if (y0 is not None and timeline_years
+            and y0.published_value >= timeline_years[0]):
+        problems.append("Carbon_NGFS_Y0Year: NGFS pre-timeline anchor must be "
+                        "before the first timeline year")
 
     if problems:
         raise ProvenanceError(problems)

@@ -120,3 +120,59 @@ class WorkbookFormulas(unittest.TestCase):
         # the override beats the cell's own formula: dependents must move
         bad, _ = compare_cached(self.data, overrides={(sheet, cell): want * 1.5})
         self.assertTrue(any("Carbon!" in b for b in bad), bad[:5])
+
+
+class FirstYearRobustness(unittest.TestCase):
+    """CR-01: Time_FirstYear is an editable input; Carbon paths must follow.
+
+    With the pre-fix header-derived anchors, a 2027 run labelled the 2030 NGFS
+    point as 2031 and the paths were silently wrong.
+    """
+    KEYS = ("CP", "NDC", "NZ50")
+
+    @classmethod
+    def setUpClass(cls):
+        from checkmodel.carbon_reference import carbon_paths, interp_annual
+        ds = build.load_dataset("config")
+        data, _ = build.build_bytes("main", ds)
+        cls.wf = openpyxl.load_workbook(io.BytesIO(data))
+        cls.paths = carbon_paths(ds.inputs)
+        cls.interp = staticmethod(interp_annual)
+        sheet, ref = FormulaEvaluator(cls.wf).name_target("Time_FirstYear")
+        cls.fy = (sheet, ref.split(":")[0])
+
+    def _ev(self, year):
+        return FormulaEvaluator(self.wf, {self.fy: year})
+
+    def _cell(self, ev, name):
+        sheet, ref = ev.name_target(name)
+        return sheet, ref.split(":")[0]
+
+    def test_first_year_shift(self):
+        ev = self._ev(2027)
+        self.assertEqual(ev.value("Carbon", "N5"), 2027)
+        ws = self.wf["Carbon"]
+        for key in self.KEYS:
+            ays, avs, _ann = self.paths[key]
+            sheet, first = self._cell(ev, "Path_Carbon_" + key)
+            row = ws[first].row
+            yr_row = row - 6
+            self.assertEqual(ws.cell(row=yr_row, column=2).value,
+                             "NGFS anchor years")
+            got_years = [ev.value("Carbon", ws.cell(row=yr_row, column=4 + i).coordinate)
+                         for i in range(len(ays))]
+            self.assertEqual(got_years, [2025, 2030, 2035, 2040, 2045, 2050, 2055])
+            want = self.interp(ays, avs, list(range(2027, 2057)))
+            _, ref = ev.name_target("Path_Carbon_" + key)
+            c0 = ws[first].column
+            for k, w in enumerate(want):
+                g = ev.value("Carbon", ws.cell(row=row, column=c0 + k).coordinate)
+                self.assertAlmostEqual(g / w, 1.0, delta=1e-12)
+            s2, c = self._cell(ev, "Carb_Check_Anchors_" + key)
+            self.assertEqual(ev.value(s2, c), "OK")
+
+    def test_first_year_check_flags(self):
+        ev = self._ev(2025)
+        for key in self.KEYS:
+            s2, c = self._cell(ev, "Carb_Check_Anchors_" + key)
+            self.assertEqual(ev.value(s2, c), "ERROR")
