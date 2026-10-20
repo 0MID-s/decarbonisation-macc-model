@@ -119,6 +119,11 @@ class CarbonSheet(unittest.TestCase):
                   for c in range(TIMELINE_FIRST_COL, TIMELINE_LAST_COL + 1)]
             self.assertEqual([y for y in ys if y is not None],
                              [2030, 2035, 2040, 2045, 2050, 2055])
+            # WR-02: point years are locked constants, not unlocked inputs
+            for c in range(TIMELINE_FIRST_COL, TIMELINE_LAST_COL + 1):
+                cell = ws.cell(row=r, column=c + 1)
+                if cell.value is not None:
+                    self.assertTrue(cell.protection.locked, cell.coordinate)
 
     def test_eua_gaps(self):
         gaps = eua_gaps(self.ds.inputs)

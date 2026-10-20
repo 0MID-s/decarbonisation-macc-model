@@ -151,10 +151,13 @@ def build_inputs(wb, styles, cells, dataset, cfg):
         yrow = row + 2
         year_rows.append((r.id, yrow))
         cells.text(ws, yrow, 1, "  point year (fixed)", styles.get("label"))
-        cells.text(ws, yrow, 2, "Series point years; independent of First "
+        cells.text(ws, yrow, 2, "Series point years as published (source "
+                   "metadata, not an input; locked). Independent of First "
                    "model year", styles.get("text"))
         for y, v in r.series:
+            # WR-02: a locked constant, not the unlocked input style; the
+            # Carbon anchor check also compares it with the published year
             cells.number(ws, yrow, col_for_year(y), y,
-                         styles.get("input", "year"))
+                         styles.get("calc", "year"))
     return InputsLayout(HEADER_ROW, tuple(record_rows), tuple(series_rows),
                         tuple(year_rows))

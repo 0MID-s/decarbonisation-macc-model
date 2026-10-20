@@ -37,8 +37,11 @@ LIMIT_NOTE = (
     "US-CPI route would give about 1.31, so prices about 25% higher (an indicative analyst estimate, not a sourced input; see docs/DATA_LOG.md); "
     "candidate Phase 4 sensitivity (D-41)")
 ANCHOR_NOTE = (
-    "NGFS point years are fixed cells on Inputs; changing First model year "
-    "shifts the timeline and the paths re-interpolate to the new years")
+    "NGFS point years are fixed, locked cells on Inputs; changing First "
+    "model year shifts the timeline and the paths re-interpolate to the new "
+    "years. The anchor check also fails if a point year differs from the "
+    "NGFS publication year")
+NGFS_YEAR_STEP = 5  # NGFS publishes Price|Carbon every five years
 EUA_NOTE = (
     "EUA 2025 average in nominal 2025 euros = EUR 2025 prices; scenarios are "
     "not floored or blended to it (D-29); any short-run blending is a "
@@ -161,6 +164,11 @@ def build_carbon(wb, styles, cells, dataset, cfg, inputs_layout):
         if n > GRID_MAX:
             raise ValueError("more than %d anchors for %s" % (GRID_MAX, key))
         last = GRID_FIRST + n - 1
+        if any(y % NGFS_YEAR_STEP for y in ays) or any(
+                b - a != NGFS_YEAR_STEP for a, b in zip(ays, ays[1:])):
+            raise ValueError("NGFS point years for %s must be %d-yearly "
+                             "publication years, got %r"
+                             % (key, NGFS_YEAR_STEP, ays))
         band(r, "%s: %s, %s" % (tier, name, model_text))
         r += 1
         r_yr, r_us, r_e10, r_e25 = r, r + 1, r + 2, r + 3
@@ -234,11 +242,19 @@ def build_carbon(wb, styles, cells, dataset, cfg, inputs_layout):
         rows.append((pname, r_val))
         rows.append(("anchor_eur2025_" + key, r_e25))
         r_chk = r_val + 1
-        line(r_chk, "Anchor-year check (ascending; first anchor before "
-             "first model year)", "check")
+        line(r_chk, "Anchor-year check (each anchor = NGFS publication "
+             "year; ascending; first anchor before first model year)", "check")
         conds = ["%s%d<%s%d" % (col_letter(GRID_FIRST + i), r_yr + 1,
                                 col_letter(GRID_FIRST + i + 1), r_yr + 1)
                  for i in range(n - 1)]
+        # WR-02: each anchor year must equal the NGFS publication year from
+        # the config, written as a labelled, locked reference row under the
+        # check (formula lint forbids year literals), so an edited point year
+        # (e.g. 2030 -> 2026) reads ERROR even though the years still ascend
+        r_ref = r_chk + 1
+        conds += ["%s%d=%s%d" % (col_letter(GRID_FIRST + i), r_yr + 1,
+                                 col_letter(GRID_FIRST + i), r_ref + 1)
+                  for i in range(n)]
         conds.append("%s%d<$%s$%d" % (col_letter(GRID_FIRST), r_yr + 1,
                                       col_letter(TIMELINE_FIRST_COL), hdr_ref))
         cells.formula(ws, r_chk, GRID_FIRST,
@@ -249,6 +265,11 @@ def build_carbon(wb, styles, cells, dataset, cfg, inputs_layout):
         cells.define_name(cname, "=Carbon!$%s$%d" % (col_letter(GRID_FIRST),
                                                      r_chk + 1))
         rows.append((cname, r_chk))
+        line(r_ref, "  NGFS publication years (config; check reference, "
+             "locked)", "year")
+        for i in range(n):
+            cells.number(ws, r_ref, GRID_FIRST + i, ays[i],
+                         styles.get("calc", "year"))
         r = r_chk + 2
 
     # --- EUA anchor (D-29)

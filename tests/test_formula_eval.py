@@ -246,3 +246,27 @@ class FirstYearRobustness(unittest.TestCase):
         for key in self.KEYS:
             s2, c = self._cell(ev, "Carb_Check_Anchors_" + key)
             self.assertEqual(ev.value(s2, c), "ERROR")
+
+    def test_edited_point_year_flags(self):
+        """WR-02: a point year edited to 2026 must read ERROR, even though
+        the years still ascend (2025 < 2026 < 2035)."""
+        ws = self.wf["Carbon"]
+        for key in self.KEYS:
+            ev0 = FormulaEvaluator(self.wf)
+            sheet, first = self._cell(ev0, "Path_Carbon_" + key)
+            yr_row = ws[first].row - 6
+            f = ws.cell(row=yr_row, column=5).value  # E: the 2030 point
+            self.assertTrue(f.startswith("=Inputs!"), f)
+            ref = f[len("=Inputs!"):].replace("$", "")
+            self.assertEqual(ev0.value("Inputs", ref), 2030)
+            ev = FormulaEvaluator(self.wf, {("Inputs", ref): 2026})
+            s2, c = self._cell(ev, "Carb_Check_Anchors_" + key)
+            self.assertEqual(ev.value(s2, c), "ERROR", key)
+
+    def test_edited_y0_year_flags(self):
+        ev0 = FormulaEvaluator(self.wf)
+        y0 = self._cell(ev0, "Carbon_NGFS_Y0Year")
+        ev = FormulaEvaluator(self.wf, {y0: 2020})
+        for key in self.KEYS:
+            s2, c = self._cell(ev, "Carb_Check_Anchors_" + key)
+            self.assertEqual(ev.value(s2, c), "ERROR", key)
