@@ -26,6 +26,7 @@ class InputsLayout:
     header_row: int
     record_rows: Tuple[Tuple[str, int], ...]
     series_model_rows: Tuple[Tuple[str, int], ...]
+    series_year_rows: Tuple[Tuple[str, int], ...] = ()
 
 
 def _assign_rows(dataset):
@@ -41,7 +42,7 @@ def _assign_rows(dataset):
         row += 1
         for r in recs:
             rows[r.id] = row
-            row += 2 if r.kind is Kind.SERIES else 1
+            row += 3 if r.kind is Kind.SERIES else 1
     return bands, rows
 
 
@@ -89,6 +90,7 @@ def build_inputs(wb, styles, cells, dataset, cfg):
 
     record_rows = []
     series_rows = []
+    year_rows = []
     for r in dataset.inputs:
         row = rows[r.id]
         R = row + 1
@@ -146,4 +148,13 @@ def build_inputs(wb, styles, cells, dataset, cfg):
             cells.formula(ws, mrow, col,
                           "=%s%d*$F$%d" % (col_letter(col), R, R),
                           styles.get("calc", model_num), value=v * factor)
-    return InputsLayout(HEADER_ROW, tuple(record_rows), tuple(series_rows))
+        yrow = row + 2
+        year_rows.append((r.id, yrow))
+        cells.text(ws, yrow, 1, "  point year (fixed)", styles.get("label"))
+        cells.text(ws, yrow, 2, "Series point years; independent of First "
+                   "model year", styles.get("text"))
+        for y, v in r.series:
+            cells.number(ws, yrow, col_for_year(y), y,
+                         styles.get("input", "year"))
+    return InputsLayout(HEADER_ROW, tuple(record_rows), tuple(series_rows),
+                        tuple(year_rows))

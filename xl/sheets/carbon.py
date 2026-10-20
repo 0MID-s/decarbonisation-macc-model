@@ -15,7 +15,7 @@ from xl.layout import (
     LABEL_COL, TIMELINE_FIRST_COL, TIMELINE_LAST_COL, UNIT_COL, col_for_year,
     col_letter, setup_sheet)
 from xl.sheets.common import num_role_for_unit, write_title_band
-from xl.styles import SheetKind
+from xl.styles import SheetKind, apply_check_format
 
 LAST_COL = TIMELINE_LAST_COL
 HDR_ROW = 4  # zero-based; Excel row 5
@@ -36,6 +36,9 @@ LIMIT_NOTE = (
     "Assumes the US dollar kept its 2010 real value against the euro. A "
     "US-CPI route would give about 1.31, so prices about 25% higher; "
     "candidate Phase 4 sensitivity (D-41)")
+ANCHOR_NOTE = (
+    "NGFS point years are fixed cells on Inputs; changing First model year "
+    "shifts the timeline and the paths re-interpolate to the new years")
 EUA_NOTE = (
     "EUA 2025 average in nominal 2025 euros = EUR 2025 prices; scenarios are "
     "not floored or blended to it (D-29); any short-run blending is a "
@@ -66,6 +69,7 @@ def build_carbon(wb, styles, cells, dataset, cfg, inputs_layout):
     paths = carbon_paths(dataset.inputs)
     gaps = eua_gaps(dataset.inputs)
     srows = dict(inputs_layout.series_model_rows)
+    yrows = dict(inputs_layout.series_year_rows)
     unit_year = by_id["Carbon_NGFS_CP"].price_basis.year
     if unit_year != UNIT_BASE_YEAR:
         raise ValueError("NGFS unit base year must be %d, got %r"
@@ -144,6 +148,8 @@ def build_carbon(wb, styles, cells, dataset, cfg, inputs_layout):
     cells.define_name("Carb_USDtoEUR2025", "=Carbon!$D$%d" % (r + 1))
     rows.append(("Carb_USDtoEUR2025", r))
     cells.text(ws, r, GRID_FIRST + 1, LIMIT_NOTE, note)
+    r += 1
+    cells.text(ws, r, LABEL_COL, ANCHOR_NOTE, note)
     r += 2
 
     # --- scenarios
@@ -183,8 +189,10 @@ def build_carbon(wb, styles, cells, dataset, cfg, inputs_layout):
             else:
                 y = ays[i]
                 ycol = col_letter(col_for_year(y))
-                cells.formula(ws, r_yr, col, "=%s$%d" % (ycol, hdr_ref),
-                              styles.get("calc", "year"), value=y)
+                cells.formula(
+                    ws, r_yr, col,
+                    "=Inputs!$%s$%d" % (ycol, yrows["Carbon_NGFS_" + key] + 1),
+                    styles.get("link", "year"), value=y)
                 ser = dict(by_id["Carbon_NGFS_" + key].series)
                 cells.formula(
                     ws, r_us, col,
@@ -225,7 +233,23 @@ def build_carbon(wb, styles, cells, dataset, cfg, inputs_layout):
         path_names.append(pname)
         rows.append((pname, r_val))
         rows.append(("anchor_eur2025_" + key, r_e25))
-        r = r_val + 2
+        r_chk = r_val + 1
+        line(r_chk, "Anchor-year check (ascending; first anchor before "
+             "first model year)", "check")
+        conds = ["%s%d<%s%d" % (col_letter(GRID_FIRST + i), r_yr + 1,
+                                col_letter(GRID_FIRST + i + 1), r_yr + 1)
+                 for i in range(n - 1)]
+        conds.append("%s%d<$%s$%d" % (col_letter(GRID_FIRST), r_yr + 1,
+                                      col_letter(TIMELINE_FIRST_COL), hdr_ref))
+        cells.formula(ws, r_chk, GRID_FIRST,
+                      '=IF(AND(%s),"OK","ERROR")' % ",".join(conds),
+                      styles.get("calc", "general"), value="OK")
+        apply_check_format(ws, styles, r_chk, GRID_FIRST, r_chk, GRID_FIRST)
+        cname = "Carb_Check_Anchors_" + key
+        cells.define_name(cname, "=Carbon!$%s$%d" % (col_letter(GRID_FIRST),
+                                                     r_chk + 1))
+        rows.append((cname, r_chk))
+        r = r_chk + 2
 
     # --- EUA anchor (D-29)
     band(r, "Observed EUA anchor (D-29)")

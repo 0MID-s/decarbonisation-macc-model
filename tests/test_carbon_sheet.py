@@ -79,7 +79,46 @@ class CarbonSheet(unittest.TestCase):
         ws = self.wb["Carbon"]
         found = [c.value for row in ws.iter_rows() for c in row
                  if isinstance(c.value, str) and c.value.startswith("=Inputs!")]
-        self.assertEqual(len(found), 18)
+        self.assertEqual(len(found), 36)  # 18 US$ links + 18 point-year links
+
+    def test_anchor_years_fixed_cells(self):
+        """CR-01: anchor years never derive from the movable timeline header."""
+        ws = self.wb["Carbon"]
+        for key, _t, _n in SCENARIOS:
+            chk = self._cell(self.wb, "Carb_Check_Anchors_" + key)
+            yr_row = None
+            for r in range(chk.row - 1, 1, -1):
+                if ws.cell(row=r, column=2).value == "NGFS anchor years":
+                    yr_row = r
+                    break
+            self.assertIsNotNone(yr_row)
+            n = len(self.paths[key][0])
+            for i in range(n):
+                f = ws.cell(row=yr_row, column=4 + i).value
+                self.assertNotIn("Time_FirstYear", f)
+                if i == 0:
+                    self.assertEqual(f, "=Carbon_NGFS_Y0Year")
+                else:
+                    self.assertTrue(f.startswith("=Inputs!"), f)
+                    self.assertNotRegex(f, r"\$5$")
+
+    def test_anchor_check_cells(self):
+        for key, _t, _n in SCENARIOS:
+            self.assertEqual(self._cell(self.wbv, "Carb_Check_Anchors_" + key).value, "OK")
+            self.assertIn("IF(AND(", self._cell(self.wb, "Carb_Check_Anchors_" + key).value)
+
+    def test_inputs_point_year_cells(self):
+        ws = self.wb["Inputs"]
+        for key, _t, _n in SCENARIOS:
+            r = None
+            for row in ws.iter_rows(min_col=2, max_col=2):
+                if row[0].value == "Carbon_NGFS_" + key:
+                    r = row[0].row + 2
+            self.assertEqual(ws.cell(row=r, column=2).value, "  point year (fixed)")
+            ys = [ws.cell(row=r, column=c + 1).value
+                  for c in range(TIMELINE_FIRST_COL, TIMELINE_LAST_COL + 1)]
+            self.assertEqual([y for y in ys if y is not None],
+                             [2030, 2035, 2040, 2045, 2050, 2055])
 
     def test_eua_gaps(self):
         gaps = eua_gaps(self.ds.inputs)
