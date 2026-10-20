@@ -16,7 +16,7 @@ Two words used throughout:
 
 **Rates.** Two jobs. First, it restates money from other price years into EUR 2025 using the euro-area price index (HICP), so every euro amount is comparable. Second, it derives the discount rate (Rates D21 to D23): a nominal cost of capital of 7.811% (`Fin_CoC_ChemSpecialty`) becomes a real rate of 5.70% (`Rate_DiscountReal`).
 
-**Carbon.** Three carbon price paths to 2055 (Low, Central, High), each converted into EUR 2025, plus the observed 2025 EU allowance price and the ETS2 parameters (start year 2028, which fuels are covered).
+**Carbon.** Three carbon price paths to 2055 (Low, Central, High), each converted into EUR 2025, plus the 2025 EU allowance (EUA) price used as a market reference and the ETS2 parameters (start year 2028, which fuels are covered). Each path has an "anchor-year check" row that reads OK or ERROR (explained below).
 
 **Notes.** What the model does not do or cannot know: limitations, exclusions, the NGFS licence wording, and every input that was transcribed by hand.
 
@@ -33,12 +33,12 @@ Two words used throughout:
 2. `BL_RatioVA` is firm value added over sector value added (D16 = `BL_FirmVA/BL_SectorVA`).
 3. Both come from Eurostat inputs on the Inputs sheet (`Base_SBS_*` rows from the structural business statistics). The sector gas figure comes from the Eurostat energy balance rows (source `Src_EurostatEnergyBalance`).
 
-### 3. Central carbon price in 2030 (Carbon R32 = EUR 226.18 per tCO2)
-1. Carbon R32 is the interpolation formula. Look up two rows: R30 (the year, 2030) and R31 (which NGFS point to use).
-2. The EUR 2025 anchors sit in row 29 (D29 to J29). E29 = 226.18 is the 2030 point.
-3. E29 comes from E28 times the HICP ratio (D13, 1.3823). E28 comes from E27 times D12 (1 divided by 1.3257 US dollars per euro, 0.7543).
-4. E27 = US$216.91 per tonne (2010 dollars) links to the Inputs series `Carbon_NGFS_NDC`, source `Src_NGFSPhaseV` (NGFS Phase V, model REMIND-MAgPIE 3.3-4.8, region OECD & EU).
-5. Combined conversion factor: D14 = 1.0427.
+### 3. Central carbon price in 2030 (Carbon R34 = EUR 226.18 per tCO2)
+1. Carbon R34 (column R is the year 2030) is the interpolation formula for the Central path (named `Path_Carbon_NDC`, N34:AQ34). It reads two helper rows above it: R32 (the year to use) and R33 (which NGFS point comes just before that year).
+2. The NGFS points ("anchors") for Central sit in rows 28 to 31. Row 28 holds the anchor years (D28 to J28), row 31 the prices in EUR 2025. E31 = 226.18 is the 2030 point.
+3. E31 comes from E30 times the HICP ratio (D13, 1.3823). E30 comes from E29 times D12 (1 divided by 1.3257 US dollars per euro, 0.7543).
+4. E29 = US$216.91 per tonne (2010 dollars) links to the Inputs series `Carbon_NGFS_NDC` (Inputs rows 122 to 124), source `Src_NGFSPhaseV` (NGFS Phase V, model REMIND-MAgPIE 3.3-4.8, region OECD & EU).
+5. Combined conversion factor: D14 = 1.0427 (`Carb_USDtoEUR2025`).
 
 ## Why these choices
 
@@ -52,14 +52,18 @@ Two words used throughout:
 
 **Real versus nominal money, EUR 2025 and the Fisher formula.** Nominal money includes inflation. Real money is measured in the purchasing power of one fixed year (here 2025). The model works in real EUR 2025, so the discount rate must be real too. Damodaran's cost of capital is nominal. The Fisher formula converts: real = (1 + nominal) / (1 + inflation) - 1. With nominal 7.811% and inflation at the ECB 2.0% target (`Fin_InflationLongRun`), real = 5.70% (Rates D23). The Damodaran Euros column assumes 1.5% inflation, so using 2.0% gives a slightly lower real rate. This is stated on Rates and in Notes. Memo rows show the Basic (3.08%, D24) and Diversified (5.50%, D25) chemical groups.
 
-**Why NGFS prices are converted with the 2010 exchange rate and then euro-area inflation.** The NGFS price is in 2010 US dollars. Step one: divide by 1.3257 US dollars per euro, the 2010 average (Eurostat), to get 2010 euros. Step two: multiply by euro-area HICP 2025 over 2010 (D13, 1.3823) to get 2025 euros. Combined factor 1.0427 (D14). The limitation: this assumes the dollar kept its 2010 real value against the euro. A US-CPI route would give a factor of about 1.31, so prices about 25% higher. That is a candidate sensitivity in Phase 4. NGFS prices are also model shadow prices (the carbon price needed for the model to hit its target), not market prices.
+**Why NGFS prices are converted with the 2010 exchange rate and then euro-area inflation.** The NGFS price is in 2010 US dollars. Step one: divide by 1.3257 US dollars per euro, the 2010 average (Eurostat), to get 2010 euros. Step two: multiply by euro-area HICP 2025 over 2010 (D13, 1.3823) to get 2025 euros. Combined factor 1.0427 (D14). The limitation: this assumes the dollar kept its 2010 real value against the euro. A US-CPI route would give a factor of about 1.31, so prices about 25% higher. That 1.31 is an indicative analyst estimate (its inputs are logged in docs/DATA_LOG.md, but it is not a sourced figure and is not used in the model). It is a candidate sensitivity in Phase 4. NGFS prices are also model shadow prices (the carbon price needed for the model to hit its target), not market prices.
 
-**The EUA anchor.** The 2025 average of EU allowance auction prices (`Carbon_EUA_Avg2025`, EUR 73.43) sits beside the scenarios on the Carbon sheet. Gaps to the 2025 NGFS value: Low +49.15, Central -53.33, High -85.46 (D45 to D47). The scenarios are not adjusted to the market price. How to blend the short run is a Phase 4 decision.
+**The EUA anchor.** An EUA is one EU Emissions Trading System allowance, the right to emit one tonne of CO2. The 2025 average price (`Carbon_EUA_Avg2025`, EUR 73.43, Inputs G99, shown on Carbon D48) sits beside the scenarios as a market reference. Gaps (market minus NGFS 2025 value): Low +49.15, Central -53.33, High -85.46 (Carbon D49 to D51). A positive gap means the market is above the scenario; a negative gap means the scenario is above the market. The scenarios are not adjusted to the market price. How to blend the short run is a Phase 4 decision (D-29). The 73.43 figure is an analyst assumption (see below), so treat the gaps as indicative.
+
+**Why the NGFS point years are fixed cells, and what the anchor check does.** NGFS publishes a price only every five years (2025, 2030, 2035 and so on); the model draws straight lines between these points. Originally the point years were read from the timeline header, so changing "First model year" would have silently relabelled the 2030 price as 2031. Now each point year is a fixed typed cell on Inputs (the "point year (fixed)" rows, for example Inputs row 124 for Central), and the Carbon sheet links to those cells. The anchor check (Carbon D25, D35, D45) reads OK when the years rise in order and the first point year is before the first model year, and ERROR otherwise. If you change First model year to 2027 the paths re-interpolate correctly and the checks stay OK; if you set it to 2025 or earlier, they show ERROR, because the model would need a price before the first NGFS point.
 
 ## What is an assumption, not data
 
-- **The fleet block** (Baseline rows 55 to 57): 10 vehicles, 25,000 km a year, 184.9 g CO2 per km. Eurostat has no fleet data for a firm this size. These are labelled analyst assumptions.
-- **The flat grid factor and flat residual mix paths.** No sourced Belgian projection was found on an approved source, so both are held at the latest values (an accepted deviation, in Notes).
+- **The fleet block** (Baseline rows 55 to 57): the number of vehicles (10) and the distance (25,000 km a year) are analyst assumptions, because Eurostat has no fleet data for a firm this size. The 184.9 g CO2 per km is not an assumption: it is the EEA figure for new vans in 2024 (status Sourced, re-read on 2026-10-20). Note that the Baseline sheet still labels row 57 "analyst assumption"; that label is stale and the Inputs status is the correct one.
+- **The flat grid factor and flat residual mix paths.** No sourced Belgian projection was found on an approved source, so both are held at the latest values (an accepted deviation under D-23 and D-38, in Notes).
+- **The EUA 2025 average (EUR 73.43).** The value was computed from EEX auction results, but the underlying rows were not kept, so it carries the status "Analyst assumption" (unverified transcription) until someone re-supplies the rows.
+- **Legal parameters that were not read in the legal text.** "Sourced" now means the sentence was read in the EU legal text. Sourced: the ETS2 start year 2028 (Regulation 2026/667), the EUR 45 stability price, the two-month trigger and the 20 million release (Directive 2003/87/EC Art. 30h(2)), the triple-price trigger and its release (Art. 30h(3)), and the 20 MW combustion threshold for the main EU market (original 2003 wording). Analyst assumption: the originally enacted ETS2 start year (2027), every fuel-scope flag (gas, LPG, naphtha, other fuels, road diesel, electricity, heat), and the flag that the energy balance covers chemicals and pharmaceuticals together.
 - **The UK heat factor** used as a Belgian proxy for purchased heat (DESNZ).
 - **ICCT-anchored electric vehicle values**, where the fleet measure uses the study's trucks and delivery vans as a stand-in.
 - **The RVO price year**, assumed to be the list year.
@@ -75,9 +79,9 @@ Two words used throughout:
 6. **Why use the ECB 2% target rather than recent inflation?** Euro-area inflation was 3.8% in September 2026 (Rates D26), an energy-driven spike. A long-run model needs a long-run rate. The spike is a Phase 4 sensitivity.
 7. **What are the NGFS carbon prices, and can you rely on them?** They are model shadow prices, the cost of the last tonne abated in the model, from NGFS Phase V (REMIND-MAgPIE, OECD & EU region). They are scenario inputs, not forecasts. I show Low, Central and High and do not blend them with the market price.
 8. **How did you convert US dollars from 2010 into euros from 2025?** Divide by the 2010 average exchange rate of 1.3257 US dollars per euro, then multiply by euro-area HICP 2025 over 2010. The factor is 1.0427. The weak point is the assumption that the dollar held its 2010 real value; a US-CPI route would give about 1.31.
-9. **Why does the Central scenario sit below the market price now?** Compare the EUA 2025 average of EUR 73.43 with the Central 2025 NGFS value of EUR 126.76. The Central path is a policy-ambition path, so it is higher than today's market; the model keeps both visible rather than hiding the gap.
-10. **How do you know the formulas are right?** An independent Python reference model recomputes every figure, and the cached values in the workbook are compared to it. Formulas use only plain functions (INDEX, MATCH, MIN, MAX, SUM), so the workbook opens in Excel desktop and Excel for the web.
-11. **What is ETS2, and when does it start?** A second EU carbon market for fuels used in buildings and road transport, covering fuel suppliers. The start was postponed to 2028 (Carbon D51). Natural gas, LPG and road diesel are in scope; electricity and heat are not.
+9. **Why does the Central scenario sit above today's EUA price, and the Low scenario far below it?** The EUA 2025 average is EUR 73.43. The Central 2025 NGFS value is EUR 126.76, so Central is above the market (gap -53.33), and High (158.90) is further above (gap -85.46). Only Low (24.28) is below the market, by about 49 euros (gap +49.15), so Low is not a credible short-run price. The NGFS values are model shadow prices, not market quotes. How to bridge the short run is a Phase 4 decision (D-29); the model keeps all four numbers visible rather than hiding the gap.
+10. **How do you know the formulas are right?** Two independent checks. First, the values stored in the file come from a separate Python reference model, not from the workbook formulas. Second, a test re-calculates every formula in the workbook from its inputs with a small evaluator I wrote (all 900 formulas, no mismatches) and checks it gives the same numbers, so a wrong cell reference would be caught. Another test changes First model year and checks that the carbon paths still line up with the NGFS points. I did not use Excel to recalculate the workbook. Formulas use only plain functions (INDEX, MATCH, MIN, MAX, SUM, IF), so the workbook opens in Excel desktop and Excel for the web.
+11. **What is ETS2, and when does it start?** A second EU carbon market for fuels used in buildings and road transport, covering fuel suppliers. The start was postponed to 2028 by Regulation (EU) 2026/667 (Carbon D55). Natural gas, LPG and road diesel are in scope; electricity and heat are not.
 
 ## What comes next in Phase 3
 
