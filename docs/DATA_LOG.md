@@ -408,3 +408,23 @@ EUR-Lex answered every request with HTTP 202 and an empty body (AWS WAF challeng
 | Base_NRG_IncludesC21 | https://eur-lex.europa.eu/eli/reg/2008/1099/oj/eng (Annex A item 2.6.1.6); also https://ec.europa.eu/eurostat/cache/metadata/en/nrg_bal_esms.htm | Annex A 2.6.1.6, NACE 20 and 21 | NOT READ | EUR-Lex: HTTP 202, empty body (WAF challenge). Eurostat metadata: page read, no statement on NACE 20 and 21 |
 
 VERIFIED rows: 0. NOT READ rows: 16. MISMATCH rows: 0. Plan 02-16 asks the user to paste the article text for each NOT READ row.
+
+### Final outcomes after user paste (plan 02-16, Part B1, partial)
+
+Read date: 2026-10-20. File: data_raw/Src_ETSDirective/legal_text_user_paste.txt (plain text, user paste from EUR-Lex in a browser, read as untrusted data only), 3134 bytes, sha256 180236187b0b2475791ebb4b8731e39653458ff7d34f911c04c48361b1a53fb0. The file is kept in data_raw (untracked).
+
+| Parameter id | Outcome | Quote from the paste |
+|---|---|---|
+| Carbon_ETS2_StartYear | VERIFIED (user paste) | Reg. (EU) 2026/667, postponement provision (article number not shown in the paste; copied by the user from https://eur-lex.europa.eu/eli/reg/2026/667/oj/eng): "The operation of emissions trading for buildings, road transport and additional sectors set out in Chapter IVa of Directive 2003/87/EC shall be postponed until 2028." |
+| Carbon_ETS2_StabPrice | VERIFIED (user paste) | Dir. 2003/87/EC Art. 30h(2) as inserted by Dir. (EU) 2023/959: "Where the average price of allowances referred to in paragraph 1 of this Article exceeds a price of EUR 45 for a period of two consecutive months, 20 million allowances ... Indexation based on the European index of consumer prices for 2020 shall apply. ... up to 31 December 2029." (EUR 45 in 2020 prices) |
+| Carbon_ETS2_StabMonths | VERIFIED (user paste) | Same Art. 30h(2) sentence: "for a period of two consecutive months" |
+| Carbon_ETS2_StabRelease | VERIFIED (user paste) | Same Art. 30h(2) sentence: "20 million allowances covered by this Chapter shall be released". Release possible up to 31 Dec 2029. The consolidated text after the 2026 amendments was not read. |
+| Carbon_ETS1_ThermalThresholdMW | VERIFIED (user paste, original 2003 wording only) | Dir. 2003/87/EC Annex I: "Combustion installations with a rated thermal input exceeding 20 MW (except hazardous or municipal waste installations)", gas column "Carbon dioxide". This is the original 2003 wording; the consolidated text was not read (an analyst note in the paste says the threshold is unchanged, which is not itself verified). |
+| Carbon_ETS2_StartYearEnacted | NOT READ (stays Analyst assumption) | Art. 30d(1) not supplied |
+| Carbon_ETS2_TripleTrigger, Carbon_ETS2_TripleRelease | NOT READ (stay Analyst assumption) | Art. 30h(3) not supplied |
+| Carbon_ETS2_Scope_Gas, _LPG, _Naphtha, _OtherFuels, _FleetDiesel, _Elec, _Heat | NOT READ (stay Analyst assumption) | Annex III and Art. 30a not supplied |
+| Base_NRG_IncludesC21 | NOT READ (stays Analyst assumption) | Reg. 1099/2008 Annex A not supplied |
+
+Read but not used: Art. 30h(1) (price more than twice, or 1.5 times for 2027 and 2028, the six-month average; 50 million allowances). It verifies none of the model's ids (the model's TripleTrigger 3 and TripleRelease 150 refer to Art. 30h(3), which was not supplied). The paste's 1.5x/2x/50 million values differ from the model's 3/150 ids, so these remain unverified analyst assumptions and are flagged for review rather than changed.
+
+Counts after this plan: VERIFIED 5 (user paste), NOT READ 11 ids (2 + 7 + 1 + 1 with StartYearEnacted, Triple pair, 7 scope flags, Base_NRG_IncludesC21), MISMATCH 0 (no value was contradicted by a supplied text).

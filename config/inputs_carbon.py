@@ -62,6 +62,8 @@ _ENACTED = "(per 02-RESEARCH 3.11: Directive (EU) 2023/959 as enacted, OJ L 130,
 _UNV = ("Unverified transcription: transcribed from 02-RESEARCH 3.11 "
         "(secondary reading of the EUR-Lex page); to be verified against "
         "the legal text. ")
+_USER = ("Text supplied by the user from EUR-Lex on 2026-10-20 (sha256 in "
+         "docs/DATA_LOG.md): ")
 _LOG = ("see docs/DATA_LOG.md, Legal texts (WR-02 re-read)")
 
 
@@ -70,9 +72,10 @@ def _legal(id_, desc, val, unit, art, rationale, src="Src_ETSDirective",
     """Legal parameter. Sourced only when status=SOURCED is passed after a
     VERIFIED row in docs/DATA_LOG.md; the default is an analyst assumption."""
     if status is Status.SOURCED:
-        rationale = rationale
-        note = ("Transcribed: %s %s; EUR-Lex re-read 2026-10-20, quote in "
-                "docs/DATA_LOG.md (Legal texts, WR-02)%s" % (art, text, extra))
+        rationale = _USER + rationale
+        note = ("Transcribed: %s %s; text supplied by the user from EUR-Lex "
+                "on 2026-10-20, quote and sha256 in docs/DATA_LOG.md "
+                "(Legal texts, plan 02-16)%s" % (art, text, extra))
     else:
         rationale = _UNV + rationale
         note = ("Transcribed: %s %s; EUR-Lex re-read 2026-10-20 returned no "
@@ -115,9 +118,10 @@ INPUTS = (
            "(213 auctions: 142 EU, 45 DE, 25 PL, 1 NIR)"),
     _legal("Carbon_ETS2_StartYear",
            "ETS2 start year (default, after postponement)", 2028, "year",
-           "Regulation (EU) 2026/667 Art. 2 (Art. 30k(2) rules apply)",
+           "Regulation (EU) 2026/667, postponement provision (as pasted from "
+           "the ELI page; article number not shown in the paste)",
            "Default 2028 (input; delayed-start sensitivity in Phase 4)",
-           src="Src_Reg2026_667",
+           src="Src_Reg2026_667", status=Status.SOURCED,
            text="(per 02-RESEARCH 3.11: Regulation (EU) 2026/667, OJ L 2026/667, "
                 "18.3.2026)"),
     _legal("Carbon_ETS2_StartYearEnacted",
@@ -130,17 +134,18 @@ INPUTS = (
            45, "EUR/tCO2e", "Art. 30h(2)",
            "EUR 45 in 2020 prices, indexed with the European consumer price "
            "index; restated to EUR 2025 on the Rates sheet (D-30)",
-           basis=PriceBasis("EUR", 2020, "real")),
+           basis=PriceBasis("EUR", 2020, "real"), status=Status.SOURCED),
     _legal("Carbon_ETS2_StabMonths",
            "Consecutive months above threshold that trigger release", 2,
            "months", "Art. 30h(2)",
-           "Trigger condition for the stability release (D-30)"),
+           "Trigger condition for the stability release (D-30)",
+           status=Status.SOURCED),
     _legal("Carbon_ETS2_StabRelease",
            "Allowances released when the stability threshold is exceeded",
            20, "allowances (million)", "Art. 30h(2)",
            "Release volume in the enacted text; EPRS reports the 2026 "
            "amendments added more (secondary), so the consolidated value "
-           "may differ (D-30)"),
+           "may differ (D-30)", status=Status.SOURCED),
     _legal("Carbon_ETS2_TripleTrigger",
            "Price multiple of the preceding six-month average that triggers "
            "the larger release", 3, "multiple", "Art. 30h(3)",
@@ -160,13 +165,14 @@ INPUTS = (
            "EU ETS1 threshold: total rated thermal input of combustion "
            "installations", 20, "MW", "Annex I (combustion of fuels in "
            "installations with total rated thermal input exceeding 20 MW)",
-           "20 MW is the D-07 design value pending verification. Used by the "
+           "20 MW per Annex I, original 2003 wording (consolidated text not "
+           "read; the threshold is unchanged per an analyst note). Used by the "
            "Baseline D-07 sanity row (average fuel load is a "
            "lower bound on rated thermal input, not proof of being below "
            "the threshold)",
-           extra="; Annex I wording was not re-read in plan 02-07 and the "
-                 "20 MW figure is UNVERIFIED against the article text in "
-                 "this run (it is the D-07 design value)"),
+           status=Status.SOURCED,
+           extra="; verified against the original 2003 Annex I wording only, "
+                 "the consolidated text was not read"),
 )
 
 

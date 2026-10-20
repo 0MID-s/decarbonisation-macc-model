@@ -49,6 +49,9 @@ class CarbonTests(unittest.TestCase):
         self.assertEqual(r.status, Status.ASSUMPTION)
         self.assertTrue(r.rationale.startswith("Unverified transcription:"))
         self.assertIn("docs/DATA_LOG.md", r.rationale)
+        self.assertEqual(r.status, Status.ASSUMPTION)
+        self.assertTrue(r.rationale.startswith("Unverified transcription:"))
+        self.assertIn("docs/DATA_LOG.md", r.rationale)
         self.assertEqual(r.price_basis.label, "EUR 2025 nominal")
 
     def test_ets2_values(self):
@@ -72,8 +75,10 @@ class CarbonTests(unittest.TestCase):
             self.assertEqual(BY_ID["Carbon_ETS2_Scope_" + k].published_value, 0)
 
     # Outcome per legal id from docs/DATA_LOG.md, Legal texts (WR-02 re-read):
-    # an id is listed here only if its row says VERIFIED (none so far).
-    VERIFIED = set()
+    # an id is listed here only if its row says VERIFIED (user paste, 02-16).
+    VERIFIED = {"Carbon_ETS2_StartYear", "Carbon_ETS2_StabPrice",
+                "Carbon_ETS2_StabMonths", "Carbon_ETS2_StabRelease",
+                "Carbon_ETS1_ThermalThresholdMW"}
 
     def test_legal_status_follows_data_log(self):
         legal = [r for r in CAR if r.id.startswith(("Carbon_ETS2_", "Carbon_ETS1_"))]
@@ -83,7 +88,10 @@ class CarbonTests(unittest.TestCase):
             self.assertIn("docs/DATA_LOG.md", r.note, r.id)
             if r.id in self.VERIFIED:
                 self.assertEqual(r.status, Status.SOURCED, r.id)
-                self.assertIn("EUR-Lex re-read 2026-", r.note, r.id)
+                self.assertIn("supplied by the user from EUR-Lex on 2026-",
+                              r.note, r.id)
+                self.assertTrue(r.rationale.startswith(
+                    "Text supplied by the user"), r.id)
             else:
                 self.assertEqual(r.status, Status.ASSUMPTION, r.id)
                 self.assertTrue(r.rationale.startswith("Unverified transcription:"), r.id)
@@ -92,10 +100,10 @@ class CarbonTests(unittest.TestCase):
             if r.status is Status.SOURCED:
                 self.assertNotIn("Unverified", r.rationale, r.id)
 
-    def test_threshold_not_sourced_without_annex_reading(self):
+    def test_threshold_sourced_from_original_wording(self):
         r = BY_ID["Carbon_ETS1_ThermalThresholdMW"]
-        self.assertEqual(r.status, Status.ASSUMPTION)
-        self.assertIn("design value", r.rationale)
+        self.assertEqual(r.status, Status.SOURCED)
+        self.assertIn("original 2003", r.rationale)
 
     def test_count(self):
         self.assertGreaterEqual(len(CAR), 16)
