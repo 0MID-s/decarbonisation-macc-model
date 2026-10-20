@@ -73,9 +73,10 @@ LIMITATIONS = (
 ETS2_UNVERIFIED = (
     "Legal parameters whose text the user supplied from EUR-Lex on "
     "2026-10-20 are shown as Sourced (ETS2 start year 2028, price-stability "
-    "threshold, months and release volume, and the EU ETS1 thermal "
+    "threshold, months and release volume, the price-multiple trigger "
+    "and release, and the EU ETS1 thermal "
     "threshold, the last against the original 2003 Annex I wording only). "
-    "The enacted ETS2 start year, the price-multiple trigger and release, "
+    "The enacted ETS2 start year, "
     "the fuel scope flags, and the chemical-sector NACE coverage of the "
     "energy balance sector remain analyst assumptions pending verification: "
     "no legal text was supplied for them. The log is in docs/DATA_LOG.md, "

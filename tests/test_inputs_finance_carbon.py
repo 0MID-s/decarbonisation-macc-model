@@ -80,7 +80,8 @@ class CarbonTests(unittest.TestCase):
     # an id is listed here only if its row says VERIFIED (user paste, 02-16).
     VERIFIED = {"Carbon_ETS2_StartYear", "Carbon_ETS2_StabPrice",
                 "Carbon_ETS2_StabMonths", "Carbon_ETS2_StabRelease",
-                "Carbon_ETS1_ThermalThresholdMW"}
+                "Carbon_ETS1_ThermalThresholdMW",
+                "Carbon_ETS2_TripleTrigger", "Carbon_ETS2_TripleRelease"}
 
     def test_legal_status_follows_data_log(self):
         legal = [r for r in CAR if r.id.startswith(("Carbon_ETS2_", "Carbon_ETS1_"))]

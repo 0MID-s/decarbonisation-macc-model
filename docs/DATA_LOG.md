@@ -411,7 +411,7 @@ VERIFIED rows: 0. NOT READ rows: 16. MISMATCH rows: 0. Plan 02-16 asks the user 
 
 ### Final outcomes after user paste (plan 02-16, Part B1, partial)
 
-Read date: 2026-10-20. File: data_raw/Src_ETSDirective/legal_text_user_paste.txt (plain text, user paste from EUR-Lex in a browser, read as untrusted data only), 3134 bytes, sha256 180236187b0b2475791ebb4b8731e39653458ff7d34f911c04c48361b1a53fb0. The file is kept in data_raw (untracked).
+Read date: 2026-10-20. File: data_raw/Src_ETSDirective/legal_text_user_paste.txt (plain text, user paste from EUR-Lex in a browser, read as untrusted data only), 4134 bytes, sha256 6530b21dadb8d601890c6299be6cc546cca4ea7ff860bee96d6a5f748dd531b8 (updated after the user pasted the full Article 30h on 2026-10-20; earlier version was 3134 bytes, sha256 180236187b0b2475791ebb4b8731e39653458ff7d34f911c04c48361b1a53fb0). The file is kept in data_raw (untracked).
 
 | Parameter id | Outcome | Quote from the paste |
 |---|---|---|
@@ -421,13 +421,14 @@ Read date: 2026-10-20. File: data_raw/Src_ETSDirective/legal_text_user_paste.txt
 | Carbon_ETS2_StabRelease | VERIFIED (user paste) | Same Art. 30h(2) sentence: "20 million allowances covered by this Chapter shall be released". Release possible up to 31 Dec 2029. The consolidated text after the 2026 amendments was not read. |
 | Carbon_ETS1_ThermalThresholdMW | VERIFIED (user paste, original 2003 wording only) | Dir. 2003/87/EC Annex I: "Combustion installations with a rated thermal input exceeding 20 MW (except hazardous or municipal waste installations)", gas column "Carbon dioxide". This is the original 2003 wording; the consolidated text was not read (an analyst note in the paste says the threshold is unchanged, which is not itself verified). |
 | Carbon_ETS2_StartYearEnacted | NOT READ (stays Analyst assumption) | Art. 30d(1) not supplied |
-| Carbon_ETS2_TripleTrigger, Carbon_ETS2_TripleRelease | NOT READ (stay Analyst assumption) | Art. 30h(3) not supplied |
+| Carbon_ETS2_TripleTrigger | VERIFIED (user paste) | Art. 30h(3) as inserted by Dir. (EU) 2023/959: "3. Where the average price of allowances referred to in paragraph 1 of this Article is more than three times the average price of allowances during the six preceding consecutive months, 150 million allowances covered by this Chapter shall be released from the market stability reserve in accordance with Article 1a(7) of Decision (EU) 2015/1814." Multiple = 3. |
+| Carbon_ETS2_TripleRelease | VERIFIED (user paste) | Same Art. 30h(3) sentence: "150 million allowances covered by this Chapter shall be released". |
 | Carbon_ETS2_Scope_Gas, _LPG, _Naphtha, _OtherFuels, _FleetDiesel, _Elec, _Heat | NOT READ (stay Analyst assumption) | Annex III and Art. 30a not supplied |
 | Base_NRG_IncludesC21 | NOT READ (stays Analyst assumption) | Reg. 1099/2008 Annex A not supplied |
 
-Read but not used: Art. 30h(1) (price more than twice, or 1.5 times for 2027 and 2028, the six-month average; 50 million allowances). It verifies none of the model's ids (the model's TripleTrigger 3 and TripleRelease 150 refer to Art. 30h(3), which was not supplied). The paste's 1.5x/2x/50 million values differ from the model's 3/150 ids, so these remain unverified analyst assumptions and are flagged for review rather than changed.
+Art. 30h(1) review note resolved: Art. 30h(1) (price more than twice, or 1.5 times for 2027 and 2028, the six-month average for more than three consecutive months; 50 million allowances) and Art. 30h(3) (more than three times; 150 million allowances) are separate mechanisms. The model uses 30h(2) and 30h(3); 30h(1) is context only and no model id refers to it. Paragraph 4 (when the 30h(2) condition is met on the same day as the 30h(1) or (3) condition, additional allowances are released only under paragraph 1 or 3) and paragraph 6 (no further release under this Article earlier than 12 months after a release) were read and are context only.
 
-Counts after this plan: VERIFIED 5 (user paste), NOT READ 11 ids (2 + 7 + 1 + 1 with StartYearEnacted, Triple pair, 7 scope flags, Base_NRG_IncludesC21), MISMATCH 0 (no value was contradicted by a supplied text).
+Counts after this plan (updated for Art. 30h(3)): VERIFIED 7 (user paste), NOT READ 9 ids (StartYearEnacted, 7 scope flags, Base_NRG_IncludesC21), MISMATCH 0 (no value was contradicted by a supplied text).
 
 ## Context figures and dates (WR-01, plan 02-18)
 
