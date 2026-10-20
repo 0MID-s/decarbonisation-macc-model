@@ -333,7 +333,7 @@ Cross-check observations (D-31, informational; the live DEA values remain the co
 ## Not fetched here (by design)
 
 - NGFS Phase V carbon prices: user-supplied (`data_raw/Src_NGFSPhaseV/`, D-43), handled in plan 02-11 and the NGFS parser.
-- Damodaran waccEurope: user-supplied (D-42); EUR-Lex ETS2 parameters and EEX auction data: hand entry (D-37 and D-14 route 3), plan 02-07.
+- Damodaran waccEurope: user-supplied (D-42); EUR-Lex legal texts: see the section "Legal texts (WR-02 re-read, plan 02-15)" below (outcome NOT READ); EEX auction data: hand entry (D-14 route 3), plan 02-07.
 
 ## User-supplied data (filled in plan 02-11)
 
@@ -375,3 +375,30 @@ Licence: adapted CC BY 4.0 (NGFS Phase 5 Scenario Explorer licence). Transcribed
 Sheet inputs (context): long-term treasury 3.95%, equity risk premium 5.27%, global default spread 0.68%, expected euro inflation 1.5% (used by Damodaran's Euros column).
 
 Fisher (D-19, D-42): 1.07811 / 1.02 - 1 = 5.70% real. Mismatch to state in the rationale: Damodaran's Euros column embeds 1.5% expected euro inflation; the model's Fisher step uses the ECB 2.0% target.
+
+## Legal texts (WR-02 re-read, plan 02-15)
+
+Read date: 2026-10-20. Method: HTTP GET of the HTML page only, nothing saved to disk. The WebFetch tool was not available in the executor session, so a plain GET was used. Outcome words: VERIFIED (sentence read and equal to config), NOT READ (page empty, blocked or without the sentence), MISMATCH (sentence read and different).
+
+EUR-Lex answered every request with HTTP 202 and an empty body (AWS WAF challenge page), as 02-RESEARCH 3.11 predicted. The Eurostat nrg_bal metadata page was read (HTTP 200) but only says that classification follows NACE Rev. 2; it does not state that the chemical and petrochemical sector covers Divisions 20 and 21, so it does not corroborate the flag.
+
+| Parameter id | URL tried | Article | Outcome | Quote or failure |
+|---|---|---|---|---|
+| Carbon_ETS2_StartYear | https://eur-lex.europa.eu/eli/reg/2026/667/oj/eng | Art. 2 | NOT READ | EUR-Lex returned HTTP 202 with an empty body (WAF challenge) |
+| Carbon_ETS2_StartYearEnacted | https://eur-lex.europa.eu/eli/dir/2023/959/oj/eng | Art. 30d(1) | NOT READ | EUR-Lex returned HTTP 202 with an empty body (WAF challenge) |
+| Carbon_ETS2_StabPrice | https://eur-lex.europa.eu/eli/dir/2023/959/oj/eng | Art. 30h(2) | NOT READ | EUR-Lex returned HTTP 202 with an empty body (WAF challenge) |
+| Carbon_ETS2_StabMonths | https://eur-lex.europa.eu/eli/dir/2023/959/oj/eng | Art. 30h(2) | NOT READ | EUR-Lex returned HTTP 202 with an empty body (WAF challenge) |
+| Carbon_ETS2_StabRelease | https://eur-lex.europa.eu/eli/dir/2023/959/oj/eng | Art. 30h(2) | NOT READ | EUR-Lex returned HTTP 202 with an empty body (WAF challenge) |
+| Carbon_ETS2_TripleTrigger | https://eur-lex.europa.eu/eli/dir/2023/959/oj/eng | Art. 30h(3) | NOT READ | EUR-Lex returned HTTP 202 with an empty body (WAF challenge) |
+| Carbon_ETS2_TripleRelease | https://eur-lex.europa.eu/eli/dir/2023/959/oj/eng | Art. 30h(3) | NOT READ | EUR-Lex returned HTTP 202 with an empty body (WAF challenge) |
+| Carbon_ETS2_Scope_Gas | https://eur-lex.europa.eu/eli/dir/2023/959/oj/eng | Annex III and Art. 30a | NOT READ | EUR-Lex returned HTTP 202 with an empty body (WAF challenge) |
+| Carbon_ETS2_Scope_LPG | https://eur-lex.europa.eu/eli/dir/2023/959/oj/eng | Annex III and Art. 30a | NOT READ | EUR-Lex returned HTTP 202 with an empty body (WAF challenge) |
+| Carbon_ETS2_Scope_Naphtha | https://eur-lex.europa.eu/eli/dir/2023/959/oj/eng | Annex III and Art. 30a | NOT READ | EUR-Lex returned HTTP 202 with an empty body (WAF challenge) |
+| Carbon_ETS2_Scope_OtherFuels | https://eur-lex.europa.eu/eli/dir/2023/959/oj/eng | Annex III and Art. 30a | NOT READ | EUR-Lex returned HTTP 202 with an empty body (WAF challenge) |
+| Carbon_ETS2_Scope_FleetDiesel | https://eur-lex.europa.eu/eli/dir/2023/959/oj/eng | Annex III and Art. 30a | NOT READ | EUR-Lex returned HTTP 202 with an empty body (WAF challenge) |
+| Carbon_ETS2_Scope_Elec | https://eur-lex.europa.eu/eli/dir/2023/959/oj/eng | Annex III and Art. 30a | NOT READ | EUR-Lex returned HTTP 202 with an empty body (WAF challenge) |
+| Carbon_ETS2_Scope_Heat | https://eur-lex.europa.eu/eli/dir/2023/959/oj/eng | Annex III and Art. 30a | NOT READ | EUR-Lex returned HTTP 202 with an empty body (WAF challenge) |
+| Carbon_ETS1_ThermalThresholdMW | https://eur-lex.europa.eu/eli/dir/2003/87/oj/eng | Annex I, combustion of fuels, 20 MW | NOT READ | EUR-Lex returned HTTP 202 with an empty body (WAF challenge) |
+| Base_NRG_IncludesC21 | https://eur-lex.europa.eu/eli/reg/2008/1099/oj/eng (Annex A item 2.6.1.6); also https://ec.europa.eu/eurostat/cache/metadata/en/nrg_bal_esms.htm | Annex A 2.6.1.6, NACE 20 and 21 | NOT READ | EUR-Lex: HTTP 202, empty body (WAF challenge). Eurostat metadata: page read, no statement on NACE 20 and 21 |
+
+VERIFIED rows: 0. NOT READ rows: 16. MISMATCH rows: 0. Plan 02-16 asks the user to paste the article text for each NOT READ row.
