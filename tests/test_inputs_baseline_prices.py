@@ -1,4 +1,5 @@
 """Value, order and provenance tests for the Baseline and Energy prices sections."""
+import re
 import unittest
 
 from config.inputs import INPUTS
@@ -48,15 +49,38 @@ class BaselineTests(unittest.TestCase):
 
 
 class TestDataLogCitations(unittest.TestCase):
+    # sources logged under a heading that is not their Src_ id
+    LOG_SECTION_ALIASES = {"Src_Damodaran": "### Damodaran Europe (D-42"}
+
+    @staticmethod
+    def _log_text_for(log, sid, alias=None):
+        """DATA_LOG text about one source: its "## Src_x" section, any line
+        naming the id, and its alias section if any."""
+        parts = [ln for ln in log.splitlines() if sid in ln]
+        for head in ("## " + sid + "\n", (alias + "") if alias else None):
+            if head and head in log:
+                start = log.index(head)
+                nxt = re.search(r"^##", log[start + len(head):], re.M)
+                end = start + len(head) + (nxt.start() if nxt else len(log))
+                parts.append(log[start:end])
+        return "\n".join(parts)
+
     def test_no_dangling_edition_dates(self):
+        """IN-02: every "updated YYYY-MM-DD" in an edition must appear in the
+        DATA_LOG text for the same source, not merely somewhere in the log."""
         import os
         from config.sources import SOURCES
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         log = open(os.path.join(root, "docs", "DATA_LOG.md")).read()
+        n = 0
         for s in SOURCES:
-            if "2026-10-16" in s.edition:
-                self.assertIn("2026-10-16", log, s.id)
             self.assertNotIn("per DATA_LOG", s.edition, s.id)
+            for d in re.findall(r"updated (\d{4}-\d{2}-\d{2})", s.edition):
+                text = self._log_text_for(log, s.id,
+                                          self.LOG_SECTION_ALIASES.get(s.id))
+                self.assertIn(d, text, s.id)
+                n += 1
+        self.assertGreaterEqual(n, 1)
 
     def test_reread_records_carry_no_stale_or_unlogged_text(self):
         """WR-05: no unlogged figure, and no "not re-read" clause beside a
