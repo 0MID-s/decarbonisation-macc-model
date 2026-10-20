@@ -1,5 +1,6 @@
 """Value and provenance tests for the Finance and Carbon prices sections."""
 import os
+import re
 import unittest
 
 from config.inputs import INPUTS
@@ -78,20 +79,44 @@ class CarbonTests(unittest.TestCase):
         for k in ("Elec", "Heat"):
             self.assertEqual(BY_ID["Carbon_ETS2_Scope_" + k].published_value, 0)
 
-    # Outcome per legal id from docs/DATA_LOG.md, Legal texts (WR-02 re-read):
-    # an id is listed here only if its row says VERIFIED (user paste, 02-16).
-    VERIFIED = {"Carbon_ETS2_StartYear", "Carbon_ETS2_StabPrice",
-                "Carbon_ETS2_StabMonths", "Carbon_ETS2_StabRelease",
-                "Carbon_ETS1_ThermalThresholdMW",
-                "Carbon_ETS2_TripleTrigger", "Carbon_ETS2_TripleRelease"}
+    @staticmethod
+    def data_log_outcomes():
+        """Outcome per legal id, parsed from the DATA_LOG table "Final
+        outcomes after user paste" (WR-04: no hand-kept copy of the set)."""
+        with open(os.path.join(ROOT, "docs", "DATA_LOG.md")) as f:
+            log = f.read()
+        start = log.index("### Final outcomes after user paste")
+        end = log.find("\n## ", start)
+        section = log[start:end if end > 0 else len(log)]
+        out = {}
+        for m in re.finditer(r"^\| ((?:Carbon|Base)_[^|]*?) \| "
+                             r"(VERIFIED|NOT READ|MISMATCH)", section, re.M):
+            cell, outcome = m.group(1), m.group(2)
+            ids = [x.strip() for x in cell.split(",")]
+            stem = ids[0].rsplit("_", 1)[0]
+            for x in ids:
+                full = x if not x.startswith("_") else stem + x
+                if full in out:
+                    raise AssertionError("duplicate DATA_LOG row for " + full)
+                out[full] = outcome
+        return out
 
     def test_legal_status_follows_data_log(self):
         legal = [r for r in CAR if r.id.startswith(("Carbon_ETS2_", "Carbon_ETS1_"))]
         self.assertGreaterEqual(len(legal), 15)
+        outcomes = self.data_log_outcomes()
+        verified = {i for i, o in outcomes.items() if o == "VERIFIED"}
+        # every legal record has a logged outcome, and Sourced <=> VERIFIED
+        self.assertLessEqual({r.id for r in legal}, set(outcomes))
+        for i in outcomes:
+            self.assertIn(i, BY_ID, "DATA_LOG row for unknown id " + i)
+        sourced = {i for i in outcomes if BY_ID[i].status is Status.SOURCED}
+        self.assertEqual(sourced, verified)
+        self.assertGreaterEqual(len(verified), 1)
         for r in legal:
             self.assertTrue(r.note.startswith("Transcribed:"), r.id)
             self.assertIn("docs/DATA_LOG.md", r.note, r.id)
-            if r.id in self.VERIFIED:
+            if r.id in verified:
                 self.assertEqual(r.status, Status.SOURCED, r.id)
                 self.assertIn("supplied by the user from EUR-Lex on 2026-",
                               r.note, r.id)
@@ -105,6 +130,23 @@ class CarbonTests(unittest.TestCase):
                 self.assertTrue(r.source_id, r.id)
             if r.status is Status.SOURCED:
                 self.assertNotIn("Unverified", r.rationale, r.id)
+
+    # DATA_LOG sections that log a source under a heading, not its Src_ id
+    LOG_SECTION_ALIASES = {"Src_Damodaran": "### Damodaran Europe (D-42"}
+
+    def test_every_sourced_input_is_logged(self):
+        """WR-04, repo-wide: no Sourced record without a logged trace in
+        DATA_LOG, by record id, source id or the source's log section."""
+        with open(os.path.join(ROOT, "docs", "DATA_LOG.md")) as f:
+            log = f.read()
+        missing = []
+        for r in INPUTS:
+            if r.status is not Status.SOURCED:
+                continue
+            keys = (r.id, r.source_id, self.LOG_SECTION_ALIASES.get(r.source_id))
+            if not any(k and k in log for k in keys):
+                missing.append(r.id)
+        self.assertEqual(missing, [])
 
     def test_read_wording_qualifier_visible(self):
         """WR-03: Sourced legal values read only in enacted or original
