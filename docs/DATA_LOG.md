@@ -333,7 +333,7 @@ Cross-check observations (D-31, informational; the live DEA values remain the co
 ## Not fetched here (by design)
 
 - NGFS Phase V carbon prices: user-supplied (`data_raw/Src_NGFSPhaseV/`, D-43), handled in plan 02-11 and the NGFS parser.
-- Damodaran waccEurope: user-supplied (D-42); EUR-Lex legal texts: see the section "Legal texts (WR-02 re-read, plan 02-15)" below (outcome NOT READ); EEX auction data: hand entry (D-14 route 3), plan 02-07.
+- Damodaran waccEurope: user-supplied (D-42); EUR-Lex legal texts: see the section "Legal texts (WR-02 re-read, plan 02-15)" below (7 VERIFIED by user paste (plan 02-16), 9 NOT READ); EEX auction data: hand entry (D-14 route 3), plan 02-07.
 
 ## User-supplied data (filled in plan 02-11)
 

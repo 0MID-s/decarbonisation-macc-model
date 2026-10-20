@@ -81,6 +81,8 @@ def _legal(id_, desc, val, unit, art, rationale, src="Src_ETSDirective",
     ``read`` names the exact text that was read (shown first)."""
     if status is Status.SOURCED:
         rationale = (("Text read: %s. " % read) if read else "") + _USER + rationale
+        # IN-04: the text was read in the user's paste, not via 02-RESEARCH
+        text = text.replace("per 02-RESEARCH 3.11: ", "")
         note = ("Transcribed: %s %s; text supplied by the user from EUR-Lex "
                 "on 2026-10-20, quote and sha256 in docs/DATA_LOG.md "
                 "(Legal texts, plan 02-16)%s" % (art, text, extra))
