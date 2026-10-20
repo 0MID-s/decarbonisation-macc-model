@@ -150,7 +150,8 @@ class CarbonSheet(unittest.TestCase):
                       if isinstance(c.value, str) and not c.value.startswith("="))
         for want in ("NGFS Phase 5 Scenario Explorer, hosted by IIASA",
                      "https://data.ene.iiasa.ac.at/ngfs/#/license",
-                     "Values modified", "2010 real value", "1.31"):
+                     "Values modified", "2010 real value", "1.31",
+                     "indicative analyst estimate"):
             self.assertIn(want, txt)
         self.assertNotIn("CPI-U", txt)
 

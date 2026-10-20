@@ -34,7 +34,7 @@ NGFS_LICENCE = (
     "Licence: adapted CC BY 4.0, https://data.ene.iiasa.ac.at/ngfs/#/license")
 LIMIT_NOTE = (
     "Assumes the US dollar kept its 2010 real value against the euro. A "
-    "US-CPI route would give about 1.31, so prices about 25% higher; "
+    "US-CPI route would give about 1.31, so prices about 25% higher (an indicative analyst estimate, not a sourced input; see docs/DATA_LOG.md); "
     "candidate Phase 4 sensitivity (D-41)")
 ANCHOR_NOTE = (
     "NGFS point years are fixed cells on Inputs; changing First model year "

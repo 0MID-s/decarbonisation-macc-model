@@ -67,7 +67,8 @@ LIMITATIONS = (
     "The NGFS region OECD & EU (R5) is used as the EU proxy (D-27).",
     "Alternative conversion route (D-41): a US-CPI route would give a factor "
     "of about 1.31 instead of the Eurostat route factor, so carbon prices "
-    "about a quarter higher; a candidate Phase 4 sensitivity.",
+    "about a quarter higher (an indicative analyst estimate, not a sourced "
+    "input; see docs/DATA_LOG.md); a candidate Phase 4 sensitivity.",
 )
 ETS2_UNVERIFIED = (
     "Legal parameters whose text the user supplied from EUR-Lex on "
@@ -138,7 +139,8 @@ def carbon_notes(sources):
         "dollars per euro (Eurostat), then multiplied by euro-area HICP 2025 "
         "over 2010. Limitation: it assumes the US dollar kept its 2010 real "
         "value against the euro; a US-CPI route would give about 1.31, so "
-        "prices about 25% higher, a candidate Phase 4 sensitivity.",
+        "prices about 25% higher (an indicative analyst estimate, not a sourced "
+        "input; see docs/DATA_LOG.md), a candidate Phase 4 sensitivity.",
         "EUA anchor (D-29): " + EUA_NOTE + ".",
         NGFS_ATTRIBUTION, NGFS_MODIFIED, NGFS_LICENCE,
     )

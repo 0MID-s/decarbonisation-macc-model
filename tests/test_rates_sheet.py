@@ -123,6 +123,9 @@ class RatesSheet(unittest.TestCase):
                     if isinstance(c.value, str):
                         self.assertNotIn("CPI-U", c.value)
                         self.assertNotIn("BLS", c.value)
+        nt = " ".join(c.value for row in self.wb["Notes"].iter_rows()
+                      for c in row if isinstance(c.value, str))
+        self.assertGreaterEqual(nt.count("indicative analyst estimate"), 2)
 
 
 if __name__ == "__main__":
