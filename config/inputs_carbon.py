@@ -65,14 +65,22 @@ _UNV = ("Unverified transcription: transcribed from 02-RESEARCH 3.11 "
 _USER = ("Text supplied by the user from EUR-Lex on 2026-10-20 (sha256 in "
          "docs/DATA_LOG.md): ")
 _LOG = ("see docs/DATA_LOG.md, Legal texts (WR-02 re-read)")
+# WR-03: which wording was actually read, shown first in the Inputs notes so
+# "Sourced" is not read as "checked against current consolidated law"
+READ_ETS2_ENACTED = ("Dir. (EU) 2023/959 as enacted; later amendments (2026) "
+                     "not checked")
+READ_ANNEX_I_2003 = ("original 2003 Annex I wording; consolidated text not "
+                     "read")
 
 
 def _legal(id_, desc, val, unit, art, rationale, src="Src_ETSDirective",
-           basis=NA, text=_ENACTED, extra="", status=Status.ASSUMPTION):
+           basis=NA, text=_ENACTED, extra="", status=Status.ASSUMPTION,
+           read=None):
     """Legal parameter. Sourced only when status=SOURCED is passed after a
-    VERIFIED row in docs/DATA_LOG.md; the default is an analyst assumption."""
+    VERIFIED row in docs/DATA_LOG.md; the default is an analyst assumption.
+    ``read`` names the exact text that was read (shown first)."""
     if status is Status.SOURCED:
-        rationale = _USER + rationale
+        rationale = (("Text read: %s. " % read) if read else "") + _USER + rationale
         note = ("Transcribed: %s %s; text supplied by the user from EUR-Lex "
                 "on 2026-10-20, quote and sha256 in docs/DATA_LOG.md "
                 "(Legal texts, plan 02-16)%s" % (art, text, extra))
@@ -134,28 +142,30 @@ INPUTS = (
            45, "EUR/tCO2e", "Art. 30h(2)",
            "EUR 45 in 2020 prices, indexed with the European consumer price "
            "index; restated to EUR 2025 on the Rates sheet (D-30)",
-           basis=PriceBasis("EUR", 2020, "real"), status=Status.SOURCED),
+           basis=PriceBasis("EUR", 2020, "real"), status=Status.SOURCED,
+           read=READ_ETS2_ENACTED),
     _legal("Carbon_ETS2_StabMonths",
            "Consecutive months above threshold that trigger release", 2,
            "months", "Art. 30h(2)",
            "Trigger condition for the stability release (D-30)",
-           status=Status.SOURCED),
+           status=Status.SOURCED, read=READ_ETS2_ENACTED),
     _legal("Carbon_ETS2_StabRelease",
            "Allowances released when the stability threshold is exceeded",
            20, "allowances (million)", "Art. 30h(2)",
            "Release volume in the enacted text; EPRS reports the 2026 "
            "amendments added more (secondary), so the consolidated value "
-           "may differ (D-30)", status=Status.SOURCED),
+           "may differ (D-30)", status=Status.SOURCED,
+           read=READ_ETS2_ENACTED),
     _legal("Carbon_ETS2_TripleTrigger",
            "Price multiple of the preceding six-month average that triggers "
            "the larger release", 3, "multiple", "Art. 30h(3)",
            "Trigger for the larger release (D-30)",
-           status=Status.SOURCED),
+           status=Status.SOURCED, read=READ_ETS2_ENACTED),
     _legal("Carbon_ETS2_TripleRelease",
            "Allowances released at the price-multiple trigger", 150,
            "allowances (million)", "Art. 30h(3)",
            "Release volume in the enacted text (D-30)",
-           status=Status.SOURCED),
+           status=Status.SOURCED, read=READ_ETS2_ENACTED),
     _scope("Carbon_ETS2_Scope_Gas", "Natural gas covered by ETS2 (1) or not (0)", 1),
     _scope("Carbon_ETS2_Scope_LPG", "LPG covered by ETS2 (1) or not (0)", 1),
     _scope("Carbon_ETS2_Scope_Naphtha", "Naphtha used as fuel covered by ETS2 (1) or not (0)", 1),
@@ -172,7 +182,7 @@ INPUTS = (
            "Baseline D-07 sanity row (average fuel load is a "
            "lower bound on rated thermal input, not proof of being below "
            "the threshold)",
-           status=Status.SOURCED,
+           status=Status.SOURCED, read=READ_ANNEX_I_2003,
            extra="; verified against the original 2003 Annex I wording only, "
                  "the consolidated text was not read"),
 )

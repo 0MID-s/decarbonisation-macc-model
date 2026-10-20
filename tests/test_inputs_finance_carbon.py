@@ -1,4 +1,5 @@
 """Value and provenance tests for the Finance and Carbon prices sections."""
+import os
 import unittest
 
 from config.inputs import INPUTS
@@ -8,6 +9,7 @@ from config.schema import Status
 BY_ID = {r.id: r for r in INPUTS}
 FIN = [r for r in INPUTS if r.section == "Finance"]
 CAR = [r for r in INPUTS if r.section == "Carbon prices"]
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 class FinanceTests(unittest.TestCase):
@@ -93,8 +95,9 @@ class CarbonTests(unittest.TestCase):
                 self.assertEqual(r.status, Status.SOURCED, r.id)
                 self.assertIn("supplied by the user from EUR-Lex on 2026-",
                               r.note, r.id)
+                self.assertIn("Text supplied by the user", r.rationale, r.id)
                 self.assertTrue(r.rationale.startswith(
-                    "Text supplied by the user"), r.id)
+                    ("Text supplied by the user", "Text read: ")), r.id)
             else:
                 self.assertEqual(r.status, Status.ASSUMPTION, r.id)
                 self.assertTrue(r.rationale.startswith("Unverified transcription:"), r.id)
@@ -102,6 +105,27 @@ class CarbonTests(unittest.TestCase):
                 self.assertTrue(r.source_id, r.id)
             if r.status is Status.SOURCED:
                 self.assertNotIn("Unverified", r.rationale, r.id)
+
+    def test_read_wording_qualifier_visible(self):
+        """WR-03: Sourced legal values read only in enacted or original
+        wording say so first, in config and in DATA_LOG."""
+        from config.inputs_carbon import READ_ANNEX_I_2003, READ_ETS2_ENACTED
+        with open(os.path.join(ROOT, "docs", "DATA_LOG.md")) as f:
+            log = f.read()
+        exp = {"Carbon_ETS2_StabPrice": READ_ETS2_ENACTED,
+               "Carbon_ETS2_StabMonths": READ_ETS2_ENACTED,
+               "Carbon_ETS2_StabRelease": READ_ETS2_ENACTED,
+               "Carbon_ETS2_TripleTrigger": READ_ETS2_ENACTED,
+               "Carbon_ETS2_TripleRelease": READ_ETS2_ENACTED,
+               "Carbon_ETS1_ThermalThresholdMW": READ_ANNEX_I_2003}
+        for i, q in exp.items():
+            r = BY_ID[i]
+            self.assertEqual(r.status, Status.SOURCED, i)
+            self.assertTrue(r.rationale.startswith("Text read: " + q), i)
+            row = [ln for ln in log.splitlines()
+                   if ln.startswith("| %s | VERIFIED" % i)]
+            self.assertEqual(len(row), 1, i)
+            self.assertIn("Text read: " + q, row[0], i)
 
     def test_threshold_sourced_from_original_wording(self):
         r = BY_ID["Carbon_ETS1_ThermalThresholdMW"]
