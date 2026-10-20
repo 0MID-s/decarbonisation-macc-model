@@ -54,9 +54,6 @@ class CarbonTests(unittest.TestCase):
         self.assertEqual(r.status, Status.ASSUMPTION)
         self.assertTrue(r.rationale.startswith("Unverified transcription:"))
         self.assertIn("docs/DATA_LOG.md", r.rationale)
-        self.assertEqual(r.status, Status.ASSUMPTION)
-        self.assertTrue(r.rationale.startswith("Unverified transcription:"))
-        self.assertIn("docs/DATA_LOG.md", r.rationale)
         self.assertEqual(r.price_basis.label, "EUR 2025 nominal")
 
     def test_ets2_values(self):
