@@ -126,16 +126,20 @@ class CarbonSheet(unittest.TestCase):
                     self.assertTrue(cell.protection.locked, cell.coordinate)
 
     def test_eua_gaps(self):
+        """IN-03: read each scenario's own gap cell (column D of its labelled
+        row), not any float on the sheet."""
         gaps = eua_gaps(self.ds.inputs)
-        ws = self.wbv["Carbon"]
-        vals = [c.value for row in ws.iter_rows() for c in row
-                if isinstance(c.value, float)]
-        for g in gaps.values():
-            self.assertTrue(any(abs(x - g) < 1e-9 for x in vals), g)
-        f = [c.value for row in self.wb["Carbon"].iter_rows() for c in row
+        wf, wv = self.wb["Carbon"], self.wbv["Carbon"]
+        labels = {c.value: c.row for c in wf["B"] if isinstance(c.value, str)}
+        f = [c.value for row in wf.iter_rows() for c in row
              if isinstance(c.value, str)
              and c.value.startswith("=Carbon_EUA_Avg2025-")]
         self.assertEqual(len(f), 3)
+        for key, tier, _n in SCENARIOS:
+            r = labels["Gap: EUA 2025 minus %s NGFS 2025 (EUR 2025)" % tier]
+            self.assertTrue(wf["D%d" % r].value.startswith(
+                "=Carbon_EUA_Avg2025-$D$"), key)
+            self.assertAlmostEqual(wv["D%d" % r].value, gaps[key], delta=1e-9)
 
     def test_ets2_block(self):
         ws = self.wb["Carbon"]
