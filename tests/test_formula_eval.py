@@ -95,6 +95,76 @@ class EvaluatorUnit(unittest.TestCase):
         self.assertNotIn("EVAL", SUPPORTED_FUNCTIONS)
 
 
+def _semantics(wb):
+    s = wb.add_worksheet("Sheet1")
+    s.write_row("B1", [1, 2])
+    s.write_row("B2", [3, 4])
+    s.write_string("D1", "LB")
+    s.write_formula("A1", '="a"*3')
+    s.write_formula("A2", '="2"*3')
+    s.write_formula("A3", '="x"+"y"')
+    s.write_formula("A4", "=B1:B2*2")
+    s.write_formula("A5", '=IF("LB"="lb",1,0)')
+    s.write_formula("A6", "=INDEX(B1:C2,3)")
+    s.write_formula("A7", "=IF(1<2<3,1,0)")
+    s.write_formula("A8", "=1=1=1")
+    s.write_formula("A9", '=IF(D1="lb",1,0)+IF(D1<>"Lb",10,0)')
+    s.write_formula("A10", '=IF("a"<"B",1,0)')
+    s.write_formula("A11", '=IF(1="1",1,0)')
+    s.write_formula("A12", "=B1:B2")
+    s.write_formula("A13", "=-B1:B2")
+    s.write_formula("A14", "=IF(AND(1<2,2<3),1,0)+IF((1<2)=TRUE,10,0)")
+    s.write_formula("A15", "=INDEX(B1:B2,2)+INDEX(B2:C2,2)")
+    s.write_formula("A16", "=TRUE+1")
+    s.write_formula("A17", '=-"a"')
+    s.write_formula("A18", '=IF("x",1,0)')
+
+
+class EvaluatorSemantics(unittest.TestCase):
+    """WR-01: refuse where Python and Excel semantics differ."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.wb = _wb(_semantics)
+
+    def v(self, coord):
+        return FormulaEvaluator(self.wb).value("Sheet1", coord)
+
+    def refuses(self, coord):
+        with self.assertRaises(FormulaEvalError, msg=coord):
+            self.v(coord)
+
+    def test_string_arithmetic_refused(self):
+        for coord in ("A1", "A2", "A3", "A17"):
+            self.refuses(coord)
+
+    def test_range_arithmetic_and_range_result_refused(self):
+        for coord in ("A4", "A12", "A13"):
+            self.refuses(coord)
+
+    def test_text_comparison_case_insensitive(self):
+        self.assertEqual(self.v("A5"), 1)
+        self.assertEqual(self.v("A9"), 1)
+        self.assertEqual(self.v("A10"), 1)
+
+    def test_mixed_type_comparison_refused(self):
+        self.refuses("A11")
+
+    def test_index_2d_refused_1d_ok(self):
+        self.refuses("A6")
+        self.assertEqual(self.v("A15"), 7)
+
+    def test_chained_comparison_refused(self):
+        self.refuses("A7")
+        self.refuses("A8")
+        # one comparison per argument or parenthesis level is fine
+        self.assertEqual(self.v("A14"), 11)
+
+    def test_logical_arithmetic_and_text_condition(self):
+        self.assertEqual(self.v("A16"), 2)
+        self.refuses("A18")
+
+
 class WorkbookFormulas(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
