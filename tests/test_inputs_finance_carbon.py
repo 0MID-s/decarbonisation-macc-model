@@ -26,8 +26,7 @@ class FinanceTests(unittest.TestCase):
                          (2.0, "%", "Src_ECBTarget"))
         self.assertEqual(BY_ID["Fin_HICP_EA_Sep2026"].published_value, 3.8)
         for i in ("Fin_InflationLongRun", "Fin_HICP_EA_Sep2026"):
-            self.assertEqual(BY_ID[i].status, Status.ASSUMPTION, i)
-            self.assertTrue(BY_ID[i].rationale.startswith("Unverified"), i)
+            self.assertEqual(BY_ID[i].status, Status.SOURCED, i)
         r = BY_ID["Fin_FX_USDperEUR_2010"]
         self.assertEqual(r.published_value, 1.3257)
         self.assertEqual(r.price_basis.label, "EUR 2010 nominal")

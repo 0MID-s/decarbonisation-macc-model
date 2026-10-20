@@ -80,12 +80,10 @@ INPUTS = (
            "Long-run inflation for the Fisher conversion (ECB medium-term "
            "target)",
            2.0, "per cent", "Const_PctToFrac", "%", NA, "Src_ECBTarget",
-           Status.ASSUMPTION,
-           "Unverified transcription: ECB 2% sentence read in 02-RESEARCH "
-           "(2026-10-18); not re-read in plan 02-18 (WebFetch unavailable "
-           "in executor session); to be verified. D-19: long-run inflation "
-           "for the Fisher conversion of the nominal cost of capital = ECB "
-           "medium-term target (see docs/DATA_LOG.md)",
+           _S,
+           "D-19: long-run inflation for the Fisher conversion of the "
+           "nominal cost of capital = ECB medium-term target; re-read "
+           "2026-10-20 (see docs/DATA_LOG.md)",
            "Transcribed: ECB page, \"price stability is best maintained by "
            "aiming for 2% inflation over the medium term\" (strategy review "
            "concluded July 2021). Sentence read in 02-RESEARCH 3.9; page not "
@@ -93,12 +91,10 @@ INPUTS = (
     scalar("Fin_HICP_EA_Sep2026", _SEC,
            "Euro-area annual HICP inflation, September 2026 (context)",
            3.8, "per cent", "Const_PctToFrac", "%", NA, "Src_EurostatFlash",
-           Status.ASSUMPTION,
-           "Unverified transcription: 3.8% (Belgium 4.5%) read in "
-           "02-RESEARCH (2026-10-18); not re-read in plan 02-18 (WebFetch "
-           "unavailable in executor session); to be verified (see "
-           "docs/DATA_LOG.md). Context only (D-19): the 2026 energy-driven spike; flagged for "
-           "the Phase 4 inflation sensitivity; not used in the base case",
+           _S,
+           "Re-read 2026-10-20 (see docs/DATA_LOG.md). Context only (D-19): "
+           "the 2026 energy-driven spike; flagged for the Phase 4 inflation "
+           "sensitivity; not used in the base case",
            "Transcribed: Eurostat euro indicator release 2-16102026-AP, "
            "euro area 3.8% in September 2026 (Belgium 4.5%). Read in "
            "02-RESEARCH 3.9; release date MEDIUM confidence; page not "
