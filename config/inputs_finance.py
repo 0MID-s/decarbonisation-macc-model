@@ -86,8 +86,9 @@ INPUTS = (
            "2026-10-20 (see docs/DATA_LOG.md)",
            "Transcribed: ECB page, \"price stability is best maintained by "
            "aiming for 2% inflation over the medium term\" (strategy review "
-           "concluded July 2021). Sentence read in 02-RESEARCH 3.9; page not "
-           "re-read in plan 02-07 (no web reader available)"),
+           "concluded July 2021). Sentence first read in 02-RESEARCH 3.9; "
+           "re-read 2026-10-20, VERIFIED (DATA_LOG, Context figures and "
+           "dates)"),
     scalar("Fin_HICP_EA_Sep2026", _SEC,
            "Euro-area annual HICP inflation, September 2026 (context)",
            3.8, "per cent", "Const_PctToFrac", "%", NA, "Src_EurostatFlash",
@@ -95,10 +96,10 @@ INPUTS = (
            "Re-read 2026-10-20 (see docs/DATA_LOG.md). Context only (D-19): "
            "the 2026 energy-driven spike; flagged for the Phase 4 inflation "
            "sensitivity; not used in the base case",
-           "Transcribed: Eurostat euro indicator release 2-16102026-AP, "
-           "euro area 3.8% in September 2026 (Belgium 4.5%). Read in "
-           "02-RESEARCH 3.9; release date MEDIUM confidence; page not "
-           "re-read in plan 02-07"),
+           "Transcribed: Eurostat euro indicator release 2-16102026-AP "
+           "(16 October 2026), euro area 3.8% in September 2026 (Belgium "
+           "4.5%). First read in 02-RESEARCH 3.9; re-read 2026-10-20, "
+           "VERIFIED (DATA_LOG, Context figures and dates)"),
     scalar("Fin_FX_USDperEUR_2010", _SEC,
            "US dollar per euro, 2010 annual average (NGFS conversion)",
            1.3257, "USD per EUR", "Const_None", "USD per EUR",

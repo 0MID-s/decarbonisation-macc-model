@@ -162,10 +162,10 @@ INPUTS = (
     scalar("Base_Fleet_gCO2PerKm", _SEC, "Tailpipe emissions of a new van (diesel-heavy anchor)",
            184.9, "gCO2/km", "Const_None", "gCO2/km", NA, "Src_EEAVans",
            _S,
-           "Re-read 2026-10-20 on the EEA page (see docs/DATA_LOG.md). The "
-           "2024 figure is the diesel-heavy anchor because the 2025 "
-           "provisional 172.1 includes about 10% battery-electric vans",
-           "Transcribed: EEA 2024 new-van average (WLTP); 2025 provisional "
-           "172.1 includes about 10% battery-electric vans, so 2024 is the "
-           "diesel-heavy anchor; WLTP understates real-world use"),
+           "Re-read 2026-10-20 on the EEA page (see docs/DATA_LOG.md). "
+           "Analyst choice: the 2024 figure is used as the anchor because "
+           "the 2025 figure (172.1) is provisional data",
+           "Transcribed: EEA 2024 new-van average (WLTP), \"172.1 g CO2/km "
+           "(184.9 g CO2/km in 2024)\"; 2025 value provisional; WLTP "
+           "understates real-world use"),
 )  # type: Tuple[InputRecord, ...]

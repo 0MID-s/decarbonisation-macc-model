@@ -58,6 +58,19 @@ class TestDataLogCitations(unittest.TestCase):
                 self.assertIn("2026-10-16", log, s.id)
             self.assertNotIn("per DATA_LOG", s.edition, s.id)
 
+    def test_reread_records_carry_no_stale_or_unlogged_text(self):
+        """WR-05: no unlogged figure, and no "not re-read" clause beside a
+        "re-read" rationale."""
+        for i in ("Base_Fleet_gCO2PerKm", "Fin_InflationLongRun",
+                  "Fin_HICP_EA_Sep2026"):
+            r = BY_ID[i]
+            self.assertEqual(r.status, Status.SOURCED, i)
+            text = r.rationale + " " + r.note
+            self.assertIn("re-read 2026-10-20", text.lower(), i)
+            for stale in ("not re-read", "MEDIUM confidence",
+                          "battery-electric", "10%"):
+                self.assertNotIn(stale, text, i)
+
 
 PRICE = [r for r in INPUTS if r.section == "Energy prices"]
 EB = ["IA", "IB", "IC", "ID", "IE", "IF", "IG"]
