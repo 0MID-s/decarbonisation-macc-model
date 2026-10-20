@@ -68,13 +68,31 @@ class CarbonTests(unittest.TestCase):
         for k in ("Elec", "Heat"):
             self.assertEqual(BY_ID["Carbon_ETS2_Scope_" + k].published_value, 0)
 
-    def test_legal_notes_name_text_version(self):
+    # Outcome per legal id from docs/DATA_LOG.md, Legal texts (WR-02 re-read):
+    # an id is listed here only if its row says VERIFIED (none so far).
+    VERIFIED = set()
+
+    def test_legal_status_follows_data_log(self):
         legal = [r for r in CAR if r.id.startswith(("Carbon_ETS2_", "Carbon_ETS1_"))]
         self.assertGreaterEqual(len(legal), 15)
         for r in legal:
             self.assertTrue(r.note.startswith("Transcribed:"), r.id)
-            self.assertIn("text read:", r.note, r.id)
-            self.assertEqual(r.status, Status.SOURCED)
+            self.assertIn("docs/DATA_LOG.md", r.note, r.id)
+            if r.id in self.VERIFIED:
+                self.assertEqual(r.status, Status.SOURCED, r.id)
+                self.assertIn("EUR-Lex re-read 2026-", r.note, r.id)
+            else:
+                self.assertEqual(r.status, Status.ASSUMPTION, r.id)
+                self.assertTrue(r.rationale.startswith("Unverified transcription:"), r.id)
+                self.assertIn("to be verified against the legal text", r.rationale, r.id)
+                self.assertTrue(r.source_id, r.id)
+            if r.status is Status.SOURCED:
+                self.assertNotIn("Unverified", r.rationale, r.id)
+
+    def test_threshold_not_sourced_without_annex_reading(self):
+        r = BY_ID["Carbon_ETS1_ThermalThresholdMW"]
+        self.assertEqual(r.status, Status.ASSUMPTION)
+        self.assertIn("design value", r.rationale)
 
     def test_count(self):
         self.assertGreaterEqual(len(CAR), 16)

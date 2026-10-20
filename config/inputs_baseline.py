@@ -104,7 +104,10 @@ INPUTS = (
            "sbs_sc_ovw NETTUR_MEUR, NACE C21, TOTAL, BE, 2024"),
     scalar("Base_NRG_IncludesC21", _SEC,
            "Energy balance sector includes NACE C21 (1 = yes)",
-           1, "flag (1/0)", "Const_None", "flag (1/0)", NA, "Src_Reg1099", _S,
+           1, "flag (1/0)", "Const_None", "flag (1/0)", NA, "Src_Reg1099",
+           Status.ASSUMPTION,
+           "Unverified transcription: transcribed from 02-RESEARCH (read via "
+           "legislation.gov.uk); to be verified against the legal text. "
            "The energy balance sector chemical and petrochemical covers NACE "
            "20 and 21, so value added and air emissions for the scaling "
            "denominator must include C21 (D-05, D-39). Set to 0 only to see "
@@ -112,8 +115,9 @@ INPUTS = (
            "Regulation (EC) 1099/2008 Annex A item 2.6.1.6: chemical and "
            "petrochemical = NACE Rev. 2 Divisions 20 and 21. Transcribed "
            "from the 02-RESEARCH record (read there via legislation.gov.uk); "
-           "the EUR-Lex original was not re-read in plan 02-05 (no web "
-           "reader available)"),
+           "EUR-Lex re-read 2026-10-20 returned no text (NOT READ) and the "
+           "Eurostat nrg_bal metadata does not state the NACE coverage; see "
+           "docs/DATA_LOG.md, Legal texts (WR-02 re-read)"),
     _nrg("Base_NRG_Total", "BE chemical and petrochemical final energy use, total",
          162119.849, "TOTAL",
          "Final energy consumption, energy use only (FC_IND_CPC_E); "

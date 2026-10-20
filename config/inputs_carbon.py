@@ -56,17 +56,29 @@ SOURCES = (
            "statement that values were modified, and no implied endorsement"),
 )  # type: Tuple[Source, ...]
 
-_ENACTED = "(text read: Directive (EU) 2023/959 as enacted, OJ L 130, 16.5.2023)"
-_NOCONS = ("; read in 02-RESEARCH 3.11, not re-read in plan 02-07; "
-           "consolidated Directive 2003/87/EC after the 2026 amendments "
-           "not verified")
+_ENACTED = "(per 02-RESEARCH 3.11: Directive (EU) 2023/959 as enacted, OJ L 130, 16.5.2023)"
+
+
+_UNV = ("Unverified transcription: transcribed from 02-RESEARCH 3.11 "
+        "(secondary reading of the EUR-Lex page); to be verified against "
+        "the legal text. ")
+_LOG = ("see docs/DATA_LOG.md, Legal texts (WR-02 re-read)")
 
 
 def _legal(id_, desc, val, unit, art, rationale, src="Src_ETSDirective",
-           basis=NA, text=_ENACTED, extra=""):
+           basis=NA, text=_ENACTED, extra="", status=Status.ASSUMPTION):
+    """Legal parameter. Sourced only when status=SOURCED is passed after a
+    VERIFIED row in docs/DATA_LOG.md; the default is an analyst assumption."""
+    if status is Status.SOURCED:
+        rationale = rationale
+        note = ("Transcribed: %s %s; EUR-Lex re-read 2026-10-20, quote in "
+                "docs/DATA_LOG.md (Legal texts, WR-02)%s" % (art, text, extra))
+    else:
+        rationale = _UNV + rationale
+        note = ("Transcribed: %s %s; EUR-Lex re-read 2026-10-20 returned no "
+                "text (NOT READ), %s%s" % (art, text, _LOG, extra))
     return scalar(id_, _SEC, desc, val, unit, "Const_None", unit, basis,
-                  src, _S, rationale,
-                  "Transcribed: %s %s%s%s" % (art, text, _NOCONS, extra))
+                  src, status, rationale, note)
 
 
 _SCOPE = ("ETS2 regulates fuel suppliers for fuels released for combustion "
@@ -102,7 +114,7 @@ INPUTS = (
            "Regulation (EU) 2026/667 Art. 2 (Art. 30k(2) rules apply)",
            "Default 2028 (input; delayed-start sensitivity in Phase 4)",
            src="Src_Reg2026_667",
-           text="(text read: Regulation (EU) 2026/667, OJ L 2026/667, "
+           text="(per 02-RESEARCH 3.11: Regulation (EU) 2026/667, OJ L 2026/667, "
                 "18.3.2026)"),
     _legal("Carbon_ETS2_StartYearEnacted",
            "ETS2 start year as originally enacted (memo)", 2027, "year",
@@ -144,7 +156,8 @@ INPUTS = (
            "EU ETS1 threshold: total rated thermal input of combustion "
            "installations", 20, "MW", "Annex I (combustion of fuels in "
            "installations with total rated thermal input exceeding 20 MW)",
-           "Used by the Baseline D-07 sanity row (average fuel load is a "
+           "20 MW is the D-07 design value pending verification. Used by the "
+           "Baseline D-07 sanity row (average fuel load is a "
            "lower bound on rated thermal input, not proof of being below "
            "the threshold)",
            extra="; Annex I wording was not re-read in plan 02-07 and the "

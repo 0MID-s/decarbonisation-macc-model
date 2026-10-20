@@ -70,11 +70,14 @@ LIMITATIONS = (
     "about a quarter higher; a candidate Phase 4 sensitivity.",
 )
 ETS2_UNVERIFIED = (
-    "ETS2 legal parameters were read from Directive (EU) 2023/959 as enacted "
-    "(and Regulation (EU) 2026/667 for the start year); the consolidated "
-    "Directive 2003/87/EC after the 2026 amendments was not re-read. The "
-    "EU ETS1 thermal threshold wording is unverified and is a design value "
-    "(D-07).")
+    "Legal parameters (ETS2 start year and enacted start, price-stability "
+    "threshold, months and release volumes, price-multiple trigger and "
+    "release, fuel scope flags, and the EU ETS1 thermal threshold) "
+    "and the chemical-sector NACE coverage of the energy balance sector are "
+    "analyst assumptions pending verification: they were transcribed from a "
+    "secondary reading, and the EUR-Lex pages could not be re-read on "
+    "2026-10-20 (the site returned an empty page). None is shown as "
+    "Sourced; the log is in docs/DATA_LOG.md, Legal texts (WR-02 re-read).")
 EXCLUSIONS = (
     "Scope 3 is excluded: no official sector-level Scope 3 intensity for "
     "Belgian chemicals was found and no synthetic figure is used (D-13).",

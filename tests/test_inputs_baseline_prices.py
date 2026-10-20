@@ -37,8 +37,10 @@ class BaselineTests(unittest.TestCase):
 
     def test_status(self):
         for r in BASE:
+            # Base_NRG_IncludesC21: DATA_LOG WR-02 outcome NOT READ
             exp = (Status.ASSUMPTION if r.id in (
-                "Base_Fleet_Vehicles", "Base_Fleet_KmPerVehicle")
+                "Base_Fleet_Vehicles", "Base_Fleet_KmPerVehicle",
+                "Base_NRG_IncludesC21")
                 else Status.SOURCED)
             self.assertEqual(r.status, exp, r.id)
             if exp is Status.ASSUMPTION:
