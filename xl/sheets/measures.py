@@ -10,6 +10,8 @@ added in plan 03-08 on top of the rows allocated here.
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
 
+from checkmodel import appraisal as ap
+from checkmodel.baseline_reference import model_values
 from checkmodel.measures_reference import (
     DEFAULT_STATE, SCENARIOS_UI, compute_measures)
 from config.measures_catalog import COUNTERFACTUAL_NOTE, MEASURES
@@ -24,7 +26,8 @@ LAST_COL = TIMELINE_LAST_COL
 HDR_ROW = 4  # zero-based; Excel row 5
 SCALAR_COL = 3  # column D
 NOTE_COL = 4  # column E
-SUMMARY_HEIGHT = 12  # band title, column header, six measures, blank, 3 rows
+SUMMARY_HEIGHT = 14  # title, header, six measures, blank, 3 portfolio rows,
+# market-based note, M_Check_All
 NYEARS = TIMELINE_LAST_COL - TIMELINE_FIRST_COL + 1
 
 TITLE_NOTE = (
@@ -55,6 +58,14 @@ STACK_KEYS = ("s0", "s1", "s2", "s3", "s4", "s5", "red", "gas0", "gasA",
               "dsl0", "dslA", "hr_red", "hr_pv", "hr_cov",
               "chk_nonneg", "chk_red", "chk_pv", "chk_cov", "chk_gas",
               "chk_dsl")
+RESULT_KEYS = (
+    "r_band", "dcf", "cum", "cumd", "reach", "reachd", "sign", "chg",
+    "npv", "npvmemo", "pvsub", "npvpre", "npvcarb", "capfac", "npvfull",
+    "guess", "irr", "nchg", "irrflag", "first_s", "pay_s", "first_d", "pay_d",
+    "pvlb", "pvmb", "pvsel", "avglb", "avgmb", "avgsel", "elig", "lev", "be",
+    "chk_memo", "chk_be",
+    "i_band", "levpre", "crf", "avgben", "ann", "chk_ann", "chk_zero",
+    "chk_irr")
 TIMELINE_KEYS = ("tl_band", "idx", "op", "lastidx", "df", "pidx", "basisidx",
                  "scenidx", "cprice", "ef_lb", "ef_mb", "ef_sel")
 
@@ -66,6 +77,7 @@ class MeasuresLayout:
     summary_first: int
     summary_height: int
     check_names: Tuple[str, ...]
+    summary: Dict[str, int]
 
 
 def allocate_rows():
@@ -96,7 +108,7 @@ def allocate_rows():
         m = {"band": r}
         r += 1
         for k in SIZING[ms.key] + SCALAR_KEYS + FLAG_KEYS + PHYS_KEYS \
-                + MONEY_KEYS:
+                + MONEY_KEYS + RESULT_KEYS:
             m[k] = r
             r += 1
         blocks[ms.key] = m
@@ -167,6 +179,7 @@ def _ints(xs):
 
 def build_measures(wb, styles, cells, dataset, cfg, layouts):
     ref = compute_measures(dataset.inputs, *DEFAULT_STATE)
+    mvals = dict(model_values(dataset.inputs))
     rows, blocks, _end = allocate_rows()
     carbon_rows = dict(layouts["carbon"].rows)
     ny = len(ref.years)
@@ -203,9 +216,6 @@ def build_measures(wb, styles, cells, dataset, cfg, layouts):
         for k, tag in (("tLB", "LB"), ("tMB", "MB")):
             cells.tag(SHEET, m[k], TIMELINE_FIRST_COL, m[k],
                       TIMELINE_LAST_COL, tag)
-
-    # --- reserved results summary band (03-08 fills it)
-    w.band(rows["sum_band"], "Results summary (filled in 03-08)")
 
     # --- timeline band (D-01, D-14, D-16)
     R = rows
@@ -356,12 +366,13 @@ def build_measures(wb, styles, cells, dataset, cfg, layouts):
     # --- six measure blocks
     for ms in MEASURES:
         _write_block(w, ms, ms_by[ms.key], B[ms.key], R, B, ref, hdr_ref,
-                     check_names)
+                     check_names, mvals)
+    summary = _write_summary(w, ref, R, B, check_names)
     return MeasuresLayout(R, B, R["sum_band"], SUMMARY_HEIGHT,
-                          tuple(check_names))
+                          tuple(check_names), summary)
 
 
-def _write_block(w, ms, m, b, R, B, ref, hdr_ref, check_names):
+def _write_block(w, ms, m, b, R, B, ref, hdr_ref, check_names, mv):
     key = ms.key
     ny = len(ref.years)
     zero = [0.0] * ny
@@ -591,3 +602,339 @@ def _write_block(w, ms, m, b, R, B, ref, hdr_ref, check_names):
     w.series(b["m_cfi"], lambda k, c: "=%s+%s" % (
         _a(c, b["m_cf"]), _a(c, b["m_carbon"])), m.cf_incl, "eur",
         name=nm("CFCarbon"))
+
+
+    _write_results(w, m, b, R, ref, check_names, mv, nm)
+
+
+def _accum(xs):
+    out, tot = [], 0.0
+    for x in xs:
+        tot += x
+        out.append(tot)
+    return out
+
+
+def _first_reach(cum):
+    for n, v in enumerate(cum):
+        if v >= 0:
+            return n
+    return None
+
+
+def _write_results(w, m, b, R, ref, check_names, mv, nm):
+    """Decision metrics, internal checks (plan 03-08) for one block."""
+    key = m.key
+    ny = len(ref.years)
+    D = _d
+    cf = list(m.cf_fin)
+    dfs = list(ref.df)
+    dcf = [c * d for c, d in zip(cf, dfs)]
+    cum, cumd = _accum(cf), _accum(dcf)
+    reach = [1 if v >= 0 else 0 for v in cum]
+    reachd = [1 if v >= 0 else 0 for v in cumd]
+    sign, last = [], 0
+    for c in cf:
+        last = 1 if c > 0 else (-1 if c < 0 else last)
+        sign.append(last)
+    chg = [0] + [1 if sign[n - 1] != 0 and sign[n] != sign[n - 1] else 0
+                 for n in range(1, ny)]
+    cfr, dcfr = _rng(b["m_cf"]), _rng(b["dcf"])
+    pc = lambda k: col_letter(TIMELINE_FIRST_COL + k - 1)  # noqa: E731
+
+    w.band(b["r_band"], "Results: " + m.name)
+    w.line(b["dcf"], "Discounted net cash flow", "EUR")
+    w.series(b["dcf"], lambda k, c: "=%s*%s" % (_a(c, b["m_cf"]),
+                                                _a(c, R["df"])), dcf, "eur")
+    w.line(b["cum"], "Cumulative net cash flow", "EUR")
+    w.series(b["cum"], lambda k, c: ("=%s" % _a(c, b["m_cf"]) if k == 0 else
+                                     "=%s+%s" % (_a(pc(k), b["cum"]),
+                                                 _a(c, b["m_cf"]))),
+             cum, "eur")
+    w.line(b["cumd"], "Cumulative discounted cash flow", "EUR")
+    w.series(b["cumd"], lambda k, c: ("=%s" % _a(c, b["dcf"]) if k == 0 else
+                                      "=%s+%s" % (_a(pc(k), b["cumd"]),
+                                                  _a(c, b["dcf"]))),
+             cumd, "eur")
+    w.line(b["reach"], "Cumulative >= 0 (simple)", "flag (1/0)")
+    w.series(b["reach"], lambda k, c: "=IF(%s>=0,1,0)" % _a(c, b["cum"]),
+             reach, "int")
+    w.line(b["reachd"], "Cumulative >= 0 (discounted)", "flag (1/0)")
+    w.series(b["reachd"], lambda k, c: "=IF(%s>=0,1,0)" % _a(c, b["cumd"]),
+             reachd, "int")
+    w.line(b["sign"], "Sign of latest non-zero flow", "sign")
+    w.series(b["sign"], lambda k, c: (
+        "=IF(%s>0,1,IF(%s<0,-1,0))" % (_a(c, b["m_cf"]), _a(c, b["m_cf"]))
+        if k == 0 else "=IF(%s>0,1,IF(%s<0,-1,%s))" % (
+            _a(c, b["m_cf"]), _a(c, b["m_cf"]), _a(pc(k), b["sign"]))),
+        sign, "int")
+    w.line(b["chg"], "Sign change", "flag (1/0)")
+    w.series(b["chg"], lambda k, c: ("=0" if k == 0 else
+                                     "=IF(AND(%s<>0,%s<>%s),1,0)" % (
+                                         _a(pc(k), b["sign"]),
+                                         _a(c, b["sign"]),
+                                         _a(pc(k), b["sign"]))),
+             chg, "int")
+
+    # ---- NPV family
+    w.line(b["npv"], "Financial NPV, after subsidy (excl. carbon value; "
+           "drives IRR, payback, abatement cost)", "EUR")
+    w.scalar(b["npv"], "=SUMPRODUCT(%s,M_DF)" % cfr, m.npv, "eur",
+             name=nm("NPV"))
+    w.line(b["npvmemo"], "Memo: CF0 + NPV(rate, CF1..CFn)", "EUR")
+    w.scalar(b["npvmemo"], "=$N$%d+NPV(Rate_DiscountReal,$O$%d:$AQ$%d)" % (
+        b["m_cf"] + 1, b["m_cf"] + 1, b["m_cf"] + 1), m.npv_memo, "eur",
+        name=nm("NPVMemo"))
+    w.note(b["npvmemo"], "Excel NPV() discounts its first value one period, "
+           "so year 0 stays outside it")
+    w.line(b["pvsub"], "PV of subsidy", "EUR")
+    w.scalar(b["pvsub"], "=SUMPRODUCT(%s,M_DF)" % _rng(b["m_sub"]),
+             m.pv_subsidy, "eur", name=nm("PVSubsidy"))
+    w.line(b["npvpre"], "NPV before subsidy", "EUR")
+    w.scalar(b["npvpre"], "=%s-%s" % (D(b["npv"]), D(b["pvsub"])),
+             m.npv_pre_sub, "eur", name=nm("NPVPreSub"))
+    w.line(b["npvcarb"], "NPV incl. carbon value at the selected scenario "
+           "(shadow-price lens, not cash)", "EUR")
+    w.scalar(b["npvcarb"], "=SUMPRODUCT(%s,M_DF)" % _rng(b["m_cfi"]),
+             m.npv_incl_carbon, "eur", name=nm("NPVCarbon"))
+    capfac = (sum(dfs[n] for n in range(ny)
+                  if n == 0 or ref_is_repl(m, ref, n))
+              - m.res_frac * dfs[-1] - m.subsidy_frac)
+    w.line(b["capfac"], "Capex PV factor (memo)", "factor")
+    w.scalar(b["capfac"], "=SUMPRODUCT(%s,M_DF)+SUMPRODUCT(%s,M_DF)-%s*"
+             "INDEX(M_DF,M_LastIdx+1)-%s" % (
+                 _rng(b["init"]), _rng(b["repl"]), D(b["resfrac"]),
+                 D(b["sub"])), capfac, "factor", name=nm("CapexPVFactor"))
+    w.line(b["npvfull"], "Full-capex NPV (memo, D-05)", "EUR")
+    if m.npv_full_capex is None:
+        w.cells.text(w.ws, b["npvfull"], SCALAR_COL,
+                     "n/a (no counterfactual purchase)", w.styles.get("note"))
+        cells = w.cells
+        cells.define_name(nm("NPVFullCapex"),
+                            "=%s!$D$%d" % (SHEET, b["npvfull"] + 1))
+    else:
+        w.scalar(b["npvfull"], "=%s-(%s-%s)*%s" % (
+            D(b["npv"]), D(b["fullcapex"]), D(b["capex"]), D(b["capfac"])),
+            m.npv_full_capex, "eur", name=nm("NPVFullCapex"))
+
+    # ---- IRR
+    guess = -mv["Const_IRR_Guess"] if sum(cf) < 0 else mv["Const_IRR_Guess"]
+    w.line(b["guess"], "IRR guess", "fraction")
+    w.scalar(b["guess"], "=IF(SUM(%s)<0,-Const_IRR_Guess,Const_IRR_Guess)"
+             % cfr, guess, "pct")
+    cf0 = "$N$%d" % (b["m_cf"] + 1)
+    # numeric view of a cell that may hold an n/a text, so a guarded branch
+    # never does arithmetic on text
+    nz = lambda row: "IF(ISNUMBER(%s),%s,0)" % (D(row), D(row))  # noqa: E731
+    w.line(b["irr"], "IRR (on financial cash flows)", "%")
+    w.scalar(b["irr"], '=IF(%s>=0,"%s",IF(MAX(%s)<=0,"%s",IFERROR(IRR(%s,%s),'
+             '"%s")))' % (cf0, ap.NA_NO_OUTLAY, cfr, ap.NA_NEVER_PAYS, cfr,
+                          D(b["guess"]), ap.NA_NO_SOLUTION), m.irr, "pct",
+             name=nm("IRR"))
+    w.line(b["nchg"], "Sign changes in cash flow", "count")
+    w.scalar(b["nchg"], "=SUM(%s)" % _rng(b["chg"]), m.sign_changes, "int")
+    w.line(b["irrflag"], "IRR uniqueness flag", "")
+    w.scalar(b["irrflag"], '=IF(%s>1,"%s","")' % (D(b["nchg"]), ap.MULTI_SIGN),
+             m.multi_flag, "general", name=nm("IRRFlag"))
+
+    # ---- payback
+    def payback(first_k, pay_k, reach_k, cum_k, flow_k, cum_list, text, name,
+                value):
+        fv = _first_reach(cum_list)
+        w.line(b[first_k], "First year index with cumulative >= 0 (%s; -1 = "
+               "never within the horizon)" % text, "index")
+        w.scalar(b[first_k], "=IF(MAX(%s)=0,-1,MATCH(1,%s,0)-1)" % (
+            _rng(b[reach_k]), _rng(b[reach_k])), -1 if fv is None else fv,
+            "int")
+        f = D(b[first_k])
+        w.line(b[pay_k], "%s payback (years after %d)" % (
+            text.capitalize(), ref.years[0]), "years")
+        w.scalar(b[pay_k], '=IF(%s<0,"%s",IF(%s=0,"%s",(%s-1)+(-INDEX(%s,'
+                 '%s))/INDEX(%s,%s+1)))' % (
+                     f, ap.NOT_WITHIN, f, ap.NA_NO_OUTLAY, f,
+                     _rng(b[cum_k]), f, _rng(b[flow_k]), f), value, "dec1",
+                 name=name)
+    payback("first_s", "pay_s", "reach", "cum", "m_cf", cum, "simple",
+            nm("PaySimple"), m.pay_simple)
+    payback("first_d", "pay_d", "reachd", "cumd", "dcf", cumd, "discounted",
+            nm("PayDisc"), m.pay_disc)
+
+    # ---- tonnes
+    ns = float(sum(ref.op))
+    for k, row, lst, tag, label in (
+            ("pvlb", "tLB", m.t_lb, "LB", "location-based"),
+            ("pvmb", "tMB", m.t_mb, "MB", "market-based"),
+            ("pvsel", "tSel", m.t_sel, None, "selected basis")):
+        val = m.pv_t_lb if k == "pvlb" else (m.pv_t_mb if k == "pvmb"
+                                             else m.pv_t_sel)
+        w.line(b[k], "PV of abated tCO2e, %s" % label, "tCO2e")
+        w.scalar(b[k], "=SUMPRODUCT(%s,M_DF)" % _rng(b[row]), val, "tco2e",
+                 name=nm("PVt" + row[1:]))
+        if tag:
+            w.cells.tag(SHEET, b[k], SCALAR_COL, b[k], SCALAR_COL, tag)
+    for k, row, val, tag, label in (
+            ("avglb", "tLB", m.avg_t_lb, "LB", "location-based"),
+            ("avgmb", "tMB", m.avg_t_mb, "MB", "market-based"),
+            ("avgsel", "tSel", m.avg_t_sel, None, "selected basis")):
+        w.line(b[k], "Average annual abated tCO2e, %s" % label, "tCO2e/yr")
+        w.scalar(b[k], "=SUM(%s)/SUM(M_Op)" % _rng(b[row]), val, "tco2e",
+                 name=nm("Avgt" + row[1:]))
+        if tag:
+            w.cells.tag(SHEET, b[k], SCALAR_COL, b[k], SCALAR_COL, tag)
+    elig = D(b["elig"])
+    w.line(b["elig"], "Abatement on selected basis (1 = yes)", "flag (1/0)")
+    w.scalar(b["elig"], "=IF(%s>0,1,0)" % D(b["pvsel"]),
+             1 if m.eligible else 0, "int", name=nm("Eligible"))
+    w.line(b["lev"], "Levelised abatement cost (EUR/tCO2e, excl. carbon "
+           "value; negative = saves money)", "EUR/tCO2e")
+    w.scalar(b["lev"], '=IF(%s=0,"%s",-%s/%s)' % (
+        elig, ap.NA_NO_ABATEMENT, D(b["npv"]), D(b["pvsel"])), m.lev,
+        "eur_per_t", name=nm("LevCost"))
+    w.line(b["be"], "Break-even carbon price (constant real price at which "
+           "NPV incl. carbon = 0)", "EUR/tCO2e")
+    w.scalar(b["be"], '=IF(%s=0,"%s",-%s/%s)' % (
+        elig, ap.NA_NO_ABATEMENT, D(b["npv"]), D(b["pvsel"])), m.break_even,
+        "eur_per_t", name=nm("BreakEven"))
+
+    def check(row, name, text, f, val, note=None):
+        w.line(row, text, "TRUE/FALSE")
+        w.scalar(row, f, bool(val), "general", name=name)
+        apply_bool_check_format(w.ws, w.styles, row, SCALAR_COL, row,
+                                SCALAR_COL)
+        if note:
+            w.note(row, note)
+        check_names.append(name)
+    tol_m = mv["Const_CheckTolMoney"]
+    check(b["chk_memo"], "M_Check_%s_NPVMemo" % key,
+          "Check: SUMPRODUCT NPV equals CF0 + NPV() memo",
+          "=ABS(%s-%s)<=Const_CheckTolMoney" % (D(b["npv"]), D(b["npvmemo"])),
+          abs(m.npv - m.npv_memo) <= tol_m)
+    lev_num = isinstance(m.lev, float)
+    check(b["chk_be"], "M_Check_%s_BreakEven" % key,
+          "Check: break-even price equals levelised cost",
+          "=IF(ISNUMBER(%s),ABS(%s-%s)<=Const_CheckTolerance,TRUE)" % (
+              D(b["lev"]), nz(b["lev"]), nz(b["be"])),
+          (abs(m.lev - m.break_even) <= mv["Const_CheckTolerance"])
+          if lev_num else True)
+
+    # ---- internal reconciliation
+    w.band(b["i_band"], "Internal reconciliation (not a client output)")
+    w.line(b["levpre"], "Levelised cost before subsidy", "EUR/tCO2e")
+    w.scalar(b["levpre"], '=IF(%s=0,"%s",-%s/%s)' % (
+        elig, ap.NA_NO_ABATEMENT, D(b["npvpre"]), D(b["pvsel"])),
+        m.lev_pre_sub, "eur_per_t")
+    rate = ref.rate
+    crf = ap.crf(rate, m.life)
+    w.line(b["crf"], "Capital recovery factor", "factor")
+    w.scalar(b["crf"], "=Rate_DiscountReal/(1-1/(1+Rate_DiscountReal)^%s)"
+             % D(b["life"]), crf, "factor")
+    avgben = sum(m.om_row[n] + m.e_elec[n] + m.e_gas[n] + m.e_diesel[n]
+                 for n in range(ny)) / ns
+    w.line(b["avgben"], "Average annual operating benefit", "EUR/yr")
+    w.scalar(b["avgben"], "=(SUM(%s)+SUM(%s)+SUM(%s)+SUM(%s))/SUM(M_Op)" % (
+        _rng(b["m_om"]), _rng(b["m_eE"]), _rng(b["m_eG"]), _rng(b["m_eD"])),
+        avgben, "eur")
+    ann_v = ((m.capex * crf - avgben) / m.avg_t_sel if m.eligible
+             else ap.NA_NO_ABATEMENT)
+    w.line(b["ann"], "Annuity-method cost", "EUR/tCO2e")
+    w.scalar(b["ann"], '=IF(%s=0,"%s",(%s*%s-%s)/%s)' % (
+        elig, ap.NA_NO_ABATEMENT, D(b["capex"]), D(b["crf"]), D(b["avgben"]),
+        D(b["avgsel"])), ann_v, "eur_per_t")
+    ann_ok = m.annuity_ok if m.eligible else True
+    check(b["chk_ann"], "M_Check_%s_Annuity" % key,
+          "Check: annuity cost agrees with levelised cost before subsidy",
+          "=IF(%s=0,TRUE,ABS(%s-%s)<=Const_AnnuityTolAbs+Const_AnnuityTolRel*"
+          "ABS(%s))" % (elig, nz(b["ann"]), nz(b["levpre"]), nz(b["levpre"])),
+          ann_ok, "annuity and levelised forms agree only for flat profiles; "
+          "tolerance documented on Inputs (Const_AnnuityTolRel)")
+    check(b["chk_zero"], "M_Check_%s_NPVatZero" % key,
+          "Check: NPV at r = 0 equals the plain sum",
+          "=ABS((%s+NPV(0,$O$%d:$AQ$%d))-SUM(%s))<=Const_CheckTolMoney" % (
+              cf0, b["m_cf"] + 1, b["m_cf"] + 1, cfr),
+          abs(cf[0] + sum(cf[1:]) - sum(cf)) <= tol_m)
+    irr_num = isinstance(m.irr, float)
+    check(b["chk_irr"], "M_Check_%s_NPVatIRR" % key,
+          "Check: NPV at the IRR is about zero",
+          "=IF(ISNUMBER(%s),ABS(%s+NPV(%s,$O$%d:$AQ$%d))<="
+          "Const_IRRCheckTolMoney,TRUE)" % (
+              D(b["irr"]), cf0, nz(b["irr"]), b["m_cf"] + 1, b["m_cf"] + 1),
+          (abs(ap.npv0(m.irr, cf)) <= mv["Const_IRRCheckTolMoney"])
+          if irr_num else True)
+
+
+def ref_is_repl(m, ref, n):
+    return ref.years[n] in m.replacement_years
+
+
+def _write_summary(w, ref, R, B, check_names):
+    r0 = R["sum_band"]
+    cells = w.cells
+    w.band(r0, "Results summary (selected basis and scenario; details in each "
+           "block below)")
+    hdr = w.styles.get("header")
+    heads = ("Measure", "Annual tCO2e (selected)",
+             "Annual tCO2e, location-based", "Annual tCO2e, market-based",
+             "Abatement cost EUR/tCO2e", "Financial NPV (after subsidy)",
+             "NPV before subsidy", "NPV incl. carbon value (lens)", "IRR",
+             "Simple payback (years)", "Discounted payback (years)")
+    for i, t in enumerate(heads):
+        w.cells.text(w.ws, r0 + 1, LABEL_COL + i, t, hdr)
+    first = r0 + 2
+    last = first + len(ref.measures) - 1
+    # tags first, so the LB / MB lint sees them before any reader formula
+    w.cells.tag(SHEET, first, 3, last, 3, "LB")
+    w.cells.tag(SHEET, first, 4, last, 4, "MB")
+    cols = (("AvgtSel", "tco2e", lambda x: x.avg_t_sel),
+            ("AvgtLB", "tco2e", lambda x: x.avg_t_lb),
+            ("AvgtMB", "tco2e", lambda x: x.avg_t_mb),
+            ("LevCost", "eur_per_t", lambda x: x.lev),
+            ("NPV", "eur", lambda x: x.npv),
+            ("NPVPreSub", "eur", lambda x: x.npv_pre_sub),
+            ("NPVCarbon", "eur", lambda x: x.npv_incl_carbon),
+            ("IRR", "pct", lambda x: x.irr),
+            ("PaySimple", "dec1", lambda x: x.pay_simple),
+            ("PayDisc", "dec1", lambda x: x.pay_disc))
+    for i, mr in enumerate(ref.measures):
+        r = first + i
+        w.cells.text(w.ws, r, LABEL_COL, mr.name, w.styles.get("label"))
+        for j, (suffix, num, attr) in enumerate(cols):
+            w.cells.formula(w.ws, r, LABEL_COL + 1 + j,
+                            "=M_%s_%s" % (mr.key, suffix),
+                            w.styles.get("link", num), value=attr(mr))
+    pr = last + 2
+
+    # portfolio rows keep values in column D under their own labels
+    ms = ref.measures
+    w.cells.text(w.ws, pr, LABEL_COL, "Portfolio financial NPV (sum of "
+                 "measures, stack order applied)", w.styles.get("label"))
+    w.cells.formula(w.ws, pr, 3, "=SUM(G%d:G%d)" % (first + 1, last + 1),
+                    w.styles.get("calc", "eur"),
+                    value=sum(x.npv for x in ms))
+    cells.define_name("M_Portfolio_NPV", "=%s!$D$%d" % (SHEET, pr + 1))
+    w.cells.text(w.ws, pr + 1, LABEL_COL, "Total annual tCO2e, "
+                 "location-based", w.styles.get("label"))
+    w.cells.formula(w.ws, pr + 1, 3, "=SUM(D%d:D%d)" % (first + 1, last + 1),
+                    w.styles.get("calc", "tco2e"),
+                    value=sum(x.avg_t_lb for x in ms))
+    cells.define_name("M_Total_tLB", "=%s!$D$%d" % (SHEET, pr + 2))
+    w.cells.text(w.ws, pr + 2, LABEL_COL, "Total annual tCO2e, "
+                 "market-based", w.styles.get("label"))
+    w.cells.formula(w.ws, pr + 2, 3, "=SUM(E%d:E%d)" % (first + 1, last + 1),
+                    w.styles.get("calc", "tco2e"),
+                    value=sum(x.avg_t_mb for x in ms))
+    cells.define_name("M_Total_tMB", "=%s!$D$%d" % (SHEET, pr + 3))
+    w.cells.tag(SHEET, pr + 1, 3, pr + 1, 3, "LB")
+    w.cells.tag(SHEET, pr + 2, 3, pr + 2, 3, "MB")
+    w.note(pr + 3, "The electricity part of the six measures' market-based "
+           "tonnes sums exactly to the baseline market-based electricity "
+           "emissions; the split between measures depends on the stack order "
+           "(see Notes)", LABEL_COL)
+    w.cells.text(w.ws, pr + 4, LABEL_COL, "All Measures checks (TRUE = "
+                 "every check passes)", w.styles.get("label"))
+    names = [n for n in check_names]
+    w.cells.formula(w.ws, pr + 4, 3, "=AND(%s)" % ",".join(names),
+                    w.styles.get("calc", "general"), value=True)
+    cells.define_name("M_Check_All", "=%s!$D$%d" % (SHEET, pr + 5))
+    apply_bool_check_format(w.ws, w.styles, pr + 4, 3, pr + 4, 3)
+    return {"first": first, "last": last, "portfolio": pr,
+            "check_all": pr + 4}

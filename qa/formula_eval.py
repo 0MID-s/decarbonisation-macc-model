@@ -668,6 +668,8 @@ class FormulaEvaluator(object):
 
 
 def _close(got, want, rel_tol):
+    if got == "" and want is None:  # an empty-string result reads back as None
+        return True
     if isinstance(got, bool) != isinstance(want, bool):
         return False
     if _num(got) and _num(want):
