@@ -29,7 +29,7 @@ def nice_step(total, max_intervals=8):
         k += 1
 
 
-def _axes(chart, major_unit=None, size=(900, 420)):
+def _axes(chart, major_unit=None, size=(900, 420), axis_max=None):
     x_axis = {
         "date_axis": True, "num_format": "#,##0", "min": 0,
         "label_position": "low", "num_font": FONT,
@@ -38,6 +38,8 @@ def _axes(chart, major_unit=None, size=(900, 420)):
     if major_unit is not None:
         x_axis["major_unit"] = major_unit
         x_axis["major_unit_type"] = "days"
+    if axis_max is not None:
+        x_axis["max"] = axis_max
     chart.set_x_axis(x_axis)
     chart.set_y_axis({
         "num_format": "#,##0", "name": Y_TITLE,
@@ -49,13 +51,17 @@ def _axes(chart, major_unit=None, size=(900, 420)):
 
 
 def macc_area_chart(wb, a_layout, with_reference_line=True, title=None,
-                    major_unit=None, label_col=None, size=(900, 420)):
-    # type: (object, MaccALayout, bool, object, object, object, tuple) -> object
+                    major_unit=None, label_col=None, size=(900, 420),
+                    axis_max=None):
+    # type: (object, MaccALayout, bool, object, object, object, tuple, object) -> object
     chart = wb.add_chart({"type": "area"})
     sh = a_layout.sheet
     h0, h1 = a_layout.helper_first_row, a_layout.helper_last_row
     s0 = a_layout.sorted_rows[0]
-    cats = [sh, h0, a_layout.x_col, h1, a_layout.x_col]
+    # Categories come from the date-formatted feed column when the layout has
+    # one (real MACC), else from the x column (Phase 1 spike).
+    cat_col = a_layout.x_col if a_layout.feed_col is None else a_layout.feed_col
+    cats = [sh, h0, cat_col, h1, cat_col]
     n_points = h1 - h0 + 1
     for k, col in enumerate(a_layout.series_cols):
         labels = [{"delete": True}] * n_points
@@ -84,7 +90,7 @@ def macc_area_chart(wb, a_layout, with_reference_line=True, title=None,
         "name": ("Technique A: variable-width MACC (synthetic data)"
                  if title is None else title),
         "name_font": {"name": "Arial", "size": 11}})
-    _axes(chart, major_unit, size)
+    _axes(chart, major_unit, size, axis_max)
     return chart
 
 

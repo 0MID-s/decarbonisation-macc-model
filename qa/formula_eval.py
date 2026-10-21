@@ -27,6 +27,7 @@ criteria with operators or wildcards, and an IRR whose NPV function does not
 have exactly one root on [-0.99, 10] (a non-unique IRR is refused, not guessed).
 Text comparison is case-insensitive, as in Excel ("LB"="lb" is TRUE).
 """
+import datetime
 import io
 import math
 import re
@@ -35,6 +36,7 @@ from typing import Dict, List, Tuple
 import openpyxl
 from openpyxl.formula import Tokenizer
 from openpyxl.utils import range_boundaries
+from openpyxl.utils.datetime import to_excel
 
 
 class FormulaEvalError(ValueError):
@@ -694,6 +696,9 @@ def compare_cached(data, rel_tol=1e-9, overrides=None):
                 if isinstance(c.value, str) and c.value.startswith("="):
                     n += 1
                     want = wv[ws.title][c.coordinate].value
+                    if isinstance(want, (datetime.date, datetime.time)):
+                        # date-formatted numeric cell (MACC chart axis feed)
+                        want = to_excel(want)
                     try:
                         got = ev.value(ws.title, c.coordinate)
                     except FormulaEvalError as e:

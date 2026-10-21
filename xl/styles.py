@@ -48,6 +48,7 @@ NUM_FORMATS = {
     "dec3": "#,##0.000",
     "dec5": "0.00000",
     "eur_m": "#,##0.00",
+    "date_feed": "d/m/yyyy",
     "date": "yyyy-mm-dd",
 }  # type: Dict[str, str]
 

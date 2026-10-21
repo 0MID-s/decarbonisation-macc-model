@@ -189,9 +189,11 @@ def build_macc(wb, styles, cells, dataset, cfg, layouts):
     # --- charts
     total = max(sum(res.chart_widths) for res in all_states(dataset.inputs).values())
     title_ref = "=%s!$B$%d" % (SHEET, TITLE_ROW + 1)
+    step = nice_step(total)
+    axis_max = int(-(-total // step) * step)
     chart_a = macc_area_chart(wb, a_layout, title=title_ref,
-                              major_unit=nice_step(total), label_col=7,
-                              size=(980, 460))
+                              major_unit=step, label_col=7,
+                              size=(980, 460), axis_max=axis_max)
     cells.insert_chart(ws, CHART_A_CELL, chart_a)
     c_layout = write_macc_c_block(cells, styles, ws, a_layout, srt, g)
     chart_c = macc_column_chart(

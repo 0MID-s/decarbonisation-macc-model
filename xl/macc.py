@@ -81,6 +81,7 @@ class MaccALayout:
     series_cols: Tuple[int, ...]
     name_row: int
     ref_col: int
+    feed_col: object = None   # date-formatted copy of x (chart A categories)
 
 
 @dataclass(frozen=True)
@@ -365,6 +366,20 @@ def write_macc_linked_block(cells, styles, ws, geometry, rows, ref_price_name,
                 styles.get("calc", "eur2"), value=vals[i][k])
         cells.formula(ws, r, ref_col, "=" + ref_price_name,
                       styles.get("calc", "eur2"), value=ref_price)
+    # Chart axis feed: a date-formatted copy of x. XlsxWriter always writes
+    # c:auto=1 on a date axis, so Excel only uses a true number-scale axis when
+    # the category cells carry a date number format. The visible tonnes column
+    # stays a plain number format.
+    feed_col = ref_col + 1
+    cells.text(ws, g.slot_row, feed_col,
+               "Chart axis feed: same tonnes as column E, date-formatted only "
+               "so Excel spaces the bars by tCO2e (read as tonnes, not dates)",
+               styles.get("note"))
+    cells.text(ws, g.name_row, feed_col, "Chart axis feed (tCO2e)", hdr)
+    for i, (slot, edge, flag, x) in enumerate(pts):
+        r = h0 + i
+        cells.formula(ws, r, feed_col, "=E%d" % (r + 1),
+                      styles.get("calc", "date_feed"), value=x)
     layout = MaccALayout(g.sheet, (d0, d1), (s0, s1), h0, h1, 4, series_cols,
-                         g.name_row, ref_col)
+                         g.name_row, ref_col, feed_col)
     return layout, tuple(srt)
