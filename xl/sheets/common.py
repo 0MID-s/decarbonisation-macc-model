@@ -84,6 +84,20 @@ _UNIT_ROLES = {
     "MW/kW": "factor",
     "abs tolerance": "general",
     "km per 100 km": "count",
+    "EUR/1000 l": "eur2",
+    "EUR/l": "price4",
+    "EUR/GO": "eur2",
+    "PJ": "dec2",
+    "1000 m2/MWp": "dec3",
+    "m2/kWp": "dec3",
+    "kWp": "count",
+    "EUR/km": "price4",
+    "per thousand": "factor",
+    "kW/MW": "count",
+    "MWh/GO": "factor",
+    "fraction": "factor",
+    "abs tolerance (currency units)": "general",
+    "abs tolerance (currency units per tonne)": "general",
 }
 
 

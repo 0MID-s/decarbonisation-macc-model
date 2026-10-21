@@ -100,10 +100,12 @@ class MeasureTests(unittest.TestCase):
 
     def test_fleet_assumptions(self):
         fleet = [r for r in MEAS if r.id.startswith("Meas_Fleet_")]
-        self.assertEqual(len(fleet), 3)
+        self.assertEqual(len(fleet), 7)  # 6 plus Meas_Fleet_Subsidy
         for r in fleet:
             self.assertEqual(r.status, Status.ASSUMPTION)
-            self.assertIn("no numeric ICCT anchor", r.note)
+            if r.id in ("Meas_Fleet_EVPremium", "Meas_Fleet_EVkWhPerKm",
+                        "Meas_Fleet_Life"):
+                self.assertIn("no numeric ICCT anchor", r.note)
         self.assertEqual(BY_ID["Meas_Fleet_EVPremium"].published_value, 15000)
         self.assertEqual(BY_ID["Meas_Fleet_EVkWhPerKm"].published_value, 0.25)
         self.assertEqual(BY_ID["Meas_Fleet_Life"].published_value, 8)

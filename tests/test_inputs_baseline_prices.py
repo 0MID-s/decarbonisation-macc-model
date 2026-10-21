@@ -109,16 +109,17 @@ GAS_V = {"S1": [0.0749, 0.0689, 0.0505, 0.0428, 0.0415, 0.0424],
 
 class PriceTests(unittest.TestCase):
     def test_count_and_contiguous_order(self):
-        self.assertEqual(len(PRICE), 53)
+        self.assertEqual(len(PRICE), 55)
         ids = [r.id for r in INPUTS]
         first = ids.index("Price_ElecLower_IA")
-        self.assertEqual(ids[first:first + 53], [r.id for r in PRICE])
+        self.assertEqual(ids[first:first + 55], [r.id for r in PRICE])
         exp = []
         for pre, bands, in (("Elec", EB), ("Gas", GB)):
             exp += ["Price_%sLower_%s" % (pre, b) for b in bands]
             for k in ("S1", "S2", "26S1"):
                 exp += ["Price_%s%s_%s" % (pre, k, b) for b in bands]
-        exp.append("Price_RealEscalation")
+        exp += ["Price_RealEscalation", "Price_DieselBE_WithTax",
+                "Price_DieselBE_VAT"]
         self.assertEqual([r.id for r in PRICE], exp)
 
     def test_lower_bounds(self):

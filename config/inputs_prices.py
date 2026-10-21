@@ -27,6 +27,13 @@ SOURCES = (
            "https://ec.europa.eu/eurostat/databrowser/view/nrg_pc_203/default/table",
            "semesters 2025-S1, 2025-S2, 2026-S1; fetched 2026-10-19 "
            "(see DATA_LOG)", _D, _LIC),
+    Source("Src_EUOilBulletin", "European Commission, DG Energy",
+           "Weekly Oil Bulletin, price history (with and without taxes) and "
+           "VAT rates",
+           "https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en",
+           "price history file as issued 2026-10-21 (re-issued weekly); "
+           "2025 mean of 52 weekly prices", datetime.date(2026, 10, 21),
+           "Terms not stated on the page; figures cited with source"),
 )  # type: Tuple[Source, ...]
 
 ELEC_BANDS = ("IA", "IB", "IC", "ID", "IE", "IF", "IG")
@@ -106,5 +113,22 @@ INPUTS = tuple(
               "Real energy-price escalation per year", 0.0, "per cent",
               "Const_PctToFrac", "%", NA, None, Status.ASSUMPTION,
               "Forward energy prices held flat in real terms (D-22); "
-              "energy-price sensitivity is Phase 4")]
+              "energy-price sensitivity is Phase 4"),
+       scalar("Price_DieselBE_WithTax", _SEC,
+              "Belgian automotive gas oil (diesel), 2025 mean of weekly "
+              "prices with taxes", 1658.59, "EUR/1000 l", "Const_PerThousand",
+              "EUR/l", PriceBasis("EUR", 2025, "nominal"),
+              "Src_EUOilBulletin", _S,
+              "The model divides by (1 + VAT) on the Measures sheet because "
+              "a VAT-registered firm recovers VAT but pays excise (Phase 2 "
+              "X_VAT logic, D-11); the without-tax column (770.58 EUR/1000 "
+              "l) would understate the saving",
+              "Oil Bulletin file, sheet 'Prices with taxes', column Y "
+              "(BE_price_with_tax_diesel), mean of the 52 weekly rows dated "
+              "2025 (DATA_LOG Phase 3)"),
+       scalar("Price_DieselBE_VAT", _SEC,
+              "Belgian VAT rate on diesel", 21, "per cent",
+              "Const_PctToFrac", "%", NA, "Src_EUOilBulletin", _S, "",
+              "Oil Bulletin file, sheet 'VAT', row 6 (BE_, since "
+              "1996-01-01), diesel column")]
 )  # type: Tuple[InputRecord, ...]

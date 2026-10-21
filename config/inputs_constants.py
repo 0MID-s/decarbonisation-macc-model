@@ -57,6 +57,37 @@ INPUTS = (
        "Absolute tolerance for OK/ERROR reconciliation checks"),
     _c("Const_km_per_100km", "Kilometres per 100 km", 100.0,
        "km per 100 km", "Definitional: 100 km = 100 km"),
+    _c("Const_PerThousand", "Per thousand", 0.001, "per thousand",
+       "Definitional: a price per 1000 litres divided by 1000 is a price "
+       "per litre"),
+    _c("Const_kW_per_MW", "Kilowatts per megawatt", 1000.0, "kW/MW",
+       "Definitional: 1 MW = 1000 kW"),
+    _c("Const_MWh_per_GO", "Megawatt-hours per Guarantee of Origin", 1.0,
+       "MWh/GO", "One Guarantee of Origin covers 1 MWh (Directive (EU) "
+       "2018/2001 art. 19(2), flagged as not re-read this phase)"),
+    _c("Const_IRR_Guess", "IRR starting guess", 0.1, "fraction",
+       "Starting value for Excel IRR (Excel default 10%); the Measures "
+       "sheet flips its sign when the undiscounted sum of flows is "
+       "negative so Excel searches near a negative root"),
+    _c("Const_CheckTolMoney", "Check tolerance, money", 1.0,
+       "abs tolerance (currency units)",
+       "Absolute tolerance for euro reconciliation checks (SUMPRODUCT NPV "
+       "vs CF0+NPV memo); Const_CheckTolerance (1e-6) is too tight for "
+       "euro sums"),
+    _c("Const_IRRCheckTolMoney", "Check tolerance, NPV at IRR", 10.0,
+       "abs tolerance (currency units)",
+       "Tolerance for NPV at the IRR = 0: Excel IRR is accurate to about "
+       "1e-7 in the rate, which moves NPV by up to a few euros on these "
+       "capex sizes (research Pitfall 4)"),
+    _c("Const_AnnuityTolRel", "Annuity reconciliation tolerance, relative",
+       0.05, "fraction",
+       "Relative tolerance of the internal annuity vs levelised "
+       "reconciliation; the forms agree only for flat profiles "
+       "(replacements, degradation, 29-year window); the prototype showed "
+       "at most 2.4% difference (research Code Example 7)"),
+    _c("Const_AnnuityTolAbs", "Annuity reconciliation tolerance, absolute",
+       1.0, "abs tolerance (currency units per tonne)",
+       "Absolute floor for the annuity reconciliation for costs near zero"),
 )  # type: Tuple[InputRecord, ...]
 
 SOURCES = ()

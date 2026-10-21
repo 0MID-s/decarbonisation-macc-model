@@ -18,6 +18,10 @@ EXPECTED = {
     "Const_kg_per_t": 1000, "Const_g_per_kg": 1000,
     "Const_Mega_per_kilo": 1000, "Const_PerMW_to_PerkW": 0.001,
     "Const_CheckTolerance": 1e-6, "Const_km_per_100km": 100,
+    "Const_PerThousand": 0.001, "Const_kW_per_MW": 1000,
+    "Const_MWh_per_GO": 1, "Const_IRR_Guess": 0.1,
+    "Const_CheckTolMoney": 1, "Const_IRRCheckTolMoney": 10,
+    "Const_AnnuityTolRel": 0.05, "Const_AnnuityTolAbs": 1,
 }
 MONEY = re.compile(r"€|EUR|USD|US\$|GBP")
 
@@ -25,7 +29,7 @@ MONEY = re.compile(r"€|EUR|USD|US\$|GBP")
 class ConstantsTests(unittest.TestCase):
     def test_values(self):
         by = {r.id: r for r in inputs_constants.INPUTS}
-        self.assertEqual(len(by), 14)
+        self.assertEqual(len(by), 22)
         for k, v in EXPECTED.items():
             self.assertAlmostEqual(by[k].published_value, v, delta=1e-12)
 

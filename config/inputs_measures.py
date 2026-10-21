@@ -2,10 +2,11 @@
 import datetime
 from typing import Tuple
 
-from config._helpers import EUR2025_REAL, NA, PriceBasis, Status, scalar
+from config._helpers import EUR2025_NOM, EUR2025_REAL, NA, PriceBasis, Status, scalar
 from config.schema import Source
 
 _D = datetime.date(2026, 10, 19)
+_D3 = datetime.date(2026, 10, 21)
 _SEC = "Measures"
 _S = Status.SOURCED
 _A = Status.ASSUMPTION
@@ -51,6 +52,19 @@ SOURCES = (
            "final advice 13 Feb 2026, OT-model 20 Feb 2026 (Colofon: "
            "Eindadvies SDE++ 2026 - 1)", _D,
            "PBL terms not read; figures cited with source"),
+    Source("Src_JRCHeat", "European Commission, Joint Research Centre",
+           "Heat and cooling demand and market perspective (EUR 25381 EN, "
+           "Pardo et al. 2012), Table 3.2.a",
+           "https://publications.jrc.ec.europa.eu/repository/handle/JRC70962",
+           "EUR 25381 EN (2012); data year 2009", _D3,
+           "Terms not stated on the page; figures cited with source"),
+    Source("Src_WalloniaMarket", "Service public de Wallonie, Energie",
+           "Valeurs de marche applicables en 2026 (regime CPMA)",
+           "https://energie.wallonie.be/files/Soutiens%20financiers/"
+           "%c3%a9lectricit%c3%a9%20verte/M%c3%a9canismes%20de%20soutiens/"
+           "R%c3%a9gime%20CPMA/valeurs-de-marche-2026.pdf",
+           "values applicable in 2026; GO value is the 2025 average", _D3,
+           "Terms not stated on the page; figures cited with source"),
 )  # type: Tuple[Source, ...]
 
 
@@ -257,4 +271,147 @@ INPUTS = (
            "years", "Const_None", "years", NA, None, _A,
            _FB + "assumed holding period of a light commercial van, chosen "
            "by the analyst, not taken from a source", _FBN),
+)
+
+_AS = "chosen by the analyst, not taken from a source"
+_SUB = ("Analyst assumption (D-15): no grant assumed by default; enter a % "
+        "of the initial capex to see NPV after incentives; applies to the "
+        "year-0 capex only, not to replacements (typical grant practice)")
+
+
+def _share(id_, desc, val, rat):
+    return scalar(id_, _SEC, desc, val, "per cent", "Const_PctToFrac", "%",
+                  NA, None, _A, rat, "Analyst assumption; Phase 4 sensitivity")
+
+
+def _sub(key, extra=""):
+    return scalar("Meas_%s_Subsidy" % key, _SEC,
+                  "Subsidy on initial capex, %s" % key, 0, "per cent",
+                  "Const_PctToFrac", "%", NA, None, _A, _SUB + extra,
+                  "Analyst assumption (D-15, MEAS-10)")
+
+
+def _ana(id_, desc, val, unit, basis, rat):
+    return scalar(id_, _SEC, desc, val, unit, "Const_None", unit, basis, None,
+                  _A, rat, "Analyst assumption; Phase 4 sensitivity")
+
+
+INPUTS = INPUTS + (
+    scalar("Meas_LED_ZMCapex", _SEC,
+           "RVO EML: double TL light line to LED fixture, ZM (independent "
+           "moment) total investment per fixture", 252.224, "EUR per unit",
+           "Const_None", "EUR per unit", _EUR2023, "Src_RVOEML", _S,
+           "D-05: a retrofit uses the full cost (ZM); the NM rows are "
+           "incremental to a replacement that happens anyway. " + _RVO_RAT,
+           "Samengevoegde maatregelen, ZM row 15, cell K15"),
+    scalar("Meas_LED_ZMSaving", _SEC,
+           "RVO EML: double TL light line to LED fixture, ZM electricity "
+           "saving per fixture", 215.75, "kWh/yr per unit", "Const_None",
+           "kWh/yr per unit", NA, "Src_RVOEML", _S, "",
+           "Samengevoegde maatregelen, ZM row 15, cell J15"),
+    scalar("Meas_VSD_ZMCapex", _SEC,
+           "RVO EML: frequency controller on cooling compressors, ZM "
+           "(independent moment) total investment per piece (40 kW)",
+           5521.60, "EUR per unit", "Const_None", "EUR per unit", _EUR2023,
+           "Src_RVOEML", _S,
+           "D-05: full cost for a retrofit. The RVO row is a "
+           "refrigeration-compressor VSD used as a cost proxy for 'VSD on "
+           "compressor motors'. " + _RVO_RAT,
+           "Samengevoegde maatregelen, ZM row 3, cell K3"),
+    _eur25("Meas_Boiler_IndirectCapex",
+           "Gas boiler indirect investment (memo)", 0.23, "M EUR/MW", _MK,
+           "EUR/kW", "sheet 6.1!C28 (DATA_LOG Phase 3: rows 22-24 total, "
+           "indirect at row 28)",
+           "Kept out of capex (D-06, A3 resolved: the headline nominal "
+           "investment is the total); identical to the heat-pump value so "
+           "it cancels in the incremental capex"),
+    scalar("Meas_HP_FullLoadHours", _SEC,
+           "Industrial heat pump full-load hours", 8000, "h/yr",
+           "Const_None", "h/yr", NA, "Src_PBLSDE2026", _S,
+           "Sourced base case (orchestrator resolution 3): DEA states no "
+           "hours; 6,000 h is a Phase 4 sensitivity; a subsidy reference "
+           "case, not a DEA value",
+           "OT-model sheet 98, cell C29 (industrial heat pump, closed "
+           "system, 8,000 h)"),
+    scalar("Meas_HP_HeatHighPJ", _SEC,
+           "JRC Belgium chemical useful heat demand, high temperature",
+           25.3, "PJ", "Const_None", "PJ", NA, "Src_JRCHeat", _S, "",
+           "Table 3.2.a, Belgium, chemical, useful heat demand 2009 (high)"),
+    scalar("Meas_HP_HeatMedPJ", _SEC,
+           "JRC Belgium chemical useful heat demand, medium temperature "
+           "(100-400 C)", 12.5, "PJ", "Const_None", "PJ", NA, "Src_JRCHeat",
+           _S, "", "Table 3.2.a, Belgium, chemical, useful heat demand 2009 "
+           "(medium 100-400 C)"),
+    scalar("Meas_HP_HeatLowPJ", _SEC,
+           "JRC Belgium chemical useful heat demand, low temperature "
+           "(below 100 C)", 21.0, "PJ", "Const_None", "PJ", NA,
+           "Src_JRCHeat", _S,
+           "The share below 100 C is computed on the Measures sheet and "
+           "used as a conservative proxy for gas heat at or below 125 C "
+           "(D-10; 100-125 C not separable; all fuels, 2009)",
+           "Table 3.2.a, Belgium, chemical, useful heat demand 2009 (low, "
+           "below 100 C)"),
+    scalar("Meas_PV_RoofArea", _SEC,
+           "Rooftop PV space requirement (memo for implied roof area)",
+           4.479, "1000 m2/MWp", "Const_None", "m2/kWp", NA, _EL, _S,
+           "Used only for the implied-roof-area memo row (D-09)",
+           "sheet 22 Rooftop PV comm.&industrial!C30; note B2: 110 kWp is "
+           "about 490 m2 flat"),
+    scalar("Meas_RC_GOPrice", _SEC,
+           "Guarantee of Origin value (Wallonia, 2025 average purchase "
+           "price)", 2.05, "EUR/GO", "Const_MWh_per_GO", "EUR/MWh",
+           EUR2025_NOM, "Src_WalloniaMarket", _S,
+           "Producer-side regulatory reference value, likely below a retail "
+           "green premium, so it flatters the contract; Phase 4 "
+           "sensitivity (D-12)",
+           "Page 1: \"Valeur d'une GO: 2,05 EUR/GO\" (average GO "
+           "purchase price from producers, 1 Jan to 31 Dec 2025)"),
+    _share("Meas_LED_LightingShare",
+           "Lighting share of industrial electricity", 6,
+           "Anchor: US EIA MECS 2018 (about 6% of US manufacturing "
+           "electricity, eia.gov FAQ 99) as a non-EU proxy; no EU, JRC or "
+           "RVO figure found (D-07); value " + _AS),
+    _share("Meas_LED_Coverage",
+           "Share of the lighting load still on legacy (TL/halogen) "
+           "fittings", 50,
+           "Avoids counting savings on fittings already LED (Pitfall 2); "
+           "value " + _AS),
+    _share("Meas_LED_SavingRate",
+           "Electricity saving of LED vs the legacy fitting", 50,
+           "Consistent in order of magnitude with the RVO TL-to-LED row; "
+           "value " + _AS),
+    _share("Meas_VSD_MotorShare",
+           "Compressed-air share of industrial electricity", 10,
+           "Anchor: Fraunhofer ISI (Radgen & Blaustein 2001, about 10% of "
+           "EU industrial electricity) and JRC (motor systems 65%) (D-08); "
+           "value " + _AS),
+    _share("Meas_VSD_Coverage",
+           "Share of compressed-air load suited to a VSD retrofit", 50,
+           "Avoids counting savings on already-controlled compressors "
+           "(Pitfall 2); value " + _AS),
+    _share("Meas_VSD_SavingRate",
+           "Electricity saving of a VSD on a compressor", 15,
+           "Order of magnitude of the RVO row saving; value " + _AS),
+    _ana("Meas_PV_Size", "Rooftop PV system size", 1000, "kWp", NA,
+         "Typical flat roof of about 5,000-7,000 m2 on a medium plant; the "
+         "DEA ratio (Meas_PV_RoofArea) implies about 4,480 m2 "
+         "flush-mounted (D-09); " + _AS),
+    _ana("Meas_Fleet_ChargerCapex", "Fleet: depot AC charger per van, "
+         "installed", 2000, "EUR per vehicle", EUR2025_REAL,
+         "Depot AC charger installed per van; no van TCO source found "
+         "(research V9); " + _AS),
+    _ana("Meas_Fleet_MaintSaving", "Fleet: maintenance saving of an "
+         "electric vs a diesel van", 0.03, "EUR/km", EUR2025_REAL,
+         "Maintenance saving per km; no source found (V9); " + _AS),
+    _ana("Meas_Fleet_DieselVanPrice", "Fleet: purchase price of the "
+         "counterfactual new diesel light van", 35000, "EUR per vehicle",
+         EUR2025_REAL,
+         "Used ONLY for the D-05 full-capex memo NPV of the fleet block "
+         "(the decision NPV uses the incremental premium); round planning "
+         "figure " + _AS),
+    _ana("Meas_RC_Term", "Renewable contract term", 10, "years", NA,
+         "Contract renewed at the same real premium to 2055; disclosure "
+         "only, it does not change the cash flows (D-12); " + _AS),
+    _sub("LED"), _sub("VSD"), _sub("HP"), _sub("Fleet"), _sub("PV"),
+    _sub("RC", "; the contract has no capex, so its subsidy has no effect"),
 )
