@@ -6,7 +6,6 @@ import unittest
 import zipfile
 
 import openpyxl
-from openpyxl.utils.datetime import to_excel
 
 import build
 from checkmodel import appraisal as ap
@@ -118,35 +117,6 @@ class MaccSheet(unittest.TestCase):
         c = [x for x in macc if "<c:dateAx>" not in x][0]
         self.assertIn("<c:barChart>", c)
         self.assertIn("Fallback view", c)
-
-    def test_chart_a_categories_use_date_formatted_feed(self):
-        ws = self.wb["MACC"]
-        wsv = self.wbv["MACC"]
-        feed = None
-        for c in ws[67]:
-            if c.value is not None and "axis feed" in str(c.value).lower():
-                feed = c.column_letter
-        self.assertIsNotNone(feed)
-        with zipfile.ZipFile(io.BytesIO(self.data)) as z:
-            a = [z.read(n).decode("utf-8") for n in z.namelist()
-                 if n.startswith("xl/charts/chart")
-                 and "<c:dateAx>" in z.read(n).decode("utf-8")][0]
-        cats = re.findall(r"<c:cat>.*?<c:f>(.*?)</c:f>", a)
-        self.assertTrue(cats)
-        for f in cats:
-            self.assertEqual(f, "MACC!$%s$68:$%s$91" % (feed, feed))
-        self.assertIn('<c:max val="', a)
-        for r in range(68, 92):
-            cell = ws["%s%d" % (feed, r)]
-            self.assertEqual(cell.value, "=E%d" % r)
-            self.assertTrue(cell.number_format.lower().startswith("d"),
-                            cell.number_format)
-            fv = wsv["%s%d" % (feed, r)].value
-            if not isinstance(fv, (int, float)):
-                fv = to_excel(fv)   # openpyxl decodes date-formatted numbers
-            self.assertEqual(fv, wsv["E%d" % r].value)
-            self.assertNotIn("d", ws["E%d" % r].number_format.lower().replace(
-                "#", ""))
 
     def test_barrier_notes_labelled(self):
         ws = self.wb["MACC"]

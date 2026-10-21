@@ -58,10 +58,7 @@ def macc_area_chart(wb, a_layout, with_reference_line=True, title=None,
     sh = a_layout.sheet
     h0, h1 = a_layout.helper_first_row, a_layout.helper_last_row
     s0 = a_layout.sorted_rows[0]
-    # Categories come from the date-formatted feed column when the layout has
-    # one (real MACC), else from the x column (Phase 1 spike).
-    cat_col = a_layout.x_col if a_layout.feed_col is None else a_layout.feed_col
-    cats = [sh, h0, cat_col, h1, cat_col]
+    cats = [sh, h0, a_layout.x_col, h1, a_layout.x_col]
     n_points = h1 - h0 + 1
     for k, col in enumerate(a_layout.series_cols):
         labels = [{"delete": True}] * n_points
