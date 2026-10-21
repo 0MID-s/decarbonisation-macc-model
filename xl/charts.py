@@ -5,6 +5,7 @@ Okabe-Ito palette in slot order, no 3D, gradients or shadows.
 """
 from xl.macc import MaccALayout, MaccCLayout
 from xl.styles import OKABE_ITO
+from xlsxwriter.utility import xl_col_to_name
 
 FONT = {"name": "Arial", "size": 9}
 X_TITLE = "Cumulative annual abatement (tCO2e)"
@@ -15,23 +16,41 @@ def _q(sheet):
     return "'%s'" % sheet if " " in sheet else sheet
 
 
-def _axes(chart):
-    chart.set_x_axis({
+def nice_step(total, max_intervals=8):
+    # type: (float, int) -> int
+    """Smallest of 1, 2, 5 x 10^k giving at most max_intervals major steps."""
+    total = max(float(total), 1.0)
+    k = 0
+    while True:
+        for m in (1, 2, 5):
+            step = m * 10 ** k
+            if total / step <= max_intervals:
+                return step
+        k += 1
+
+
+def _axes(chart, major_unit=None, size=(900, 420)):
+    x_axis = {
         "date_axis": True, "num_format": "#,##0", "min": 0,
         "label_position": "low", "num_font": FONT,
         "name": X_TITLE, "name_font": dict(FONT, bold=False),
-    })
+    }
+    if major_unit is not None:
+        x_axis["major_unit"] = major_unit
+        x_axis["major_unit_type"] = "days"
+    chart.set_x_axis(x_axis)
     chart.set_y_axis({
         "num_format": "#,##0", "name": Y_TITLE,
         "name_font": dict(FONT, bold=False), "num_font": FONT,
         "major_gridlines": {"visible": True, "line": {"color": "#D9D9D9"}},
     })
     chart.set_legend({"position": "bottom", "font": FONT})
-    chart.set_size({"width": 900, "height": 420})
+    chart.set_size({"width": size[0], "height": size[1]})
 
 
-def macc_area_chart(wb, a_layout, with_reference_line=True):
-    # type: (object, MaccALayout, bool) -> object
+def macc_area_chart(wb, a_layout, with_reference_line=True, title=None,
+                    major_unit=None, label_col=None, size=(900, 420)):
+    # type: (object, MaccALayout, bool, object, object, object, tuple) -> object
     chart = wb.add_chart({"type": "area"})
     sh = a_layout.sheet
     h0, h1 = a_layout.helper_first_row, a_layout.helper_last_row
@@ -40,7 +59,8 @@ def macc_area_chart(wb, a_layout, with_reference_line=True):
     n_points = h1 - h0 + 1
     for k, col in enumerate(a_layout.series_cols):
         labels = [{"delete": True}] * n_points
-        labels[4 * k + 1] = {"value": "=%s!$C$%d" % (_q(sh), s0 + k + 1)}
+        lc = "C" if label_col is None else xl_col_to_name(label_col)
+        labels[4 * k + 1] = {"value": "=%s!$%s$%d" % (_q(sh), lc, s0 + k + 1)}
         chart.add_series({
             "name": [sh, a_layout.name_row, col],
             "categories": cats,
@@ -60,14 +80,16 @@ def macc_area_chart(wb, a_layout, with_reference_line=True):
             "marker": {"type": "none"},
         })
         chart.combine(line)
-    chart.set_title({"name": "Technique A: variable-width MACC (synthetic data)",
-                     "name_font": {"name": "Arial", "size": 11}})
-    _axes(chart)
+    chart.set_title({
+        "name": ("Technique A: variable-width MACC (synthetic data)"
+                 if title is None else title),
+        "name_font": {"name": "Arial", "size": 11}})
+    _axes(chart, major_unit, size)
     return chart
 
 
-def macc_column_chart(wb, c_layout):
-    # type: (object, MaccCLayout) -> object
+def macc_column_chart(wb, c_layout, title=None, size=(900, 420)):
+    # type: (object, MaccCLayout, object, tuple) -> object
     chart = wb.add_chart({"type": "column"})
     sh = c_layout.sheet
     cats = [sh, c_layout.first_row, c_layout.start_col,
@@ -81,8 +103,10 @@ def macc_column_chart(wb, c_layout):
             "border": {"none": True},
             "gap": 0, "overlap": 100,
         })
-    chart.set_title({"name": "Technique C: 200-bin MACC fallback (synthetic data)",
-                     "name_font": {"name": "Arial", "size": 11}})
+    chart.set_title({
+        "name": ("Technique C: 200-bin MACC fallback (synthetic data)"
+                 if title is None else title),
+        "name_font": {"name": "Arial", "size": 11}})
     chart.set_x_axis({"num_format": "#,##0", "name": X_TITLE,
                       "name_font": dict(FONT, bold=False), "num_font": FONT,
                       "interval_unit": 20, "label_position": "low"})
@@ -91,5 +115,5 @@ def macc_column_chart(wb, c_layout):
                       "major_gridlines": {"visible": True,
                                           "line": {"color": "#D9D9D9"}}})
     chart.set_legend({"position": "bottom", "font": FONT})
-    chart.set_size({"width": 900, "height": 420})
+    chart.set_size({"width": size[0], "height": size[1]})
     return chart
