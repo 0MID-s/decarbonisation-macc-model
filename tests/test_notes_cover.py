@@ -47,6 +47,20 @@ class Notes(unittest.TestCase):
                   "Transcribed inputs (D-14 route 3)", "Version log"):
             self.assertIn(h, vals)
 
+    def test_phase3_section(self):
+        vals = [c.value for row in self.wb["Notes"].iter_rows() for c in row]
+        self.assertIn("Measures and MACC method (Phase 3)", vals)
+        t = self._text()
+        for w in ("not an optimiser", "Kesicki", "stack", "shadow-price",
+                  "Phase 3: Measures engine"):
+            self.assertIn(w, t)
+        fx = build.load_dataset("fixtures")
+        data, _ = build.build_bytes("main", fx)
+        import io, openpyxl
+        fvals = [c.value for row in openpyxl.load_workbook(
+            io.BytesIO(data))["Notes"].iter_rows() for c in row]
+        self.assertNotIn("Measures and MACC method (Phase 3)", fvals)
+
     def _text(self):
         return "\n".join(str(c.value) for row in self.wb["Notes"].iter_rows()
                          for c in row if c.value is not None)

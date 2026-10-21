@@ -109,6 +109,45 @@ def legal_status_note(inputs):
     return " ".join(parts)
 
 
+MEASURES_TITLE = "Measures and MACC method (Phase 3)"
+MEASURES_METHOD = (
+    "Cash flows are pre-tax, ex-VAT and in real EUR 2025. Year 0 is 2026 "
+    "(undiscounted), operating flows run 2027-2055 and are discounted at "
+    "year end (D-01, D-04).",
+    "The heat pump and the fleet measure use incremental capex over the "
+    "boiler or diesel van the firm would buy anyway (the McKinsey MACC "
+    "convention). LED, VSD and PV use full cost. The full-capex NPV memo "
+    "line is for transparency only (D-05).",
+    "Assets are replaced like-for-like at the same real capex, with no "
+    "learning-curve decline. Life left in 2055 is credited as a "
+    "straight-line residual value (D-02).",
+    "The financial NPV includes any subsidy (Meas_*_Subsidy, default 0) and "
+    "drives IRR, payback and abatement cost. NPV before subsidy is shown "
+    "alongside it (D-15).",
+    "Carbon value at the selected NGFS scenario is a shadow-price lens, not "
+    "cash. Cash carbon costs by channel belong to Phase 4 (D-16).",
+    "The electricity stack applies efficiency, electrification and solar "
+    "first, then the renewable contract on the residual. Measures interact "
+    "and the stack fixes one order, so per-measure results are not fully "
+    "independent (an independence limitation). The market-based electricity "
+    "tonnes of the six measures sum exactly to the baseline market-based "
+    "electricity emissions; only the split between measures depends on the "
+    "stack order (D-13). Under the location-based basis the contract "
+    "abates nothing.",
+    "The MACC is a cost-ranked screening, not an optimiser. It ignores "
+    "interactions beyond the stack, barriers and non-financial costs "
+    "(Kesicki and Ekins). Negative-cost measures are often not done because "
+    "of hidden and attention costs.",
+    "Key analyst assumptions to test in Phase 4: Meas_LED_LightingShare, "
+    "Meas_LED_Coverage, Meas_LED_SavingRate, Meas_VSD_MotorShare, "
+    "Meas_VSD_Coverage, Meas_VSD_SavingRate, Meas_PV_Size, "
+    "Meas_Fleet_ChargerCapex, Meas_Fleet_MaintSaving, Meas_RC_GOPrice "
+    "(producer-side value), Meas_HP_FullLoadHours (PBL subsidy reference "
+    "case) and the JRC 2009 heat split.",
+    "The annuity-method reconciliation is an internal check with tolerance "
+    "Const_AnnuityTolRel, not a client output.",
+)
+
 EXCLUSIONS = (
     "Scope 3 is excluded: no official sector-level Scope 3 intensity for "
     "Belgian chemicals was found and no synthetic figure is used (D-13).",
@@ -210,6 +249,14 @@ def build_notes(wb, styles, cells, dataset, cfg):
                 or r.rationale.startswith(("Transcribed",
                                            "Unverified transcription"))):
             n.para("%s: %s" % (r.id, r.description))
+    if not dataset.synthetic:
+        n.section(MEASURES_TITLE)
+        for t in MEASURES_METHOD:
+            n.para(t)
     n.section("Version log")
     n.para("Phase 2: real cited data, Baseline, Rates, Carbon and Notes")
+    if not dataset.synthetic:
+        n.para("Phase 3: Measures engine (six measures, stack, NPV/IRR/"
+               "payback/abatement cost, LB/MB and scenario selectors) and "
+               "MACC")
     return None
