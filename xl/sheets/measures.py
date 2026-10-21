@@ -10,6 +10,7 @@ added in plan 03-08 on top of the rows allocated here.
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
 
+from xl.selector import selector_state
 from checkmodel import appraisal as ap
 from checkmodel.baseline_reference import model_values
 from checkmodel.measures_reference import (
@@ -178,7 +179,8 @@ def _ints(xs):
 
 
 def build_measures(wb, styles, cells, dataset, cfg, layouts):
-    ref = compute_measures(dataset.inputs, *DEFAULT_STATE)
+    ref = compute_measures(dataset.inputs, *selector_state(dataset))
+    state = selector_state(dataset)
     mvals = dict(model_values(dataset.inputs))
     rows, blocks, _end = allocate_rows()
     carbon_rows = dict(layouts["carbon"].rows)
@@ -238,11 +240,11 @@ def build_measures(wb, styles, cells, dataset, cfg, layouts):
              % _a(c, R["idx"]), ref.price_idx, "factor", name="M_PriceIdx")
     w.line(R["basisidx"], "Basis index (1 = location-based, 2 = "
            "market-based)", "index")
-    basis_i = 2 if DEFAULT_STATE[0] == "Market-based" else 1
+    basis_i = 2 if state[0] == "Market-based" else 1
     w.scalar(R["basisidx"], "=MATCH(Sel_Basis,List_Basis,0)", basis_i, "int",
              link=True, name="M_BasisIdx")
     w.line(R["scenidx"], "Scenario index (1 Low, 2 Central, 3 High)", "index")
-    scen_i = SCENARIOS_UI.index(DEFAULT_STATE[1]) + 1
+    scen_i = SCENARIOS_UI.index(state[1]) + 1
     w.scalar(R["scenidx"], "=MATCH(Sel_Scenario,List_Scenario,0)", scen_i,
              "int", link=True, name="M_ScenIdx")
     w.line(R["cprice"], "Selected carbon price (shadow price lens)",

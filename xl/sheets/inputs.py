@@ -7,6 +7,7 @@ from xl.layout import (
     LABEL_COL, TIMELINE_FIRST_COL, TIMELINE_LAST_COL, col_for_year, col_letter,
     setup_sheet,
 )
+from xl.selector import selector_state
 from xl.sheets.common import (
     num_role_for_unit, write_legend_row, write_synthetic_banner,
     write_title_band,
@@ -51,7 +52,7 @@ def _notes(r):
     return text if text.strip() else "–"
 
 
-def _selector_band(ws, styles, cells):
+def _selector_band(ws, styles, cells, state=("Market-based", "Central")):
     """Model selectors (D-26, OUT-04): Sel_Scenario at G8, Sel_Basis at G9."""
     sec = styles.get("section")
     cells.text(ws, 6, LABEL_COL,
@@ -61,11 +62,11 @@ def _selector_band(ws, styles, cells):
         cells.blank(ws, 6, c, sec)
     rows = (
         (7, "Sel_Scenario", "Carbon price scenario (Low = NGFS Current "
-         "Policies, Central = NDCs, High = Net Zero 2050)", "Central",
+         "Policies, Central = NDCs, High = Net Zero 2050)", state[1],
          "=List_Scenario", "Select scenario",
          "Default Central; drives the carbon value and MACC reference line"),
         (8, "Sel_Basis", "Emissions basis for Scope 2 electricity "
-         "(GHG Protocol Scope 2 Guidance)", "Market-based", "=List_Basis",
+         "(GHG Protocol Scope 2 Guidance)", state[0], "=List_Basis",
          "Select basis", "Default Market-based (CSRD/ESRS headline basis); "
          "location-based is one click away"),
     )
@@ -99,7 +100,7 @@ def build_inputs(wb, styles, cells, dataset, cfg):
     if dataset.synthetic:
         write_synthetic_banner(cells, styles, ws, 3, LAST_COL)
     write_legend_row(cells, styles, ws, 4)
-    _selector_band(ws, styles, cells)
+    _selector_band(ws, styles, cells, selector_state(dataset))
 
     hdr = styles.get("header")
     for i, name in enumerate(INPUT_COLUMNS):

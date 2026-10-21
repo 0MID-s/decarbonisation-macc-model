@@ -7,6 +7,7 @@ Everything is driven by the Measures result names and the two selectors
 from dataclasses import dataclass
 from typing import Tuple
 
+from xl.selector import selector_state
 from checkmodel.measures_reference import (
     DEFAULT_STATE, all_states, compute_measures)
 from config.measures_catalog import MEASURES
@@ -86,7 +87,7 @@ def _rows(ref):
 
 
 def build_macc(wb, styles, cells, dataset, cfg, layouts):
-    ref = compute_measures(dataset.inputs, *DEFAULT_STATE)
+    ref = compute_measures(dataset.inputs, *selector_state(dataset))
     n = len(ref.measures)
     g = GEOMETRY
     ws = wb.add_worksheet(SHEET)
