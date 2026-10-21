@@ -163,3 +163,27 @@ class HelperTables(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class EligibleRanking(unittest.TestCase):
+    def test_ineligible_after_eligible(self):
+        ms = [("A", 10, 5.0, True), ("B", 0, "n/a", False),
+              ("C", 20, -3.0, True)]
+        self.assertEqual(ref.input_ranks_eligible(ms), [2, 3, 1])
+
+    def test_two_ineligible_keep_input_order(self):
+        ms = [("A", 0, "n/a", False), ("B", 5, 1.0, True),
+              ("C", 0, "n/a", False)]
+        self.assertEqual(ref.input_ranks_eligible(ms), [2, 1, 3])
+
+    def test_ties_keep_input_order(self):
+        ms = [("a", 1, 5.0, True), ("b", 2, 5.0, True), ("c", 3, 1.0, True)]
+        self.assertEqual(ref.input_ranks_eligible(ms), [2, 3, 1])
+        self.assertEqual(ref.input_ranks_eligible(ms),
+                         ref.input_ranks([m[:3] for m in ms]))
+
+    def test_rank_measures_eligible_zeroes_ineligible(self):
+        ms = [("A", 10, 5.0, True), ("B", 7, "n/a", False),
+              ("C", 20, -3.0, True)]
+        out = ref.rank_measures_eligible(ms)
+        self.assertEqual(out, [("C", 20, -3.0), ("A", 10, 5.0), ("B", 0, 0)])
