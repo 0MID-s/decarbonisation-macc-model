@@ -91,3 +91,37 @@ def macc_c_values(sorted_measures, n_bins=N_BINS):
     n = len(sorted_measures)
     return [[sorted_measures[s][2] if slot == s + 1 else 0 for s in range(n)]
             for (_i, _start, slot) in macc_c_bins(sorted_measures, n_bins)]
+
+
+EligibleMeasure = Tuple[str, int, object, bool]
+
+
+def input_ranks_eligible(measures):
+    # type: (Sequence[EligibleMeasure]) -> List[int]
+    """Eligible measures rank by cost (ties in input order); ineligible ones
+    follow in input order (workbook rule: COUNT(costs) + COUNTIF(flags))."""
+    elig_costs = [m[2] for m in measures if m[3]]
+    n_elig = len(elig_costs)
+    out = []
+    seen_costs = []
+    n_inelig = 0
+    for m in measures:
+        if m[3]:
+            c = m[2]
+            out.append(1 + sum(1 for x in elig_costs if x < c)
+                       + sum(1 for x in seen_costs if x == c))
+            seen_costs.append(c)
+        else:
+            n_inelig += 1
+            out.append(n_elig + n_inelig)
+    return out
+
+
+def rank_measures_eligible(measures):
+    # type: (Sequence[EligibleMeasure]) -> List[Measure]
+    """Sorted list; ineligible measures carry width 0 and cost 0."""
+    ranks = input_ranks_eligible(measures)
+    out = [None] * len(measures)
+    for m, r in zip(measures, ranks):
+        out[r - 1] = (m[0], m[1], m[2]) if m[3] else (m[0], 0, 0)
+    return out
