@@ -40,6 +40,7 @@ from xl.sheets.notes import build_notes
 from xl.sheets.rates import build_rates
 from xl.sheets.sources import build_sources
 from xl.sheets.spike import build_spike
+from xl.postprocess import patch_date_axis
 from xl.styles import Styles
 
 OPTIONS = {
@@ -142,7 +143,9 @@ def build_bytes(target, dataset, extra_builders=()):
     for extra in extra_builders:
         extra(wb, styles, cells)
     wb.close()
-    data = buf.getvalue()
+    # XlsxWriter hard-codes c:auto=1 on date axes; force a true date axis on
+    # the one technique A MACC chart (see xl/postprocess.py).
+    data = patch_date_axis(buf.getvalue(), expected_charts=1)
     registry = cells.registry
     for rec in registry:
         lint_or_raise(rec.text, rec.sheet, cells.tags)
