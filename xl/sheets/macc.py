@@ -177,6 +177,9 @@ def build_macc(wb, styles, cells, dataset, cfg, layouts):
                     ("MACC_Rank_Cost", "E"), ("MACC_Rank_Tier", "J")):
         cells.define_name(name, "=%s!$%s$%d:$%s$%d" % (
             SHEET, c, TBL_FIRST + 1, c, t1 + 1))
+    for name, c in (("MACC_Chart_Width", "E"), ("MACC_Chart_Height", "D")):
+        cells.define_name(name, "=%s!$%s$%d:$%s$%d" % (
+            SHEET, c, s0 + 1, c, s1 + 1))
     for r in range(d0, d1 + 1):
         ws.set_row(r, 40)
     ws.set_row(g.header_row, 38)
