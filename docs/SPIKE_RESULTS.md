@@ -52,6 +52,14 @@ not by the thumbnail.
 
 ## GATE-A status
 
+Correction (2026-10-21): the conclusion below that technique A "works" for
+variable widths was probably wrong. The spike chart used the same XML as the
+Phase 3 chart: a date axis with `c:auto=1` fed by plain-number category cells,
+which Excel renders as a text axis (equal spacing). The "crowded labels" were
+likely the 24 category labels. Equal spacing was not detected at the time.
+Variable width (with date-formatted category cells) is re-verified in Phase 3
+plan 03-11.
+
 GATE-A: Passed (Excel desktop) on 2026-10-18, with notes. Excel for the web not yet checked.
 
 Environment: Microsoft Excel for Mac 16.114, spike sha256

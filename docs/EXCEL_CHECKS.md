@@ -63,6 +63,32 @@ only. The copy was closed without saving and the copy and its subfolder were
 deleted. dist/maison_veritas.xlsx was only ever read. No data_raw file was
 opened in Excel.
 
+### User finding 1 (2026-10-21): MACC technique A drew equal-width bars
+
+The user opened dist/maison_veritas.xlsx in Excel for Mac 16.114 (Market-based,
+Central). All six measures were drawn as equal-width, evenly spaced trapezoids
+and the x-axis showed only a "0" label. Widths should follow tCO2e per year
+(VSD 15, PV 155, LED 31, renewable contract 2,194, heat pump 789, fleet 36).
+Labels, the dashed reference line, title and legend rendered correctly.
+
+Cause: XlsxWriter 3.2.9 always writes `<c:auto val="1"/>` inside `<c:dateAx>`, so
+Excel chooses the axis type from the number format of the category cells. The x
+helper cells (MACC E68:E91) were plain numbers, so Excel fell back to a text
+axis: 24 equally spaced categories, and the major unit of 500 was read as a
+label interval (only "0" shown).
+
+Fix (commit "date-formatted axis feed"): a dedicated chart-feed column
+(MACC M68:M91, header "Chart axis feed (tCO2e)", note in M65) holds `=E68` ...
+`=E91` with the number format `d/m/yyyy`. Chart A categories (bars and the
+reference line) point at that column. The visible tonnes column E keeps its
+plain format; the chart axis labels use `#,##0` (not source-linked), so they
+read as tonnes. The axis now has min 0, major unit = nice step of the largest
+total across the six states, and a max rounded up to a multiple of that step.
+The QA comparer converts openpyxl date-decoded cached values back to serials.
+The Phase 1 spike builder is untouched (its layout has no feed column).
+
+Re-verification of variable widths and axis labels in Excel: pending, user.
+
 ### User visual verdict
 
-Pending (Task 2).
+Pending (Task 2); the user re-checks after the fix above.
