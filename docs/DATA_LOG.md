@@ -240,7 +240,7 @@ Derived: GCV/NCV for natural gas = 0.18231 / 0.20199 = 0.90257; NCV/GCV = 1.1079
 | 6.1 boiler: technical lifetime, years | 25 | 25 | match | !C12 |
 | 6.1 boiler: indirect investment cost M EUR/MW (memo) | 0.23 | 0.23 | match | !C28 |
 
-Open point carried from research: whether "Nominal investment" already includes the "indirect investment cost" memo line is not stated in the sheets; treat the headline as total and keep the memo as a flagged item.
+Open point carried from research: whether "Nominal investment" already includes the "indirect investment cost" memo line is not stated in the sheets; treat the headline as total and keep the memo as a flagged item. **Open point A3 is RESOLVED in the Phase 3 section below (plan 03-01, D-06).**
 
 ## Src_DEAElectricity
 
@@ -452,3 +452,52 @@ The workbook says a US-CPI route "would give about 1.31, so prices about 25% hig
 - Ratio 321.943 / 218.056 = 1.47638.
 - Divided by the 2025 average USD per EUR: research used 1.12998, giving 1.47638 / 1.12998 = 1.3066; with the Eurostat 2025 average of 1.13 in this log, 1.47638 / 1.13 = 1.3065. Rounded: about 1.31.
 - That host is not allowlisted (D-41) and the values were not re-fetched, which is why the figure is labelled indicative. There is no US CPI input and no source row for it in the workbook.
+
+## Phase 3 (measures engine), plan 03-01
+
+Executor session 2026-10-21. New raw files were fetched only through `tools/fetch_all.py` (hosts allowlisted; `energie.wallonie.be` added as an exact host in its own reviewed commit 024ae19 after the user approved the diff). Files are untrusted data in gitignored `data_raw/<Src_ID>/`; the xlsx was read with `tools/parse_xlsx.py` / openpyxl read-only under `-I`; the PDFs by macOS PDFKit text extraction only. All research values (V3-V10) were recomputed from the primary files; none differed.
+
+### Src_EUOilBulletin (EU Weekly Oil Bulletin, price history)
+
+- File: `Weekly_Oil_Bulletin_Prices_History_maticni_4web.xlsx`, 4,487,743 bytes, sha256 `03a95c7a42ab4dfc4dd2841b3995e7f7517de5b96f7ef31c1519e3a07ec12753`, retrieved_utc 2026-10-21T09:37:18Z.
+- URL: https://energy.ec.europa.eu/document/download/906e60ca-8b6a-44e7-8589-652854d2fd3f_en?filename=Weekly_Oil_Bulletin_Prices_History_maticni_4web.xlsx (linked from https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en). The hash equals the researcher's, so the file had not been re-issued between the two reads; the file is re-issued weekly, so later fetches will differ.
+- Sheets read: `Prices with taxes` column Y (`BE_price_with_tax_diesel`), `Prices wo taxes` column Y (`BE_price_wo_tax_diesel`), units EUR per 1000 l; `VAT` row 6 (`BE_`, since 1996-01-01), diesel column = 21 (%).
+- 2025 means over 52 weekly rows dated in 2025: with taxes **1,658.59** EUR/1000 l (1658.5935), without taxes **770.58** EUR/1000 l (770.5780). Recomputed: identical to research V8.
+- Model use: with-tax / (1 + VAT) = 1,658.59 / 1.21 = 1,370.74 EUR/1000 l = 1.3707 EUR/l (ex-VAT, including excise). A VAT-registered firm recovers VAT but pays excise (same X_VAT logic as Phase 2 D-21). The "without taxes" mean is memo only.
+
+### Src_JRCHeat (JRC, Heat and Cooling Demand and Market Perspective)
+
+- File: `ldna25381enn.pdf`, 2,157,059 bytes, sha256 `93129f6375e7a9103b4d73ba437f9442e0296f57c589798c45a140039b26afb9`, retrieved_utc 2026-10-21T09:37:19Z. Repository record https://publications.jrc.ec.europa.eu/repository/handle/JRC70962 (EUR 25381 EN, Pardo et al. 2012); URL https://publications.jrc.ec.europa.eu/repository/bitstream/JRC70962/ldna25381enn.pdf. (JRC70956 is a different report, EUR 25406, and is not used.)
+- Table 3.2.a, "Breakdown of useful heat demand for the industry in EU-27 in PJ for 2009", PDF page 13. Belgium row, Chemical group: high temperature **25.3** PJ, medium temperature (100-400 C) **12.5** PJ, low temperature (<100 C) **21.0** PJ. Row text read: "Belgium 38,4 1,9 1,0 3,4 0,2 0,1 25,3 12,5 21,0 22,5 ..." (Iron and steel, Non-ferrous, then Chemical). The column grouping comes from text extraction and matches the header order.
+- Derived: total 58.8 PJ; share below 100 C = 21.0 / 58.8 = 35.7%. Used as a conservative proxy for the share of gas heat at or below 125 C (D-10); the 100-125 C slice is not separable. It is useful heat from all fuels, not gas only, and is 2009 data.
+
+### Src_WalloniaMarket (SPW Energie, Valeurs de marche applicables en 2026)
+
+- File: `valeurs-de-marche-2026.pdf`, 303,540 bytes, sha256 `32a7acd8b6f43331a2c0dd4a988507958835dd40d3f5c4e9bc6aff3ee44fd25e` (equals the researcher's), retrieved_utc 2026-10-21T09:37:20Z. URL https://energie.wallonie.be/files/Soutiens%20financiers/%c3%a9lectricit%c3%a9%20verte/M%c3%a9canismes%20de%20soutiens/R%c3%a9gime%20CPMA/valeurs-de-marche-2026.pdf.
+- Page 1, quoted line: "Valeur d'une GO [EUR/GO] 2,05 EUR"; comment: "Prix moyen d'achat des GO aux producteurs sur la periode du 1er janvier 2025 au 31 decembre 2025" (average purchase price of GOs from producers, calendar 2025). Value **2.05 EUR per GO** (research: previous year 1.99).
+- Caveat: a producer-side regulatory value, probably below a retail green premium. 1 GO = 1 MWh per Directive (EU) 2018/2001 art. 19: from memory, NOT re-read in this session.
+
+### Local files re-read (plan 03-01)
+
+| Item | Value | Location | Status |
+|---|---|---|---|
+| RVO ZM double-TL to LED: investment / saving | 252.224 EUR / 215.75 kWh per year | Src_RVOEML `Samengevoegde maatregelen` K15, J15 | match |
+| RVO ZM frequency controller, cooling compressors: investment | 5,521.60 EUR (15,360 kWh/yr in J3) | same sheet K3, J3 | match |
+| DEA 2.a HP up to 125 C: nominal investment (total) | 1.2 MEUR/MW (2020 column); 40% equipment, 60% installation | Src_DEAProcessHeat `2.a High temp. hp Up to 125C` rows 22-24 | match |
+| DEA 6.1 gas boiler: nominal investment (total) | 0.09 MEUR/MW; 66% equipment, 34% installation | `6.1 Boiler, gas and oil` rows 22-24 | match |
+| DEA indirect investment (memo) | 0.23 MEUR/MW in both sheets (2.a row 29, 6.1 row 28) | same | match |
+| DEA rooftop PV commercial/industrial: space requirement | 4.479 (1000 m2/MWp, equals m2/kWp) | Src_DEAElectricity `22 Rooftop PV comm.&industrial` C30 | match |
+| PBL industrial heat pump, closed system: full-load hours | 8,000 h | Src_PBLSDE2026 sheet `98` C29 | match |
+
+**NM vs ZM correction.** NM = natural moment: the measure is done when an asset is replaced anyway, so the cost is only the extra over the like-for-like replacement. ZM = independent moment: the measure is done on its own, so the full cost applies. Per D-05 the LED and frequency-controller measures use full capex, so the ZM rows (K15 and K3) replace the NM rows (K14 = 0.00116 EUR and K2 = 4,361.60 EUR). The NM rows become reference-only, and the earlier flag that the TL-to-LED capex looked unreliable (near-zero NM cost) is CLOSED: the ZM figure of 252.224 EUR is used instead.
+
+**Open point A3: RESOLVED (D-06).** The headline "Nominal investment (*total)" is total: for the 2.a heat pump it splits 40% equipment + 60% installation, for the 6.1 boiler 66% + 34%. The separate "Indirect investment cost" of 0.23 MEUR/MW is identical for heat pump and boiler and applies only with new piping, so it is kept out of capex and cancels in the incremental capex (heat pump minus boiler).
+
+**PBL 8,000 h (orchestrator resolution 3).** 8,000 full-load hours is the sourced base case; 6,000 h is a Phase 4 sensitivity.
+
+### Searched, not found
+
+- EU lighting share of industrial electricity: no official EU figure. US EIA MECS 2018 (about 6%) is used only as the anchor of a labelled analyst assumption.
+- Compressed-air share: Fraunhofer ISI about 10% (MEDIUM confidence), anchor of an analyst assumption.
+- EV charger cost and van maintenance saving: no source found; analyst assumptions.
+- LED and frequency-controller lifetimes: still not stated in any source read (see the Src_RVOEML lifetime search); labelled analyst assumptions.
