@@ -14,6 +14,7 @@ class HostAllowedTests(unittest.TestCase):
             "https://www.gov.uk/x",
             "https://data.ecb.europa.eu/x",
             "https://data.ene.iiasa.ac.at/ngfs/",
+            "https://energie.wallonie.be/files/x.pdf",
         ):
             with self.subTest(url=url):
                 self.assertTrue(host_allowed(url))
@@ -27,6 +28,10 @@ class HostAllowedTests(unittest.TestCase):
             "https://notgov.uk/",
             "ftp://gov.uk/",
             "https://xn--80ak6aa92e.com/",
+            "http://energie.wallonie.be/x.pdf",
+            "https://wallonie.be/x.pdf",
+            "https://www.wallonie.be/x.pdf",
+            "https://energie.wallonie.be.evil.com/x.pdf",
         ):
             with self.subTest(url=url):
                 self.assertFalse(host_allowed(url))

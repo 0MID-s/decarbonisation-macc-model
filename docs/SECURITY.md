@@ -62,6 +62,7 @@ The allowlist (`ALLOWED_DOMAINS` in `config/security.py`) is strict on purpose: 
 | efrag.org | EFRAG: ESRS technical advice and standards |
 | eex.com | European Energy Exchange: EU ETS auction results |
 | ember-energy.org | Ember: recognised research body, EUA price data |
+| energie.wallonie.be | Walloon Region government energy portal (SPW Energie): official 'Valeurs de marche' publication used for the Guarantee-of-Origin price (D-12); exact host only |
 | ens.dk | Danish Energy Agency: technology data catalogues |
 | europa.eu | EU institutions: Eurostat, EEA, JRC PVGIS, Commission, Parliament, EPRS, ECB |
 | gov.uk | UK DESNZ/DEFRA: greenhouse gas conversion factors |

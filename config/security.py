@@ -7,9 +7,9 @@ from urllib.parse import urlsplit
 # own commit and requires a one-line justification row in the docs/SECURITY.md
 # "Allowed source domains" table. Never broaden an entry to make a URL pass.
 ALLOWED_DOMAINS = (
-    "aib-net.org", "eex.com", "efrag.org", "ember-energy.org", "ens.dk",
-    "europa.eu", "gov.uk", "ifrs.org", "iiasa.ac.at", "ngfs.net", "pbl.nl",
-    "rvo.nl", "stern.nyu.edu", "theicct.org",
+    "aib-net.org", "eex.com", "efrag.org", "ember-energy.org",
+    "energie.wallonie.be", "ens.dk", "europa.eu", "gov.uk", "ifrs.org",
+    "iiasa.ac.at", "ngfs.net", "pbl.nl", "rvo.nl", "stern.nyu.edu", "theicct.org",
 )  # type: Tuple[str, ...]
 
 
