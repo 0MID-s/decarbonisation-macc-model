@@ -7,7 +7,8 @@ import xlsxwriter
 
 import build
 from qa.formula_eval import (
-    SUPPORTED_FUNCTIONS, FormulaEvalError, FormulaEvaluator, compare_cached)
+    SUPPORTED_FUNCTIONS, FormulaEvalError, FormulaEvaluator, compare_cached,
+    evaluate_names)
 
 
 def _wb(fill):
@@ -37,7 +38,7 @@ def _basic(wb):
     s.write_formula("N1", "=_xlfn.XLOOKUP(1,2,3)")
     s.write_formula("O1", "=P1")
     s.write_formula("P1", "=O1")
-    s.write_formula("Q1", "=2^2")
+    s.write_formula("Q1", "=-2^2")
     s.write_formula("R1", "=A1__x")
     s.write_row("A2", [1, 2, 3])
     o.write("B2", 7)
@@ -272,3 +273,179 @@ class FirstYearRobustness(unittest.TestCase):
         for key in self.KEYS:
             s2, c = self._cell(ev, "Carb_Check_Anchors_" + key)
             self.assertEqual(ev.value(s2, c), "ERROR", key)
+
+
+def _bytes(data, formulas, names=None):
+    """Workbook bytes: data cells on Sheet1, formulas in column H (H1..)."""
+    buf = io.BytesIO()
+    wb = xlsxwriter.Workbook(buf, {"in_memory": True})
+    ws = wb.add_worksheet("Sheet1")
+    for coord, v in (data or {}).items():
+        if isinstance(v, str):
+            ws.write_string(coord, v)
+        else:
+            ws.write(coord, v)
+    for i, f in enumerate(formulas):
+        ws.write_formula("H%d" % (i + 1), f)
+    for n, ref in (names or {}).items():
+        wb.define_name(n, ref)
+    wb.close()
+    return buf.getvalue()
+
+
+def _calc(formula, data=None, overrides=None):
+    wf = openpyxl.load_workbook(io.BytesIO(_bytes(data, [formula])))
+    return FormulaEvaluator(wf, overrides).value("Sheet1", "H1")
+
+
+ROW = {"A1": 1, "B1": 2, "C1": 3}
+POS = {"A1": 10, "B1": 20, "C1": 30}
+
+
+class TestPhase3Functions(unittest.TestCase):
+    def refuses(self, formula, data=None):
+        with self.assertRaises(FormulaEvalError, msg=formula):
+            _calc(formula, data)
+
+    def test_power(self):
+        self.assertEqual(_calc("=2^3"), 8)
+        self.assertAlmostEqual(_calc("=(1+0.1)^2"), 1.21, places=12)
+        self.assertAlmostEqual(_calc("=2^-2"), 0.25, places=12)
+        self.assertEqual(_calc("=2*3^2"), 18)
+
+    def test_power_refusals(self):
+        self.refuses("=-2^2")
+        self.refuses("=2^3^2")  # Excel left-assoc, Python right-assoc
+        self.refuses("=0^-1")   # #DIV/0! error value reaches the cell
+        self.refuses("=(-8)^0.5")  # #NUM!
+
+    def test_concat(self):
+        self.assertEqual(_calc('="a"&"b"'), "ab")
+        self.assertEqual(_calc('="x: "&A1', {"A1": "Central"}), "x: Central")
+        self.assertEqual(_calc('=IF("a"&"b"="AB",1,0)'), 1)
+        self.refuses('="a"&1')
+        self.refuses('=1&2')
+
+    def test_sumproduct(self):
+        self.assertEqual(_calc("=SUMPRODUCT(A1:C1,A2:C2)",
+                               {"A1": 1, "B1": 2, "C1": 3, "A2": 4, "B2": 5, "C2": 6}), 32)
+        self.refuses("=SUMPRODUCT(A1:C1,A2:B2)", {"A1": 1, "B1": 2, "C1": 3, "A2": 4, "B2": 5})
+
+    def test_npv(self):
+        self.assertAlmostEqual(_calc("=NPV(0.1,110,121)"), 200.0, places=9)
+        self.assertAlmostEqual(_calc("=NPV(0.1,A1:C1)", {"A1": 110, "B1": 121, "C1": 0}), 200.0, places=9)
+
+    def test_irr(self):
+        self.assertAlmostEqual(_calc("=IRR(A1:B1)", {"A1": -100, "B1": 110}), 0.1, places=9)
+        # guess is ignored
+        self.assertAlmostEqual(_calc("=IRR(A1:B1,0.5)", {"A1": -100, "B1": 110}), 0.1, places=9)
+        # replacement-capex shape: three sign changes, single root
+        flows = {"A1": -100, "B1": 60, "C1": 60, "D1": -10, "E1": 60}
+        r = _calc("=IRR(A1:E1)", flows)
+        npv = sum(v / (1 + r) ** i for i, v in enumerate([-100, 60, 60, -10, 60]))
+        self.assertAlmostEqual(npv, 0.0, places=8)
+
+    def test_irr_refusals(self):
+        # two roots at 10% and 20%
+        self.refuses("=IRR(A1:C1)", {"A1": -100, "B1": 230, "C1": -132})
+        self.refuses("=IRR(A1:C1)", POS)
+        self.refuses("=IRR(A1:C1)+1", POS)
+
+    def test_mod_round(self):
+        self.assertEqual(_calc("=MOD(29,15)"), 14)
+        self.assertEqual(_calc("=MOD(29,8)"), 5)
+        self.assertEqual(_calc("=MOD(-1,8)"), 7)
+        self.refuses("=MOD(5,0)")
+        self.assertEqual(_calc("=ROUND(2.5,0)"), 3)
+        self.assertEqual(_calc("=ROUND(-2.5,0)"), -3)
+        self.assertEqual(_calc("=ROUND(2.4,0)"), 2)
+        self.refuses("=ROUND(1.2345,2)")
+
+    def test_rank(self):
+        d = {"A1": 3, "B1": 5, "C1": 1}
+        self.assertEqual(_calc("=RANK(5,A1:C1,1)", d), 3)
+        self.assertEqual(_calc("=RANK(5,A1:C1,0)", d), 1)
+        self.assertEqual(_calc("=RANK(5,A1:C1)", d), 1)
+        self.assertEqual(_calc("=RANK(3,A1:D1,1)", dict(d, D1="text")), 2)
+        self.refuses('=RANK("a",A1:C1,1)', d)
+        self.assertEqual(_calc('=IFERROR(RANK("a",A1:C1,1),-1)', d), -1)
+
+    def test_countif_count(self):
+        d = {"A1": 5, "B1": 5, "C1": 0, "D1": "x"}
+        self.assertEqual(_calc("=COUNTIF(A1:D1,5)", d), 2)
+        self.assertEqual(_calc("=COUNTIF(A1:D1,0)", d), 1)
+        self.assertEqual(_calc('=COUNTIF(A1:D1,"X")', d), 1)
+        self.refuses('=COUNTIF(A1:D1,">1")', d)
+        self.assertEqual(_calc("=COUNT(A1:D1)", d), 3)
+
+    def test_logic(self):
+        self.assertEqual(_calc("=OR(1>2,2>1)"), True)
+        self.assertEqual(_calc("=OR(1>2,2>3)"), False)
+        self.assertEqual(_calc("=NOT(1>2)"), True)
+        self.assertEqual(_calc("=NOT(0)"), True)
+        self.assertEqual(_calc("=ISNUMBER(3)"), True)
+        self.assertEqual(_calc("=ISNUMBER(A1)", {"A1": "t"}), False)
+        self.assertEqual(_calc("=ISNUMBER(TRUE)"), False)
+
+    def test_match_type0(self):
+        names = {"A1": "Low", "B1": "Central", "C1": "High"}
+        self.assertEqual(_calc('=MATCH("central",A1:C1,0)', names), 2)
+        self.refuses('=MATCH("none",A1:C1,0)', names)
+        self.refuses("=IF(MATCH(9,A1:C1,0)>0,1,0)", POS)
+        self.assertEqual(_calc("=MATCH(20,A1:C1,0)", POS), 2)
+
+    def test_lazy_errors(self):
+        self.assertEqual(_calc('=IF(1>0,"n/a",IRR(A1:C1))', POS), "n/a")
+        self.assertEqual(_calc('=IFERROR(IRR(A1:C1),"none")', POS), "none")
+        self.assertEqual(_calc("=IF(1>0,1,1/0)"), 1)
+        self.assertEqual(_calc("=IFERROR(1/0,7)"), 7)
+        self.assertEqual(_calc("=IFERROR(3,7)"), 3)
+        self.refuses("=1/0")
+
+    def test_whitelist_and_injection(self):
+        for n in ("SUMPRODUCT", "NPV", "IRR", "MOD", "ROUND", "RANK", "COUNTIF",
+                  "COUNT", "OR", "NOT", "IFERROR", "ISNUMBER"):
+            self.assertIn(n, SUPPORTED_FUNCTIONS)
+        self.refuses("=__import__(1)")
+        self.refuses("=EVAL(1)")
+
+
+class TestEvaluateNames(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        data = {"B1": "Central", "A5": 1, "A6": 2}
+        formulas = [
+            '=IF(B1="High",100,10)',
+            '=IF(B1="High",100,10)+1',
+        ]
+        buf = io.BytesIO()
+        wb = xlsxwriter.Workbook(buf, {"in_memory": True})
+        ws = wb.add_worksheet("Sheet1")
+        ws.write_string("B1", "Central")
+        for j, c in enumerate("CDEF"):
+            ws.write_formula("%s2" % c, '=IF($B$1="High",%d,%d)' % (100 * (j + 1), j + 1))
+            ws.write_formula("%s3" % c, "=%s2*2" % c)
+        ws.write_formula("A4", '=IF(B1="High",100,10)')
+        wb.define_name("Name_A", "=Sheet1!$A$4")
+        wb.define_name("Row_A", "=Sheet1!$C$2:$F$2")
+        wb.define_name("Grid_A", "=Sheet1!$C$2:$D$3")
+        wb.close()
+        cls.data = buf.getvalue()
+
+    def test_scalar_name_with_override(self):
+        self.assertEqual(evaluate_names(self.data, ["Name_A"])["Name_A"], 10)
+        out = evaluate_names(self.data, ["Name_A"], overrides={("Sheet1", "B1"): "High"})
+        self.assertEqual(out["Name_A"], 100)
+
+    def test_row_range_name(self):
+        self.assertEqual(evaluate_names(self.data, ["Row_A"])["Row_A"], [1, 2, 3, 4])
+        out = evaluate_names(self.data, ["Row_A"], overrides={("Sheet1", "$B$1"): "High"})
+        self.assertEqual(out["Row_A"], [100, 200, 300, 400])
+
+    def test_two_d_range_row_major(self):
+        out = evaluate_names(self.data, ["Grid_A"])
+        self.assertEqual(out["Grid_A"], [1, 2, 2, 4])
+
+    def test_unknown_name_refused(self):
+        with self.assertRaises(FormulaEvalError):
+            evaluate_names(self.data, ["No_Such_Name"])
