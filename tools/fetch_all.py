@@ -64,6 +64,16 @@ FETCHES = (
     # D-31 cross-check.
     ("Src_PBLSDE2026", "pbl_ot_model_eindadvies_sde_2026.xlsx",
      "https://www.pbl.nl/downloads/pbl-2026-onrendabele-top-model-eindadvies-sde-2026-5699xlsx"),
+    # Phase 3 (03-01): fuel price, heat-demand temperature split, GO market value.
+    # The Oil Bulletin history file is re-issued weekly, so its hash changes.
+    ("Src_EUOilBulletin", "Weekly_Oil_Bulletin_Prices_History_maticni_4web.xlsx",
+     "https://energy.ec.europa.eu/document/download/906e60ca-8b6a-44e7-8589-652854d2fd3f_en"
+     "?filename=Weekly_Oil_Bulletin_Prices_History_maticni_4web.xlsx"),
+    ("Src_JRCHeat", "ldna25381enn.pdf",
+     "https://publications.jrc.ec.europa.eu/repository/bitstream/JRC70962/ldna25381enn.pdf"),
+    ("Src_WalloniaMarket", "valeurs-de-marche-2026.pdf",
+     "https://energie.wallonie.be/files/Soutiens%20financiers/%c3%a9lectricit%c3%a9%20verte/"
+     "M%c3%a9canismes%20de%20soutiens/R%c3%a9gime%20CPMA/valeurs-de-marche-2026.pdf"),
 )
 
 

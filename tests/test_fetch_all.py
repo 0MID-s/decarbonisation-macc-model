@@ -38,6 +38,13 @@ class FetchListTests(unittest.TestCase):
         self.assertTrue(any("sbs_sc_ovw" in u and "C20" in u and "C21" in u
                             for s, n, u in fetch_all.FETCHES))
 
+    def test_phase3_entries(self):
+        ids = {s for s, n, u in fetch_all.FETCHES}
+        for sid in ("Src_EUOilBulletin", "Src_JRCHeat", "Src_WalloniaMarket"):
+            self.assertIn(sid, ids)
+        wal = [u for s, n, u in fetch_all.FETCHES if s == "Src_WalloniaMarket"]
+        self.assertTrue(all(urlsplit(u).hostname == "energie.wallonie.be" for u in wal))
+
 
 class MainTests(unittest.TestCase):
     def setUp(self):
