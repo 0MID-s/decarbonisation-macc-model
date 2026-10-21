@@ -33,6 +33,7 @@ from xl.sheets.carbon import build_carbon
 from xl.sheets.cover import build_cover
 from xl.sheets.inputs import build_inputs
 from xl.sheets.lists import build_lists
+from xl.sheets.macc import build_macc
 from xl.sheets.measures import build_measures
 from xl.sheets.notes import build_notes
 from xl.sheets.rates import build_rates
@@ -75,7 +76,7 @@ def load_dataset(name):
 
 
 MAIN_SHEETS_BASE = ("Cover", "Inputs", "Sources", "Lists")
-REAL_DATA_SHEETS = ("Baseline", "Rates", "Carbon", "Measures")
+REAL_DATA_SHEETS = ("Baseline", "Rates", "Carbon", "Measures", "MACC")
 NOTES_SHEETS = ("Notes",)
 
 
@@ -96,6 +97,7 @@ def _build_main(wb, styles, cells, dataset, cfg):
         out["rates"] = build_rates(wb, styles, cells, dataset, cfg)
         out["carbon"] = build_carbon(wb, styles, cells, dataset, cfg, inputs)
         out["measures"] = build_measures(wb, styles, cells, dataset, cfg, out)
+        out["macc"] = build_macc(wb, styles, cells, dataset, cfg, out)
     out["notes"] = build_notes(wb, styles, cells, dataset, cfg)
     return out
 
