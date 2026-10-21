@@ -15,11 +15,20 @@ FormulaEvalError) rather than return a plausible but wrong value:
 - comparisons between different types (number vs text vs logical);
 - INDEX on a 2-D range (Excel indexes rows, not a flattened list).
 Text comparison is case-insensitive, as in Excel ("LB"="lb" is TRUE).
-Known limitation: IF evaluates both branches eagerly, so IF(1,1,1/0)
-raises where Excel returns 1. That can only cause a false failure, never a
-false pass.
+Errors are lazy values (class _Err): MATCH/INDEX/RANK/IRR misses, division by
+zero and #NUM! results are returned as error values that propagate through
+arithmetic, comparison and concatenation, are swallowed only by IFERROR (and
+ISNUMBER), and are never evaluated away by IF, so IF(guard,IRR(..),"n/a")
+behaves as in Excel. A cell whose final value is an error value raises.
+Further refusals: unary minus directly before ^ (Excel gives (-2)^2=4,
+Python -4), chained ^ (Excel is left-associative), number & text
+concatenation (locale formatting), ROUND with digits other than 0, COUNTIF
+criteria with operators or wildcards, and an IRR whose NPV function does not
+have exactly one root on [-0.99, 10] (a non-unique IRR is refused, not guessed).
+Text comparison is case-insensitive, as in Excel ("LB"="lb" is TRUE).
 """
 import io
+import math
 import re
 from typing import Dict, List, Tuple
 
@@ -30,6 +39,17 @@ from openpyxl.utils import range_boundaries
 
 class FormulaEvalError(ValueError):
     """Unsupported token, unknown function, cycle or Excel error value."""
+
+
+class _Err(object):
+    """Excel error value carried as data (lazy), e.g. #N/A or #NUM!."""
+    __slots__ = ("code",)
+
+    def __init__(self, code):
+        self.code = code
+
+    def __repr__(self):
+        return "_Err(%s)" % self.code
 
 
 class _Rng(list):
@@ -61,7 +81,7 @@ def _SUM(*a):
 def _AVERAGE(*a):
     v = [x for x in _flat(a) if _num(x)]
     if not v:
-        raise FormulaEvalError("#DIV/0! in AVERAGE")
+        return _Err("#DIV/0!")
     return sum(v) / len(v)
 
 
@@ -83,15 +103,39 @@ def _AND(*a):
     return all(bool(x) for x in _flat(a) if x is not None)
 
 
+def _OR(*a):
+    vals = [x for x in _flat(a) if x is not None]
+    if any(isinstance(x, str) for x in vals):
+        raise FormulaEvalError("text in OR is not supported")
+    return any(bool(x) for x in vals)
+
+
+def _NOT(x):
+    if isinstance(x, (str, list)):
+        raise FormulaEvalError("NOT needs a logical or a number")
+    return not x
+
+
 def _MATCH(x, rng, kind=1):
+    vals = list(_flat([rng]))
+    if kind == 0:
+        for i, b in enumerate(vals):
+            if isinstance(x, str) and isinstance(b, str):
+                if x.casefold() == b.casefold():
+                    return i + 1
+            elif _num(x) and _num(b) and x == b:
+                return i + 1
+            elif isinstance(x, bool) and isinstance(b, bool) and x == b:
+                return i + 1
+        return _Err("#N/A")
     if kind != 1:
-        raise FormulaEvalError("MATCH only supports type 1")
+        raise FormulaEvalError("MATCH only supports type 0 and 1")
     pos = None
-    for i, b in enumerate(_flat([rng])):
+    for i, b in enumerate(vals):
         if _num(b) and _num(x) and b <= x:
             pos = i + 1
     if pos is None:
-        raise FormulaEvalError("#N/A in MATCH")
+        return _Err("#N/A")
     return pos
 
 
@@ -105,29 +149,178 @@ def _INDEX(rng, k, col=None):
     vals = list(_flat([rng]))
     k = int(k)
     if k < 1 or k > len(vals):
-        raise FormulaEvalError("#REF! in INDEX")
+        return _Err("#REF!")
     return vals[k - 1]
 
 
 def _CHOOSE(i, *a):
     i = int(i)
     if i < 1 or i > len(a):
-        raise FormulaEvalError("#VALUE! in CHOOSE")
+        return _Err("#VALUE!")
     return a[i - 1]
 
 
 def _IF(c, a, b=False):
+    if isinstance(c, _Err):
+        return c
     if isinstance(c, (str, list)):
         raise FormulaEvalError("#VALUE! IF condition must be a scalar logical or number")
     return a if c else b
 
 
+def _IFERROR(a, b):
+    return b if isinstance(a, _Err) else a
+
+
+def _ISNUMBER(x):
+    if isinstance(x, list):
+        raise FormulaEvalError("ISNUMBER needs a scalar")
+    return _num(x)
+
+
+def _COUNT(*a):
+    return sum(1 for x in _flat(a) if _num(x))
+
+
+def _SUMPRODUCT(*a):
+    if not a:
+        raise FormulaEvalError("SUMPRODUCT needs arguments")
+    shape = None
+    cols = []
+    for r in a:
+        if not isinstance(r, _Rng):
+            raise FormulaEvalError("SUMPRODUCT needs ranges")
+        if shape is None:
+            shape = (r.rows, r.cols)
+        elif shape != (r.rows, r.cols):
+            raise FormulaEvalError("#VALUE! SUMPRODUCT shape mismatch")
+        cols.append([x if _num(x) else 0 for x in r])
+    total = 0
+    for items in zip(*cols):
+        p = 1
+        for x in items:
+            p *= x
+        total += p
+    return total
+
+
+def _NPV(rate, *a):
+    if not _num(rate):
+        raise FormulaEvalError("NPV rate must be a number")
+    if rate == -1:
+        return _Err("#DIV/0!")
+    return sum(v / (1.0 + rate) ** (i + 1)
+               for i, v in enumerate(x for x in _flat(a) if _num(x)))
+
+
+_IRR_LO, _IRR_HI, _IRR_N = -0.99, 10.0, 6000
+
+
+def _IRR(values, guess=None):
+    flows = [x for x in _flat([values]) if _num(x)]
+    if not (any(x > 0 for x in flows) and any(x < 0 for x in flows)):
+        return _Err("#NUM!")
+
+    def f(r):
+        d = 1.0 + r
+        return sum(v / d ** i for i, v in enumerate(flows))
+
+    # uniform grid in ln(1+r): resolves roots near -99% as well as near 1000%
+    lo, hi = math.log(1.0 + _IRR_LO), math.log(1.0 + _IRR_HI)
+    rs = [math.exp(lo + (hi - lo) * k / _IRR_N) - 1.0 for k in range(_IRR_N + 1)]
+    fs = [f(r) for r in rs]
+    roots = []
+    for k, fk in enumerate(fs):
+        if fk == 0:
+            roots.append((rs[k], rs[k]))
+        elif k + 1 < len(fs) and fs[k + 1] != 0 and fk * fs[k + 1] < 0:
+            roots.append((rs[k], rs[k + 1]))
+    if len(roots) != 1:
+        raise FormulaEvalError(
+            "IRR refused: NPV(r) has %d roots on [%s, %s], not exactly one"
+            % (len(roots), _IRR_LO, _IRR_HI))
+    a, b = roots[0]
+    if a == b:
+        return a
+    fa = f(a)
+    for _ in range(200):
+        m = (a + b) / 2.0
+        fm = f(m)
+        if fm == 0 or (b - a) < 1e-13:
+            return m
+        if (fa < 0) == (fm < 0):
+            a, fa = m, fm
+        else:
+            b = m
+    return (a + b) / 2.0
+
+
+def _MOD(a, b):
+    if not (_num(a) and _num(b)):
+        raise FormulaEvalError("MOD needs numbers")
+    if b == 0:
+        return _Err("#DIV/0!")
+    return a % b
+
+
+def _ROUND(x, digits=0):
+    if not _num(x):
+        raise FormulaEvalError("ROUND needs a number")
+    if digits != 0:
+        raise FormulaEvalError("ROUND is supported with digits 0 only")
+    # half away from zero; round(.., 9) strips binary noise like 0.49999999999999994
+    n = int(math.floor(round(abs(float(x)), 9) + 0.5))
+    return -n if x < 0 else n
+
+
+def _RANK(x, ref, order=0):
+    if not _num(x):
+        return _Err("#VALUE!")
+    if order not in (0, 1):
+        raise FormulaEvalError("RANK order must be 0 or 1")
+    vals = [v for v in _flat([ref]) if _num(v)]
+    if x not in vals:
+        return _Err("#N/A")
+    if order == 1:
+        return 1 + sum(1 for v in vals if v < x)
+    return 1 + sum(1 for v in vals if v > x)
+
+
+def _COUNTIF(rng, crit):
+    if not isinstance(rng, list):
+        raise FormulaEvalError("COUNTIF needs a range")
+    if isinstance(crit, list):
+        raise FormulaEvalError("COUNTIF criterion must be a scalar")
+    vals = list(_flat([rng]))
+    if isinstance(crit, str):
+        if crit[:1] in ("<", ">", "=") or any(c in crit for c in "*?~"):
+            raise FormulaEvalError("COUNTIF supports plain equality criteria only")
+        try:
+            float(crit)
+        except ValueError:
+            pass
+        else:
+            raise FormulaEvalError("COUNTIF numeric-looking text criterion refused")
+        return sum(1 for v in vals if isinstance(v, str) and v.casefold() == crit.casefold())
+    if isinstance(crit, bool):
+        return sum(1 for v in vals if isinstance(v, bool) and v == crit)
+    if _num(crit):
+        return sum(1 for v in vals if _num(v) and v == crit)
+    raise FormulaEvalError("unsupported COUNTIF criterion %r" % (crit,))
+
+
 _FUNCS = {"SUM": _SUM, "AVERAGE": _AVERAGE, "MIN": _MIN, "MAX": _MAX,
           "ABS": _ABS, "AND": _AND, "IF": _IF, "MATCH": _MATCH,
-          "INDEX": _INDEX, "CHOOSE": _CHOOSE}
+          "INDEX": _INDEX, "CHOOSE": _CHOOSE,
+          "SUMPRODUCT": _SUMPRODUCT, "NPV": _NPV, "IRR": _IRR, "MOD": _MOD,
+          "ROUND": _ROUND, "RANK": _RANK, "COUNTIF": _COUNTIF, "COUNT": _COUNT,
+          "OR": _OR, "NOT": _NOT, "IFERROR": _IFERROR, "ISNUMBER": _ISNUMBER}
+# functions that look at error values themselves; all others propagate them
+_ERR_AWARE = frozenset(("IF", "IFERROR", "ISNUMBER"))
 SUPPORTED_FUNCTIONS = frozenset(_FUNCS)
 
-_INFIX = {"+": "+", "-": "-", "*": "*", "/": "/", "=": "==", "<>": "!=",
+_INFIX = {"+": "+", "-": "-", "*": "*", "/": "/", "^": "**", "&": "&",
+          "=": "==", "<>": "!=",
           "<": "<", ">": ">", "<=": "<=", ">=": ">="}
 _COMPARISONS = frozenset(("=", "<>", "<", ">", "<=", ">="))
 
@@ -162,25 +355,67 @@ class _X(object):
             raise FormulaEvalError("unsupported value %r in arithmetic" % (v,))
         return v
 
+    def _bad(self, o=None):
+        """The first error value among the operands, else None."""
+        if isinstance(self.v, _Err):
+            return self.v
+        if o is not None and isinstance(o.v, _Err):
+            return o.v
+        return None
+
     def __add__(self, o):
-        return _X(self._n("+") + o._n("+"))
+        e = self._bad(o)
+        return _X(e) if e else _X(self._n("+") + o._n("+"))
 
     def __sub__(self, o):
-        return _X(self._n("-") - o._n("-"))
+        e = self._bad(o)
+        return _X(e) if e else _X(self._n("-") - o._n("-"))
 
     def __mul__(self, o):
-        return _X(self._n("*") * o._n("*"))
+        e = self._bad(o)
+        return _X(e) if e else _X(self._n("*") * o._n("*"))
 
     def __truediv__(self, o):
+        e = self._bad(o)
+        if e:
+            return _X(e)
         d = o._n("/")
+        n = self._n("/")
         if d == 0:
-            raise FormulaEvalError("#DIV/0!")
-        return _X(self._n("/") / d)
+            return _X(_Err("#DIV/0!"))
+        return _X(n / d)
+
+    def __pow__(self, o):
+        e = self._bad(o)
+        if e:
+            return _X(e)
+        b, x = float(self._n("^")), float(o._n("^"))
+        try:
+            r = b ** x
+        except ZeroDivisionError:
+            return _X(_Err("#DIV/0!"))
+        except OverflowError:
+            return _X(_Err("#NUM!"))
+        if isinstance(r, complex):
+            return _X(_Err("#NUM!"))
+        return _X(r)
+
+    def __and__(self, o):
+        e = self._bad(o)
+        if e:
+            return _X(e)
+        a, b = _scalar(self.v, "&"), _scalar(o.v, "&")
+        if not (isinstance(a, str) and isinstance(b, str)):
+            raise FormulaEvalError("& is supported between two text values only")
+        return _X(a + b)
 
     def __neg__(self):
-        return _X(-self._n("unary -"))
+        e = self._bad()
+        return _X(e) if e else _X(-self._n("unary -"))
 
     def __pos__(self):
+        if isinstance(self.v, _Err):
+            return self
         _scalar(self.v, "unary +")
         return self
 
@@ -203,29 +438,30 @@ class _X(object):
             return a, b
         raise FormulaEvalError("comparison of different types %r and %r" % (a, b))
 
-    def __eq__(self, o):
+    def _cmp(self, o, op):
+        e = self._bad(o)
+        if e:
+            return _X(e)
         a, b = self._cmp_pair(o)
-        return _X(a == b)
+        return _X(op(a, b))
+
+    def __eq__(self, o):
+        return self._cmp(o, lambda a, b: a == b)
 
     def __ne__(self, o):
-        a, b = self._cmp_pair(o)
-        return _X(a != b)
+        return self._cmp(o, lambda a, b: a != b)
 
     def __lt__(self, o):
-        a, b = self._cmp_pair(o)
-        return _X(a < b)
+        return self._cmp(o, lambda a, b: a < b)
 
     def __le__(self, o):
-        a, b = self._cmp_pair(o)
-        return _X(a <= b)
+        return self._cmp(o, lambda a, b: a <= b)
 
     def __gt__(self, o):
-        a, b = self._cmp_pair(o)
-        return _X(a > b)
+        return self._cmp(o, lambda a, b: a > b)
 
     def __ge__(self, o):
-        a, b = self._cmp_pair(o)
-        return _X(a >= b)
+        return self._cmp(o, lambda a, b: a >= b)
 
     __hash__ = None
 
@@ -238,10 +474,17 @@ def _unwrap(x):
     return x.v if isinstance(x, _X) else x
 
 
-def _wrap_func(f):
+def _wrap_func(f, err_aware=False):
     def call(*a):
-        return _X(f(*[_unwrap(x) for x in a]))
+        args = [_unwrap(x) for x in a]
+        if not err_aware:
+            for x in args:
+                if isinstance(x, _Err):
+                    return _X(x)
+        return _X(f(*args))
     return call
+
+
 _SHEET_REF = re.compile(r"^(?:(?P<s>'(?:[^']|'')+'|[A-Za-z0-9_.]+)!)?"
                         r"(?P<r>\$?[A-Za-z]{1,3}\$?[0-9]+(?::\$?[A-Za-z]{1,3}\$?[0-9]+)?)$")
 _NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -329,6 +572,9 @@ class FormulaEvaluator(object):
         # comparison operators seen per parenthesis / argument level: a second
         # one at the same level is a chained comparison and is refused
         cmp_depth = [0]
+        # per level: prefix sign pending on the current term, and a ^ seen
+        pend = [False]
+        pows = [0]
         for t in tok.items:
             ty, st, v = t.type, t.subtype, t.value
             if ty == "WHITE-SPACE":
@@ -351,20 +597,30 @@ class FormulaEvaluator(object):
                         raise FormulaEvalError("unsupported function %r" % name)
                     parts.append("_F_%s(" % name)
                     cmp_depth.append(0)
+                    pend.append(False)
+                    pows.append(0)
                 else:
                     parts.append(")")
                     cmp_depth.pop()
+                    pend.pop()
+                    pows.pop()
             elif ty == "SEP":
                 if st != "ARG":
                     raise FormulaEvalError("unsupported separator %r" % v)
                 parts.append(",")
                 cmp_depth[-1] = 0
+                pend[-1] = False
+                pows[-1] = 0
             elif ty == "PAREN":
                 parts.append(v)
                 if st == "OPEN":
                     cmp_depth.append(0)
+                    pend.append(False)
+                    pows.append(0)
                 else:
                     cmp_depth.pop()
+                    pend.pop()
+                    pows.pop()
             elif ty == "OPERATOR-INFIX":
                 if v not in _INFIX:
                     raise FormulaEvalError("unsupported operator %r" % v)
@@ -372,10 +628,21 @@ class FormulaEvaluator(object):
                     cmp_depth[-1] += 1
                     if cmp_depth[-1] > 1:
                         raise FormulaEvalError("chained comparison in %s" % formula)
+                if v == "^":
+                    if pend[-1]:
+                        raise FormulaEvalError(
+                            "unary sign before ^ differs between Excel and Python in %s" % formula)
+                    pows[-1] += 1
+                    if pows[-1] > 1:
+                        raise FormulaEvalError("chained ^ in %s" % formula)
+                else:
+                    pend[-1] = False
+                    pows[-1] = 0
                 parts.append(_INFIX[v])
             elif ty == "OPERATOR-PREFIX":
                 if v not in ("-", "+"):
                     raise FormulaEvalError("unsupported prefix %r" % v)
+                pend[-1] = True
                 parts.append(v)
             else:
                 raise FormulaEvalError("unsupported token %s %r" % (ty, v))
@@ -386,9 +653,11 @@ class FormulaEvaluator(object):
         env = {"__builtins__": {}, "_X": _X,
                "_R": lambda s, r: self._ref(s, r)}
         for n, f in _FUNCS.items():
-            env["_F_" + n] = _wrap_func(f)
+            env["_F_" + n] = _wrap_func(f, n in _ERR_AWARE)
         try:
             out = _unwrap(eval(compile(py, "<formula>", "eval"), env, {}))
+            if isinstance(out, _Err):
+                raise FormulaEvalError("%s in %s" % (out.code, formula))
             return _scalar(out, "the formula result")
         except FormulaEvalError:
             raise
@@ -399,6 +668,8 @@ class FormulaEvaluator(object):
 
 
 def _close(got, want, rel_tol):
+    if isinstance(got, bool) != isinstance(want, bool):
+        return False
     if _num(got) and _num(want):
         return abs(got - want) <= rel_tol * max(1.0, abs(want))
     return got == want
@@ -430,3 +701,21 @@ def compare_cached(data, rel_tol=1e-9, overrides=None):
                         bad.append("%s!%s %s got %r want %r" % (
                             ws.title, c.coordinate, c.value[:80], got, want))
     return bad, n
+
+
+def evaluate_names(data, names, overrides=None):
+    """Evaluate defined names from their formulas under selector overrides.
+
+    A single-cell name returns its scalar value; a range name returns the
+    list of cell values in row-major order. The workbook is only read.
+    """
+    wf = openpyxl.load_workbook(io.BytesIO(data))
+    ev = FormulaEvaluator(wf, overrides)
+    out = {}
+    for n in names:
+        sheet, ref = ev.name_target(n)
+        if ":" in ref:
+            out[n] = list(ev._ref(sheet, ref))
+        else:
+            out[n] = ev.value(sheet, ref)
+    return out
