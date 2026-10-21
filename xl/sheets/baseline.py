@@ -310,10 +310,10 @@ def build_baseline(wb, styles, cells, dataset, cfg, inputs_layout):
            "=Base_Fleet_gCO2PerKm", v["Base_Fleet_gCO2PerKm"], "dec2",
            link=True)
     km = L("Fleet distance", "km/yr", "=Base_Fleet_Vehicles*"
-           "Base_Fleet_KmPerVehicle", x.fleet_km, "count")
+           "Base_Fleet_KmPerVehicle", x.fleet_km, "count", name="BL_Fleet_km")
     lit = L("Diesel use", "l/yr",
             "=D%d*Base_Fleet_gCO2PerKm/Const_g_per_kg/EF_Diesel_l" % km,
-            x.fleet_litres, "count")
+            x.fleet_litres, "count", name="BL_Fleet_Litres")
     L("Implied consumption", "l/100 km",
       "=D%d/D%d*Const_km_per_100km" % (lit, km), x.fleet_l_per_100km, "dec2")
     L("Fleet diesel energy", "MWh",

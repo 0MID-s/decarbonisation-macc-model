@@ -162,3 +162,13 @@ def apply_check_format(ws, styles, first_row, first_col, last_row, last_col):
             "type": "cell", "criteria": "==", "value": value,
             "format": styles.get(role),
         })
+
+
+def apply_bool_check_format(ws, styles, first_row, first_col, last_row,
+                            last_col):
+    """Green for TRUE, red for FALSE via conditional formatting."""
+    for value, role in (("TRUE", "check_ok"), ("FALSE", "check_err")):
+        ws.conditional_format(first_row, first_col, last_row, last_col, {
+            "type": "cell", "criteria": "==", "value": value,
+            "format": styles.get(role),
+        })
