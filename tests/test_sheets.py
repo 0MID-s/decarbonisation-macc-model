@@ -54,11 +54,11 @@ class InputsSources(unittest.TestCase):
         cls.layout = cls.layouts[0]
 
     def test_header(self):
-        got = tuple(self.ws.cell(7, 2 + i).value for i in range(11))
+        got = tuple(self.ws.cell(11, 2 + i).value for i in range(11))
         self.assertEqual(got, INPUT_COLUMNS)
-        self.assertEqual(self.wsv["N7"].value, 2026)
-        self.assertEqual(self.wsv["AQ7"].value, 2055)
-        self.assertEqual(self.ws["N7"].value, "=Time_FirstYear")
+        self.assertEqual(self.wsv["N11"].value, 2026)
+        self.assertEqual(self.wsv["AQ11"].value, 2055)
+        self.assertEqual(self.ws["N11"].value, "=Time_FirstYear")
 
     def test_record_rows_complete(self):
         self.assertEqual(len(self.layout.record_rows), len(SYNTHETIC_INPUTS))
