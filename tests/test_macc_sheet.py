@@ -108,8 +108,16 @@ class MaccSheet(unittest.TestCase):
             charts = {n: z.read(n).decode("utf-8") for n in z.namelist()
                       if n.startswith("xl/charts/chart")}
         macc = [x for x in charts.values() if "MACC!" in x or "'MACC'!" in x]
-        self.assertEqual(len(macc), 2, len(charts))
-        a = [x for x in macc if "<c:dateAx>" in x][0]
+        self.assertEqual(len(macc), 3, len(charts))
+        dated = [x for x in macc if "<c:dateAx>" in x]
+        self.assertEqual(len(dated), 2)
+        a = [x for x in dated if "Zoom:" not in x][0]
+        z = [x for x in dated if "Zoom:" in x][0]
+        cat = lambda x: re.findall(r"<c:cat>.*?<c:f>(.*?)</c:f>", x, re.S)
+        self.assertEqual(cat(a), cat(z))
+        self.assertRegex(z, r"<c:max val=\"\d+\"/>")
+        self.assertNotEqual(re.search(r"<c:max val=\"(\d+)\"", a).group(1),
+                            re.search(r"<c:max val=\"(\d+)\"", z).group(1))
         self.assertIn("<c:majorUnit", a)
         self.assertRegex(a, r"<c:title>.*MACC!\$B\$5")
         self.assertIn("<c:lineChart>", a)

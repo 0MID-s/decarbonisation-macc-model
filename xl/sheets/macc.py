@@ -35,6 +35,8 @@ SORT_BAND = 56
 HELPER_BAND = 64
 C_BAND = 92
 CHART_C_CELL = "B94"
+ZOOM_NOTE_CELL = "K17"
+ZOOM_CELL = "K18"
 
 PURPOSE = ("Measures ranked cheapest first; bar width = annual tCO2e on the "
            "selected basis, height = EUR per tCO2e")
@@ -196,6 +198,24 @@ def build_macc(wb, styles, cells, dataset, cfg, layouts):
                               major_unit=step, label_col=7,
                               size=(980, 460), axis_max=axis_max)
     cells.insert_chart(ws, CHART_A_CELL, chart_a)
+    # Zoom chart: same series as chart A, x-axis cut just above the largest
+    # cumulative abatement of the "Do first" (negative-cost) measures over all
+    # six selector states. Computed, not hard-coded.
+    first_tot = 0
+    for res in all_states(dataset.inputs).values():
+        first_tot = max(first_tot, sum(
+            w for w, t in zip(res.chart_widths, res.tiers) if t == "Do first"))
+    zstep = nice_step(first_tot, max_intervals=5)
+    zoom_max = int(-(-first_tot // zstep) * zstep)
+    cells.text(ws, 16, 10,
+               "Zoom view: the same data as the full chart, with the x-axis "
+               "cut at %d tCO2e, so it never shows the full curve." % zoom_max,
+               styles.get("note"))
+    chart_z = macc_area_chart(
+        wb, a_layout, title="Zoom: money-saving measures (first %d tCO2e)"
+        % zoom_max, major_unit=zstep, label_col=7, size=(700, 460),
+        axis_max=zoom_max)
+    cells.insert_chart(ws, ZOOM_CELL, chart_z)
     c_layout = write_macc_c_block(cells, styles, ws, a_layout, srt, g)
     chart_c = macc_column_chart(
         wb, c_layout, title="Fallback view (200-bin column chart): same ranking",
