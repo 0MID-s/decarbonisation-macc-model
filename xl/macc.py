@@ -68,6 +68,7 @@ class LinkedRow:
     elig_v: int
     extras: Tuple[tuple, ...]   # (formula, cached value, number role) x4
     note: str               # barrier note text (analyst commentary)
+    short: str = ""         # short chart label
 
 
 @dataclass(frozen=True)
@@ -262,6 +263,8 @@ def write_macc_linked_block(cells, styles, ws, geometry, rows, ref_price_name,
     sorted_elig = [0] * n
     for r, rk in zip(rows, ranks):
         sorted_elig[rk - 1] = 1 if r.elig_v else 0
+    short_by_name = dict((r.name, r.short) for r in rows)
+    short_sorted = [short_by_name[x[0]] for x in srt]
     cum = ref.cumulative(srt)
     pts = ref.macc_a_points(srt)
     vals = ref.macc_a_values(srt)
@@ -278,7 +281,8 @@ def write_macc_linked_block(cells, styles, ws, geometry, rows, ref_price_name,
                            "Rank (1 = cheapest)", "Abatement on basis (1/0)",
                            "Financial NPV (after subsidy)", "NPV before subsidy",
                            "IRR", "Discounted payback (years)",
-                           "Barrier note (analyst commentary)")):
+                           "Barrier note (analyst commentary)",
+                           "Short chart label")):
         cells.text(ws, hdr_row, 1 + c, t, hdr)
     dcost = "$D$%d:$D$%d" % (d0 + 1, d1 + 1)
     delig = "$F$%d:$F$%d" % (d0 + 1, d1 + 1)
@@ -300,6 +304,7 @@ def write_macc_linked_block(cells, styles, ws, geometry, rows, ref_price_name,
         for j, (f, v, num) in enumerate(row.extras):
             cells.formula(ws, r, 6 + j, f, styles.get("link", num), value=v)
         cells.text(ws, r, 10, row.note, styles.get("text"))
+        cells.text(ws, r, 11, row.short, styles.get("label"))
 
     # Sorted block.
     for c, t in enumerate(("Slot", "Measure", "Chart height (EUR per tCO2e)",
@@ -308,6 +313,7 @@ def write_macc_linked_block(cells, styles, ws, geometry, rows, ref_price_name,
         cells.text(ws, g.sort_header_row, 1 + c, t, hdr)
     rank_rng = "$E$%d:$E$%d" % (d0 + 1, d1 + 1)
     names = "$B$%d:$B$%d" % (d0 + 1, d1 + 1)
+    shorts = "$L$%d:$L$%d" % (d0 + 1, d1 + 1)
     width = "$C$%d:$C$%d" % (d0 + 1, d1 + 1)
     for k in range(n):
         r = s0 + k
@@ -326,9 +332,9 @@ def write_macc_linked_block(cells, styles, ws, geometry, rows, ref_price_name,
                       styles.get("calc", "tco2e"), value=cum[k][0])
         cells.formula(ws, r, 6, "=F%d+E%d" % (r + 1, r + 1),
                       styles.get("calc", "tco2e"), value=cum[k][1])
-        cells.formula(ws, r, 7, '=IF(%s,INDEX(%s,%s),"")' % (elig, names, m),
+        cells.formula(ws, r, 7, '=IF(%s,INDEX(%s,%s),"")' % (elig, shorts, m),
                       styles.get("calc"),
-                      value=srt[k][0] if sorted_elig[k] else "")
+                      value=short_sorted[k] if sorted_elig[k] else "")
         cells.formula(ws, r, 8, "=INDEX(%s,%s)" % (delig, m),
                       styles.get("calc", "int"), value=sorted_elig[k])
 

@@ -69,6 +69,16 @@ class DateAxisPostprocess(unittest.TestCase):
         with self.assertRaises(PostprocessError):
             patch_date_axis(self.raw, 2)
 
+    def test_macc_chart_labels_are_short_names(self):
+        import openpyxl
+        from config.measures_catalog import MEASURES
+        wb = openpyxl.load_workbook(io.BytesIO(self.data), data_only=True)
+        ws = wb["MACC"]
+        shorts = set(m.short for m in MEASURES)
+        self.assertEqual(len(shorts), len(MEASURES))
+        vals = [ws["H%d" % r].value for r in range(59, 65)]
+        self.assertEqual(set(vals), shorts)
+
 
 if __name__ == "__main__":
     unittest.main()

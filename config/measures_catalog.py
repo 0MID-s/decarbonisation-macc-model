@@ -12,6 +12,7 @@ class MeasureSpec:
     key: str
     name: str
     barrier_note: str
+    short: str = ""   # short chart label (MACC data labels)
 
 
 MEASURES = (
@@ -19,31 +20,37 @@ MEASURES = (
         "LED", "LED lighting retrofit",
         "Analyst commentary: negative-cost but often not done - attention "
         "cost, small budgets, split incentives and installation downtime "
-        "keep cheap measures on the shelf (after Kesicki & Ekins)."),
+        "keep cheap measures on the shelf (after Kesicki & Ekins).",
+        short="LED"),
     MeasureSpec(
         "VSD", "Variable-speed drives on compressor motors",
         "Analyst commentary: negative-cost but often not done - attention "
         "cost, small budgets, split incentives and production downtime "
-        "during installation (after Kesicki & Ekins)."),
+        "during installation (after Kesicki & Ekins).",
+        short="VSD"),
     MeasureSpec(
         "HP", "High-temperature heat pump (replaces gas heat up to 125 C)",
         "Analyst commentary: the Belgian electricity-to-gas price ratio of "
         "about 3 erodes operating savings; high-temperature process "
-        "integration carries technical risk."),
+        "integration carries technical risk.",
+        short="Heat pump"),
     MeasureSpec(
         "Fleet", "Fleet electrification (light vans)",
         "Analyst commentary: upfront price premium, depot charging and "
         "range planning are the barriers; the result is sensitive to the "
-        "diesel price."),
+        "diesel price.",
+        short="Fleet"),
     MeasureSpec(
         "PV", "Rooftop solar PV (self-consumed)",
         "Analyst commentary: roof structure, grid-connection lead time and "
-        "capital rationing; full self-consumption is assumed."),
+        "capital rationing; full self-consumption is assumed.",
+        short="Solar PV"),
     MeasureSpec(
         "RC", "Renewable electricity contract (Guarantees of Origin)",
         "Analyst commentary: changes reported market-based Scope 2, not "
         "physical emissions; additionality is questionable and the premium "
-        "recurs every year."),
+        "recurs every year.",
+        short="Contract"),
 )  # type: Tuple[MeasureSpec, ...]
 
 MEASURE_KEYS = tuple(m.key for m in MEASURES)  # type: Tuple[str, ...]

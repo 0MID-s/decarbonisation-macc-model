@@ -82,7 +82,7 @@ def _rows(ref):
                     ("=M_%s_NPVPreSub" % k, mr.npv_pre_sub, "eur"),
                     ("=M_%s_IRR" % k, mr.irr, "pct"),
                     ("=M_%s_PayDisc" % k, mr.pay_disc, "dec1")),
-            note=spec.barrier_note))
+            note=spec.barrier_note, short=spec.short))
     return out
 
 
@@ -98,6 +98,7 @@ def build_macc(wb, styles, cells, dataset, cfg, layouts):
     ws.set_column(2, 2, 46.0)
     ws.set_column(3, 9, 16.0)
     ws.set_column(10, 10, 72.0)
+    ws.set_column(11, 11, 14.0)
     hdr = styles.get("header")
     sec = styles.get("section")
     lbl = styles.get("label")

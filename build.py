@@ -144,8 +144,9 @@ def build_bytes(target, dataset, extra_builders=()):
         extra(wb, styles, cells)
     wb.close()
     # XlsxWriter hard-codes c:auto=1 on date axes; force a true date axis on
-    # the one technique A MACC chart (see xl/postprocess.py).
-    data = patch_date_axis(buf.getvalue(), expected_charts=1)
+    # every technique A MACC chart (none when the build has no MACC sheet) (see xl/postprocess.py).
+    n_date = sum(1 for ch in wb.charts if getattr(ch, "date_category", False))
+    data = patch_date_axis(buf.getvalue(), expected_charts=n_date)
     registry = cells.registry
     for rec in registry:
         lint_or_raise(rec.text, rec.sheet, cells.tags)
