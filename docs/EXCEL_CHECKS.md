@@ -95,4 +95,18 @@ Re-verification of variable widths and axis labels in Excel: pending, user.
 
 ### User visual verdict
 
-Pending (Task 2); the user re-checks after the fix above.
+Approved, 2026-10-24, Excel for Mac 16.114, after rebuild 6b0dec23 (auto=0,
+short labels). The user said the chart "seems good" and confirmed that the
+dropdowns drive the model. Live values read from the open workbook with
+High / Location-based: title "MACC: Location-based basis, High carbon price
+scenario"; the renewable contract shows "n/a (no abatement on this basis)",
+tier Later, rank 6; VSD 14 t / -801, Solar PV 139 / -656, LED 28 / -244,
+Heat pump 822 / 102, Fleet 37 / 143.
+
+The user remarked that Solar PV, VSD and LED look squished on the full MACC.
+That is correct data (about 200 t of about 3,220 t), so a zoom chart was added
+after the user's check (cell K18, right of chart A), using the same technique
+(date axis, auto=0 post-process) and the same series, with the x-axis cut just
+above the largest cumulative "Do first" abatement over all six states. Its
+rendering was not part of the user's check and will be re-checked at GATE-B
+(Excel for the web) and in the final review.
