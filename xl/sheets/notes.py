@@ -138,6 +138,10 @@ MEASURES_METHOD = (
     "interactions beyond the stack, barriers and non-financial costs "
     "(Kesicki and Ekins). Negative-cost measures are often not done because "
     "of hidden and attention costs.",
+    "Chart technique: the MACC is an area chart on a date axis whose "
+    "positions are cumulative tCO2e, so bar widths equal annual abatement. "
+    "The axis is set to Date axis (time scale) in the file; a build step "
+    "does this because the charting library always writes automatic.",
     "Key analyst assumptions to test in Phase 4: Meas_LED_LightingShare, "
     "Meas_LED_Coverage, Meas_LED_SavingRate, Meas_VSD_MotorShare, "
     "Meas_VSD_Coverage, Meas_VSD_SavingRate, Meas_PV_Size, "

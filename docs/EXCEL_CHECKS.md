@@ -71,21 +71,25 @@ and the x-axis showed only a "0" label. Widths should follow tCO2e per year
 (VSD 15, PV 155, LED 31, renewable contract 2,194, heat pump 789, fleet 36).
 Labels, the dashed reference line, title and legend rendered correctly.
 
-Cause: XlsxWriter 3.2.9 always writes `<c:auto val="1"/>` inside `<c:dateAx>`, so
-Excel chooses the axis type from the number format of the category cells. The x
-helper cells (MACC E68:E91) were plain numbers, so Excel fell back to a text
-axis: 24 equally spaced categories, and the major unit of 500 was read as a
-label interval (only "0" shown).
+Root cause (confirmed in Excel): XlsxWriter 3.2.9 hard-codes `<c:auto val="1"/>`
+inside `<c:dateAx>`. With auto on, Excel picks the axis type itself and, for this
+area chart, chose a TEXT axis (24 equal slots, trapezoids, a single "0" label).
 
-Fix (commit "date-formatted axis feed"): a dedicated chart-feed column
-(MACC M68:M91, header "Chart axis feed (tCO2e)", note in M65) holds `=E68` ...
-`=E91` with the number format `d/m/yyyy`. Chart A categories (bars and the
-reference line) point at that column. The visible tonnes column E keeps its
-plain format; the chart axis labels use `#,##0` (not source-linked), so they
-read as tonnes. The axis now has min 0, major unit = nice step of the largest
-total across the six states, and a max rounded up to a multiple of that step.
-The QA comparer converts openpyxl date-decoded cached values back to serials.
-The Phase 1 spike builder is untouched (its layout has no feed column).
+Attempt 1 (commit 94f194b, a date-formatted copy of the x column as categories)
+was ineffective: Excel saw the cells as dates, yet the category type stayed
+"automatic" and the axis was still text. That feed column was removed again.
+
+Confirmed fix: setting the category axis type to "Date axis" (`<c:auto val="0"/>`)
+drew variable-width rectangles at once, axis 0 to 3,500 in steps of 500
+(screenshot by the user). `xl/postprocess.py` now rewrites `c:auto` 1 to 0 inside
+`c:dateAx` in the built .xlsx (stdlib zipfile; other members byte-identical;
+replacement count asserted; applied to the spike build too). Categories are plain
+MACC column E again. The axis keeps min 0, max a multiple of the nice step,
+major unit = the nice step.
+
+Data labels now use short names (LED, VSD, Solar PV, Contract, Heat pump, Fleet)
+from a "Short chart label" column (MACC column L), read through INDEX/MATCH so
+they follow the live sort. The legend keeps the full names.
 
 Re-verification of variable widths and axis labels in Excel: pending, user.
 

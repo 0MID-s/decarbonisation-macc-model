@@ -57,8 +57,11 @@ variable widths was probably wrong. The spike chart used the same XML as the
 Phase 3 chart: a date axis with `c:auto=1` fed by plain-number category cells,
 which Excel renders as a text axis (equal spacing). The "crowded labels" were
 likely the 24 category labels. Equal spacing was not detected at the time.
-Variable width (with date-formatted category cells) is re-verified in Phase 3
-plan 03-11.
+Root cause now confirmed in Excel (2026-10-21): XlsxWriter hard-codes
+`c:auto=1`; Excel then picks a text axis. A date-formatted category column did
+NOT fix it. Setting the axis to Date axis (`c:auto=0`) did, and the build now
+applies that via `xl/postprocess.py` to both the main and the spike workbooks.
+Re-check of the rebuilt files is part of Phase 3 plan 03-11.
 
 GATE-A: Passed (Excel desktop) on 2026-10-18, with notes. Excel for the web not yet checked.
 
