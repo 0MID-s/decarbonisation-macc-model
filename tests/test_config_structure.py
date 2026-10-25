@@ -1,7 +1,7 @@
 import re
 import unittest
 
-from config import (inputs_baseline, inputs_carbon, inputs_constants,
+from config import (inputs_baseline, inputs_carbon, inputs_constants, inputs_exposure,
                     inputs_factors, inputs_finance, inputs_measures,
                     inputs_prices)
 from config._helpers import scalar, series, NA
@@ -10,7 +10,7 @@ from config.schema import Kind, Status
 from config.sources import SOURCES
 
 MODS = (inputs_constants, inputs_baseline, inputs_prices, inputs_factors,
-        inputs_carbon, inputs_finance, inputs_measures)
+        inputs_carbon, inputs_finance, inputs_measures, inputs_exposure)
 EXPECTED = {
     "Const_TJ_to_MWh": 1000 / 3.6, "Const_GJ_per_MWh": 3.6,
     "Const_kWh_per_MWh": 1000, "Const_g_per_kWh_to_t_per_MWh": 0.001,

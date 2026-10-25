@@ -5,7 +5,8 @@ from enum import Enum
 from typing import Optional, Tuple
 
 SECTIONS = ("Baseline", "Energy prices", "Emission factors", "Carbon prices",
-            "Finance", "Measures", "Constants")
+            "Finance", "Measures", "Constants",
+            "Carbon exposure (Phase 4)", "Sensitivity (Phase 4)")
 
 # Underscore required so ids are valid Excel defined names and never look like
 # cell references such as ETS2 or LB1.

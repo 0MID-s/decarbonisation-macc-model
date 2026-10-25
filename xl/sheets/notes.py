@@ -70,7 +70,7 @@ LIMITATIONS = (
     "slightly lower.",
     "The NGFS region OECD & EU (R5) is used as the EU proxy (D-27).",
     "Alternative conversion route (D-41): a US-CPI route would give a factor "
-    "of about 1.31 instead of the Eurostat route factor, so carbon prices "
+    "(input Carbon_NGFS_AltRouteFactor) instead of the Eurostat route factor, so carbon prices "
     "about a quarter higher (an indicative analyst estimate, not a sourced "
     "input; see docs/DATA_LOG.md); a candidate Phase 4 sensitivity.",
 )
@@ -210,7 +210,7 @@ def carbon_notes(sources):
         "Conversion route (D-41): US$2010 divided by the 2010 average US "
         "dollars per euro (Eurostat), then multiplied by euro-area HICP 2025 "
         "over 2010. Limitation: it assumes the US dollar kept its 2010 real "
-        "value against the euro; a US-CPI route would give about 1.31, so "
+        "value against the euro; a US-CPI route would give the factor in input Carbon_NGFS_AltRouteFactor, so "
         "prices about 25% higher (an indicative analyst estimate, not a sourced "
         "input; see docs/DATA_LOG.md), a candidate Phase 4 sensitivity.",
         "EUA anchor (D-29): " + EUA_NOTE + ".",
