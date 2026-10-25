@@ -148,3 +148,13 @@ rendering was not part of the user's check and will be re-checked at GATE-B
 - Excel-only findings: none. No workbook fix was needed. All throwaway copies
   and check folders were deleted afterwards.
 - Excel for the web: still open, GATE-B (Phase 5).
+
+### User visual verdict (Phase 4)
+
+- Date: 2026-10-25
+- Checked by the user in Excel for Mac: the bridge chart (Exposure sheet) and the
+  tornado chart (Sensitivity sheet) across Central / Market-based / Direct ETS
+  Off, Low, and Direct ETS On; the sensitivity grid centre; and the
+  rank-stability indicator showing "Same".
+- Verdict (verbatim): "looks good"
+- Findings: none.
