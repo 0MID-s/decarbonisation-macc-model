@@ -39,6 +39,7 @@ from xl.sheets.macc import build_macc
 from xl.sheets.measures import build_measures
 from xl.sheets.notes import build_notes
 from xl.sheets.rates import build_rates
+from xl.sheets.sensitivity import build_sensitivity
 from xl.sheets.sources import build_sources
 from xl.sheets.spike import build_spike
 from xl.postprocess import patch_date_axis
@@ -84,7 +85,7 @@ def load_dataset(name):
 
 MAIN_SHEETS_BASE = ("Cover", "Inputs", "Sources", "Lists")
 REAL_DATA_SHEETS = ("Baseline", "Rates", "Carbon", "Measures", "MACC",
-                   "Exposure")
+                   "Exposure", "Sensitivity")
 NOTES_SHEETS = ("Notes",)
 
 
@@ -107,6 +108,8 @@ def _build_main(wb, styles, cells, dataset, cfg):
         out["measures"] = build_measures(wb, styles, cells, dataset, cfg, out)
         out["macc"] = build_macc(wb, styles, cells, dataset, cfg, out)
         out["exposure"] = build_exposure(wb, styles, cells, dataset, cfg, out)
+        out["sensitivity"] = build_sensitivity(wb, styles, cells, dataset, cfg,
+                                               out)
     out["notes"] = build_notes(wb, styles, cells, dataset, cfg)
     return out
 
