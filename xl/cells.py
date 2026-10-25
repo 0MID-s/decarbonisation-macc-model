@@ -135,9 +135,12 @@ class CellWriter(object):
             raise UnsafeCellError("invalid defined name: %r" % name)
         self.names[name] = ref
 
-    def insert_chart(self, ws, cell, chart):
-        """Place a chart. Chart formulas are checked by the final-bytes scan."""
-        if ws.insert_chart(cell, chart) != 0:
+    def insert_chart(self, ws, cell, chart, options=None):
+        """Place a chart. Chart formulas are checked by the final-bytes scan.
+        options: XlsxWriter x_offset / y_offset only."""
+        if options and set(options) - {"x_offset", "y_offset"}:
+            raise UnsafeCellError("unsupported chart option")
+        if ws.insert_chart(cell, chart, options) != 0:
             raise UnsafeCellError("chart could not be inserted at %s" % cell)
 
     def tag(self, sheet, first_row, first_col, last_row, last_col, tag):

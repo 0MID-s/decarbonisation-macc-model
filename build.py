@@ -35,6 +35,7 @@ from xl.sheets.checks import build_checks
 from xl.sheets.carbon import build_carbon
 from xl.sheets.common import get_or_add
 from xl.sheets.cover import build_cover
+from xl.sheets.dashboard import build_dashboard
 from xl.sheets.exposure import build_exposure
 from xl.sheets.inputs import build_inputs
 from xl.sheets.lists import build_lists
@@ -97,7 +98,7 @@ NOTES_SHEETS = ("Notes",)
 # Tab order of the real workbook (D-23, restricted to sheets that exist now).
 # Plans 05-03 to 05-06 insert Checks, Dashboard, ReadMe and Disclosure here at
 # their D-23 positions. Worksheets are pre-created in this order.
-REAL_ORDER = ("Cover", "Inputs", "Sources", "Baseline", "Rates", "Carbon",
+REAL_ORDER = ("Cover", "Dashboard", "Inputs", "Sources", "Baseline", "Rates", "Carbon",
               "Measures", "MACC", "Exposure", "Sensitivity", "Checks", "Notes",
               "Lists")
 
@@ -128,6 +129,8 @@ def _build_main(wb, styles, cells, dataset, cfg):
         out["exposure"] = build_exposure(wb, styles, cells, dataset, cfg, out)
         out["sensitivity"] = build_sensitivity(wb, styles, cells, dataset, cfg,
                                                out)
+        out["dashboard"] = build_dashboard(wb, styles, cells, dataset, cfg,
+                                           out)
         out["checks"] = build_checks(wb, styles, cells, dataset, cfg, out)
     out["notes"] = build_notes(wb, styles, cells, dataset, cfg)
     return out
