@@ -121,10 +121,15 @@ class MaccSheet(unittest.TestCase):
             charts = {n: z.read(n).decode("utf-8") for n in z.namelist()
                       if n.startswith("xl/charts/chart")}
         macc = [x for x in charts.values() if "MACC!" in x or "'MACC'!" in x]
-        self.assertEqual(len(macc), 3, len(charts))
+        # chart A, zoom, fallback column chart + the Dashboard copy of chart A
+        self.assertEqual(len(macc), 4, len(charts))
         dated = [x for x in macc if "<c:dateAx>" in x]
-        self.assertEqual(len(dated), 2)
-        a = [x for x in dated if "Zoom:" not in x][0]
+        self.assertEqual(len(dated), 3)
+        plain = [x for x in dated if "Zoom:" not in x]
+        self.assertEqual(len(plain), 2)
+        norm = lambda x: re.sub(r'val="\d{8}"', 'val="ID"', x)
+        self.assertEqual(norm(plain[0]), norm(plain[1]))  # Dashboard = chart A
+        a = plain[0]
         z = [x for x in dated if "Zoom:" in x][0]
         cat = lambda x: re.findall(r"<c:cat>.*?<c:f>(.*?)</c:f>", x, re.S)
         self.assertEqual(cat(a), cat(z))

@@ -35,7 +35,7 @@ class DateAxisPostprocess(unittest.TestCase):
         for x in self._date_charts(self.raw):
             self.assertIn('<c:auto val="1"/>', x)
         charts = self._date_charts(self.data)
-        self.assertEqual(len(charts), 2)  # chart A + zoom
+        self.assertEqual(len(charts), 3)  # chart A + zoom + Dashboard MACC
         for x in charts:
             ax = re.search(r"<c:dateAx>.*?</c:dateAx>", x, re.S).group(0)
             self.assertIn('<c:auto val="0"/>', ax)
@@ -49,7 +49,7 @@ class DateAxisPostprocess(unittest.TestCase):
                 self.assertRegex(f, r"^MACC!\$E\$\d+:\$E\$\d+$")
 
     def test_idempotent_and_other_members_identical(self):
-        again = patch_date_axis(self.data, 2)
+        again = patch_date_axis(self.data, 3)
         a = zipfile.ZipFile(io.BytesIO(self.data))
         b = zipfile.ZipFile(io.BytesIO(again))
         self.assertEqual(a.namelist(), b.namelist())
@@ -67,7 +67,7 @@ class DateAxisPostprocess(unittest.TestCase):
 
     def test_wrong_chart_count_fails(self):
         with self.assertRaises(PostprocessError):
-            patch_date_axis(self.raw, 3)
+            patch_date_axis(self.raw, 4)
 
     def test_macc_chart_labels_are_short_names(self):
         import openpyxl
