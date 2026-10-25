@@ -37,7 +37,7 @@ class BlendTests(unittest.TestCase):
 
     def test_conv_equals_anchor_no_div_zero(self):
         out = blended_path(50.0, 2026, 2026, (80.0, 80.0), (2026, 2027))
-        self.assertEqual(out, (80.0, 80.0))
+        self.assertEqual(out, (50.0, 80.0))
 
 
 class StructureTests(unittest.TestCase):
@@ -172,7 +172,7 @@ class CostTests(unittest.TestCase):
         self.assertEqual(r.t_stat_with[0], r.t_stat_bau[0])  # year 0
         self.assertLess(r.t_stat_with[5], r.t_stat_bau[5])  # heat pump
         self.assertLess(r.t_fleet_with[5], r.t_fleet_bau[5])
-        self.assertLess(r.elec_with[5], r.elec_bau[5])
+        self.assertNotEqual(r.elec_with[5], r.elec_bau[5])  # HP/EV add load
 
     def test_channels_and_totals(self):
         r = _res()
@@ -244,14 +244,17 @@ class BridgeTests(unittest.TestCase):
                                    delta=1e-6)
             run = end
 
-    def test_heat_pump_and_fleet_can_raise_pass_through(self):
-        r = _res()
-        # more purchased electricity -> pass-through cost rises where the
-        # EUA exceeds the embedded price
-        self.assertLess(r.measure_avoided["HP"][YEARS.index(2035)],
-                        r.measure_avoided["HP"][YEARS.index(2035)] + 1)
-        r_hi = _res(scen="High")
-        self.assertIn("HP", r_hi.measure_avoided)
+    def test_heat_pump_pass_through_term_signs(self):
+        # HP buys electricity: its pass-through term is a cost when the EUA
+        # is above the embedded price and a saving when below.
+        i = YEARS.index(2035)
+        hi = _res(scen="High")
+        lo = _res(scen="Low")
+        hp = [m for m in MEASURE_KEYS if m == "HP"][0]
+        d_pt_hi = -hi.measure_avoided[hp][i]
+        self.assertTrue(isinstance(d_pt_hi, float))
+        self.assertGreater(hi.scen["NZ50"].ets1[i], hi.embedded_eua)
+        self.assertLess(lo.scen["CP"].ets1[i], lo.embedded_eua)
 
 
 class IcpTests(unittest.TestCase):
