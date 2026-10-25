@@ -89,7 +89,18 @@ def compute_outputs(inputs, basis, scenario, direct_ets):
         "MACC_TotalAbatement": macc_total,
         "Sel_Scenario": scenario, "Sel_Basis": basis,
         "Sel_DirectETS": direct_ets,
+        "BL_Total_MWh": base.total_mwh,
+        "Dash_AbatedSel": abated,
+        "M_HP_AvgtSel": next(m.avg_t_sel for m in meas.measures
+                             if m.key == "HP"),
+        "Carbon_ICP_Level": float(next(
+            r.published_value for r in inputs if r.id == "Carbon_ICP_Level")),
+        "Sens_RankStab_AnyChanged": int(any(
+            r.flag != "Same" for r in sens.rank_stab)),
     }
+    named["Expo_ICP_Level"] = named["Carbon_ICP_Level"]
+    for m in meas.measures:
+        named["M_%s_Capex" % m.key] = m.capex
     for key in ("CP", "NDC", "NZ50"):
         c = expo.scen[key].cum
         named["Expo_CumBAU_" + key] = c["total_bau"]
