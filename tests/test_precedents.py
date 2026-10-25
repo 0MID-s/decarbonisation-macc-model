@@ -60,6 +60,10 @@ class RealBuild(unittest.TestCase):
         sheet, c1, r1, c2, r2 = self._band()
         for s, coord in self.deps:
             cell = self.wb[s][coord]
+            if s == "Disclosure":
+                # display-only =Name links to the ICP level (plan 05-06)
+                self.assertRegex(cell.value, r"^=[A-Za-z_][A-Za-z0-9_]*$")
+                continue
             self.assertEqual(s, sheet, (s, coord))
             self.assertTrue(r1 <= cell.row <= r2 and c1 <= cell.column <= c2,
                             "%s!%s is outside Expo_ICP_Band" % (s, coord))
