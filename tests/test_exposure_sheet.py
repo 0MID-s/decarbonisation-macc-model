@@ -153,6 +153,31 @@ class ExposureSheet(unittest.TestCase):
         self.assertNotAlmostEqual(ref.icp_disc_bau, self.ref.icp_disc_bau,
                                   delta=1.0)
 
+    def test_direct_ets_branch_moves_stationary_price(self):
+        """WR-04: fails if the Off/On branch of the stationary price rows is
+        edited (the in-sheet exclusivity check cannot catch that)."""
+        names = ["Expo_PStat1_NDC", "Expo_PStat2_NDC", "Expo_PETS1_NDC",
+                 "Expo_PETS2_NDC", "Expo_PreStart"]
+        off = evaluate_names(self.data, names)
+        on = evaluate_names(self.data, names, overrides={
+            self._target("Sel_DirectETS"): "On"})
+        self.assertTrue(all(x == 0 for x in off["Expo_PStat1_NDC"]))
+        self.assertTrue(all(x == 0 for x in on["Expo_PStat2_NDC"]))
+        self.assertEqual(off["Expo_PStat2_NDC"], off["Expo_PETS2_NDC"])
+        self.assertEqual(on["Expo_PStat1_NDC"], on["Expo_PETS1_NDC"])
+        self.assertTrue(any(x > 0 for x in off["Expo_PStat2_NDC"]))
+        self.assertTrue(any(x > 0 for x in on["Expo_PStat1_NDC"]))
+
+    def test_icp_independent_of_scenario(self):
+        """WR-04: the internal carbon price lens does not move with the
+        scenario selector (it is a lens, not a cash channel)."""
+        names = ["Expo_ICP_DiscBAU", "Expo_ICP_DiscWith"]
+        base = evaluate_names(self.data, names)
+        hi = evaluate_names(self.data, names, overrides={
+            self._target("Sel_Scenario"): "High"})
+        for n in names:
+            self.assertAlmostEqual(base[n], hi[n], delta=1e-9)
+
     def test_checks_true_default_and_on(self):
         names = ["Expo_Check_All", "Expo_Check_ETS2ZeroBeforeStart",
                  "Expo_Check_ETSExclusive", "Expo_Check_CashIsChannels",

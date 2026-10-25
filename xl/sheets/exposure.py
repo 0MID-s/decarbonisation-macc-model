@@ -490,8 +490,8 @@ def _results_layer(w, ws, cells, styles, ref, dataset, rows, cur, nxt, a, h,
                                 % k for k in keys),
           all(sum(x * p for x, p in zip(ref.scen[k].ets2, pre_vals)) == 0
               for k in keys))
-    check("Expo_Check_ETSExclusive", "Check: a fuel never carries both an "
-          "ETS1 and an ETS2 price",
+    check("Expo_Check_ETSExclusive", "Bookkeeping check (true by "
+          "construction): stationary fuel price rows never overlap",
           "=AND(%s)" % ",".join("SUMPRODUCT(Expo_PStat1_%s,Expo_PStat2_%s)=0"
                                 % (k, k) for k in keys),
           all(sum(x * y for x, y in zip(ref.scen[k].p_stat1,
@@ -504,8 +504,8 @@ def _results_layer(w, ws, cells, styles, ref, dataset, rows, cur, nxt, a, h,
                 "ABS(SUM(Expo_%s_Total_%s)-SUM(Expo_%s_ETS2_%s)"
                 "-SUM(Expo_%s_DirETS_%s)-SUM(Expo_%s_PT_%s))"
                 "<=Const_CheckTolMoney" % ((cl, k) * 4))
-    check("Expo_Check_CashIsChannels", "Cash totals contain only ETS2, "
-          "direct ETS1 and pass-through (no internal carbon price)",
+    check("Expo_Check_CashIsChannels", "Bookkeeping check: each cash total "
+          "equals its ETS2, direct ETS1 and pass-through rows",
           "=AND(%s)" % ",".join(parts), True)
     check("Expo_Check_ConvYears", "Check: convergence years are valid",
           "=Carb_Check_ConvYears", True)

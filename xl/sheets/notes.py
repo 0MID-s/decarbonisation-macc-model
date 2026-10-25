@@ -172,8 +172,10 @@ EXPOSURE_METHOD = (
     "the firm buys. It affects only the market-based emissions inventory "
     "and the internal carbon price lens.",
     "The direct ETS1 toggle (Sel_DirectETS) moves stationary fuel from "
-    "ETS2 to ETS1; the two are mutually exclusive and a check proves the "
-    "price rows never overlap.",
+    "ETS2 to ETS1; the two are mutually exclusive by construction (both price rows "
+    "come from one On/Off switch) and a bookkeeping check confirms the price "
+    "rows never overlap. Automated tests, not the in-sheet check, exercise "
+    "the Off and On branches.",
     "The internal carbon price is a non-cash decision lens on Scope 1 + 2 "
     "of the selected basis. It is never added to a cash total.",
     "Discounting uses 2026 as year 0 over the exposure window "
