@@ -6,7 +6,7 @@ Do NOT run this with ``python -I``: isolated mode drops the script directory
 from sys.path and the project packages (config, xl, qa) cannot be imported.
 
 Exit codes: 0 ok, 2 provenance, 3 lint or unsafe cell, 4 security scan,
-5 read-back. On any failure nothing is written to the output path.
+5 read-back, 6 build gate (Chk_Master not OK). On any failure nothing is written to the output path.
 This module is the composition root: it is the only production module that
 imports tests (lazily, for the synthetic fixtures dataset).
 """
@@ -24,12 +24,14 @@ import xlsxwriter
 from config.build_config import BUILD
 from config.schema import InputRecord, ProvenanceError, Source
 from config.validate import validate_provenance
+from qa.formula_eval import evaluate_names
 from qa.lint import LintError, lint_or_raise
 from qa.readback import ReadbackError, verify_workbook
 from qa.scan import ScanError, part_names, scan_or_raise
 from xl.selector import direct_ets_state, selector_state  # noqa: F401 (re-export)
 from xl.cells import CellWriter, FormulaRecord, UnsafeCellError
 from xl.sheets.baseline import build_baseline
+from xl.sheets.checks import build_checks
 from xl.sheets.carbon import build_carbon
 from xl.sheets.common import get_or_add
 from xl.sheets.cover import build_cover
@@ -53,6 +55,10 @@ OPTIONS = {
     "strings_to_numbers": False,
     "default_format_properties": {"font_name": "Arial", "font_size": 10},
 }
+
+
+class BuildGateError(Exception):
+    pass
 
 
 @dataclass(frozen=True)
@@ -92,7 +98,8 @@ NOTES_SHEETS = ("Notes",)
 # Plans 05-03 to 05-06 insert Checks, Dashboard, ReadMe and Disclosure here at
 # their D-23 positions. Worksheets are pre-created in this order.
 REAL_ORDER = ("Cover", "Inputs", "Sources", "Baseline", "Rates", "Carbon",
-              "Measures", "MACC", "Exposure", "Sensitivity", "Notes", "Lists")
+              "Measures", "MACC", "Exposure", "Sensitivity", "Checks", "Notes",
+              "Lists")
 
 
 def main_sheets(dataset):
@@ -121,6 +128,7 @@ def _build_main(wb, styles, cells, dataset, cfg):
         out["exposure"] = build_exposure(wb, styles, cells, dataset, cfg, out)
         out["sensitivity"] = build_sensitivity(wb, styles, cells, dataset, cfg,
                                                out)
+        out["checks"] = build_checks(wb, styles, cells, dataset, cfg, out)
     out["notes"] = build_notes(wb, styles, cells, dataset, cfg)
     return out
 
@@ -174,6 +182,16 @@ def build_bytes(target, dataset, extra_builders=()):
     problems = verify_workbook(data, registry, layouts)
     if problems:
         raise ReadbackError(problems)
+    if "Chk_Master" in cells.names:
+        # Evaluate from the formulas; never trust the cached "OK" (T-05-08).
+        value = evaluate_names(data, ["Chk_Master"])["Chk_Master"]
+        if value != "OK":
+            raise BuildGateError("Chk_Master is %r in the built state" % (value,))
+        cached = [r.value for r in registry
+                  if r.sheet == "Checks" and r.text.startswith('=IF(AND(G')]
+        if cached != ["OK"]:
+            raise BuildGateError("cached Chk_Master is %r, expected 'OK'"
+                                 % (cached,))
     return data, registry
 
 
@@ -218,6 +236,9 @@ def main(argv=None):
     except ReadbackError as exc:
         sys.stderr.write("READBACK ERROR\n%s\n\n" % "\n".join(exc.problems))
         return 5
+    except BuildGateError as exc:
+        sys.stderr.write("BUILD GATE ERROR\n%s\n\n" % exc)
+        return 6
     _write_atomic(out, data)
     print("sha256 %s  %s" % (hashlib.sha256(data).hexdigest(), out))
     print("parts %d" % len(part_names(data)))
