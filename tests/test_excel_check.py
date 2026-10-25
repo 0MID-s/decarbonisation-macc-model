@@ -104,7 +104,7 @@ class Harness(unittest.TestCase):
             calls.append(state)
             if len(calls) == 1:
                 raise subprocess.TimeoutExpired("osascript", 1)
-            return 10, [], []
+            return 10, [], [], "OK"
         with mock.patch.object(ec, "run_state", fake), \
                 mock.patch.object(ec, "STATES", ec.STATES[:2]), \
                 mock.patch("build.load_dataset", lambda *_: None), \
@@ -112,6 +112,15 @@ class Harness(unittest.TestCase):
             rc = ec.main()
         self.assertEqual(rc, 1)
         self.assertEqual(len(calls), 2)
+
+
+class MasterCell(unittest.TestCase):
+    def test_master_cell_resolved_on_checks(self):
+        data, _ = build.build_bytes("main", build.load_dataset("config"))
+        key = ec.master_cell(data)
+        self.assertTrue(key.startswith("Checks!"))
+        self.assertIn(key, ec.cached_values(data))
+        self.assertEqual(ec.cached_values(data)[key], "OK")
 
 
 if __name__ == "__main__":

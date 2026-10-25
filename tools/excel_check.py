@@ -63,6 +63,19 @@ def selector_cells(data):
     return out
 
 
+def master_cell(data):
+    """Key 'Sheet!A1' of the Chk_Master cell, resolved from the defined name
+    (never hard-coded). It must live on the Checks sheet."""
+    import io
+    import openpyxl
+    wf = openpyxl.load_workbook(io.BytesIO(data))
+    sheet, addr = wf.defined_names["Chk_Master"].attr_text.split("!")
+    sheet = sheet.strip("'")
+    if sheet != "Checks":
+        raise ValueError("Chk_Master is not on the Checks sheet: %s" % sheet)
+    return "%s!%s" % (sheet, addr.replace("$", ""))
+
+
 def blank_formula_cells(data):
     """Keys of formula cells whose formula can return an empty string; only
     these may legitimately show 0 in Excel against a cached empty value."""
@@ -201,28 +214,31 @@ def run_state(state, base=None):
     finally:
         shutil.rmtree(check_dir, ignore_errors=True)
     mism, errs = compare(cached, excel, blank_ok=blank_formula_cells(data))
-    return len(cached), mism, errs
+    master = excel.get(master_cell(data))
+    if master != "OK":
+        mism.append("Chk_Master in Excel is %r, expected 'OK'" % (master,))
+    return len(cached), mism, errs, master
 
 
 def main():
     import build
     base = build.load_dataset("config")
-    print("| Basis | Scenario | Direct ETS | Formula cells | Mismatches | Error values |")
-    print("|---|---|---|---|---|---|")
+    print("| Basis | Scenario | Direct ETS | Formula cells | Mismatches | Error values | Chk_Master in Excel |")
+    print("|---|---|---|---|---|---|---|")
     bad = False
     details = []
     for state in STATES:
         try:
-            n, mism, errs = run_state(state, base)
+            n, mism, errs, master = run_state(state, base)
         except (subprocess.TimeoutExpired, RuntimeError, OSError) as exc:
-            print("| %s | %s | %s | FAILED | %s | |" % (
+            print("| %s | %s | %s | FAILED | %s | | |" % (
                 state[0], state[1], state[2], type(exc).__name__))
             sys.stdout.flush()
             bad = True
             details.append((state, ["state failed: %s" % exc], []))
             continue
-        print("| %s | %s | %s | %d | %d | %d |" % (
-            state[0], state[1], state[2], n, len(mism), len(errs)))
+        print("| %s | %s | %s | %d | %d | %d | %s |" % (
+            state[0], state[1], state[2], n, len(mism), len(errs), master))
         sys.stdout.flush()
         if mism or errs:
             bad = True

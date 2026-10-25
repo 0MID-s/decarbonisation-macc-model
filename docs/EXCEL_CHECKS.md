@@ -174,3 +174,38 @@ rendering was not part of the user's check and will be re-checked at GATE-B
   check folders were left behind.
 - The user's visual verdict above was given before these fixes. The fixes do
   not touch the bridge or tornado chart definitions.
+
+## Phase 5 / GATE-B, Excel desktop
+
+- Date: 2026-10-26
+- Excel: Excel for Mac 16.114.1, driven by osascript (JXA) addressed to Microsoft Excel only
+- Deliverable: dist/maison_veritas.xlsx, sha256
+  `903cb44645c1a52b81f0ee8e829e38a4cbf38e7ef57b9cd7b3a36f9a209312f1`
+  (unchanged after the run; only throwaway copies were opened)
+- Method: `.venv/bin/python tools/excel_check.py` (tracked script, with
+  `tools/excel_recalc.js`). Same method as Phase 4: each of the 12 states is
+  built, a throwaway copy is opened in Excel, the three selectors are set, a
+  full recalculation runs, every formula cell is read numerically and compared
+  with the cached reference values (relative 1e-7, absolute 1e-9). New in this
+  run: the value Excel computes for Chk_Master (cell resolved from the defined
+  name on the Checks sheet) is reported per state, and the run fails unless it
+  reads "OK".
+
+| Basis | Scenario | Direct ETS | Formula cells | Mismatches | Error values | Chk_Master in Excel |
+|---|---|---|---|---|---|---|
+| Location-based | Low | Off | 12,278 | 0 | 0 | OK |
+| Location-based | Low | On | 12,278 | 0 | 0 | OK |
+| Location-based | Central | Off | 12,278 | 0 | 0 | OK |
+| Location-based | Central | On | 12,278 | 0 | 0 | OK |
+| Location-based | High | Off | 12,278 | 0 | 0 | OK |
+| Location-based | High | On | 12,278 | 0 | 0 | OK |
+| Market-based | Low | Off | 12,278 | 0 | 0 | OK |
+| Market-based | Low | On | 12,278 | 0 | 0 | OK |
+| Market-based | Central | Off | 12,278 | 0 | 0 | OK |
+| Market-based | Central | On | 12,278 | 0 | 0 | OK |
+| Market-based | High | Off | 12,278 | 0 | 0 | OK |
+| Market-based | High | On | 12,278 | 0 | 0 | OK |
+
+- Excel-only findings: none. No workbook fix was needed. No dist/excel-check-*
+  folder remains.
+- Excel for the web: to be confirmed in the user review.
