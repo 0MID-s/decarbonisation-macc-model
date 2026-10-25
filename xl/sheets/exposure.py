@@ -747,6 +747,7 @@ def _bridge_layer(w, ws, wb, cells, styles, ref, dataset, rows, cur, nxt, a,
           B_LBL0 + 3),
          (("Cost increase"), B_IPOS, B_INEG, B_COLOURS[2], B_LBL0 + 4,
           B_LBL0 + 5)), B_VAL, hr)
+    layouts["bridge"] = layout
     chart = bridge_chart(
         wb, layout, "=%s!$D$%d" % (SHEET, [rr for n, rr in rows
                                            if n == "Expo_BridgeTitle"][0] + 1),

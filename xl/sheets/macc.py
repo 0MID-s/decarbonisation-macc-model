@@ -68,6 +68,8 @@ class MaccSheetLayout:
     title_cell: str
     a_layout: object
     c_layout: object
+    chart_step: int = 0
+    chart_axis_max: int = 0
 
 
 def _rows(ref):
@@ -224,4 +226,5 @@ def build_macc(wb, styles, cells, dataset, cfg, layouts):
     return MaccSheetLayout(
         (TBL_FIRST, t1), (d0, d1), (s0, s1),
         (a_layout.helper_first_row, a_layout.helper_last_row),
-        "G%d" % (REF_ROW + 1), "B%d" % (TITLE_ROW + 1), a_layout, c_layout)
+        "G%d" % (REF_ROW + 1), "B%d" % (TITLE_ROW + 1), a_layout, c_layout,
+        step, axis_max)

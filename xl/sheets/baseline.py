@@ -428,5 +428,7 @@ def build_baseline(wb, styles, cells, dataset, cfg, inputs_layout):
     s.label(r2, "Scaling ratio between 0 and 1", "check")
     s.f(r2, LB_COL, '=IF(AND(BL_RatioVA>0,BL_RatioVA<=1),"OK","ERROR")',
         x.check_ratio, "general")
+    cells.define_name("BL_Check_Carriers", "=Baseline!$%s$%d" % (COLS[LB_COL], r1 + 1))
+    cells.define_name("BL_Check_Ratio", "=Baseline!$%s$%d" % (COLS[LB_COL], r2 + 1))
     apply_check_format(ws, styles, r1, LB_COL, r2, LB_COL)
     return BaselineLayout(tuple(s.keys))

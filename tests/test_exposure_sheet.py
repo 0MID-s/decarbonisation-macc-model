@@ -26,6 +26,12 @@ class ExposureSheet(unittest.TestCase):
         cls.ref = compute_exposure(ds.inputs, DEFAULT_STATE[0],
                                    DEFAULT_STATE[1], DEFAULT_DIRECT_ETS)
 
+    def test_bridge_layout_shared(self):
+        from tests.layout_helper import build_layouts
+        lay = build_layouts()["bridge"]
+        self.assertEqual(lay.sheet, "Exposure")
+        self.assertLess(lay.first_row, lay.last_row)
+
     def _row(self, wb, name):
         sheet, addr = self.wb.defined_names[name].attr_text.split("!")
         r = wb[sheet][addr.replace("$", "").split(":")[0]].row

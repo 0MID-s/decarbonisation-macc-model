@@ -46,6 +46,12 @@ class BaselineSheet(unittest.TestCase):
         cls.ref = compute_baseline(
             model_values(build.load_dataset("config").inputs))
 
+    def test_check_names(self):
+        for nm in ("BL_Check_Carriers", "BL_Check_Ratio"):
+            sheet, addr = self._ref(nm).split("!")
+            self.assertEqual(sheet, "Baseline")
+            self.assertEqual(self.wsv[addr.replace("$", "")].value, "OK")
+
     def _ref(self, name):
         return self.wb.defined_names[name].attr_text
 

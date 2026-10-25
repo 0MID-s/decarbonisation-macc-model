@@ -33,6 +33,19 @@ class MaccSheet(unittest.TestCase):
         cls.wb = openpyxl.load_workbook(io.BytesIO(cls.data))
         cls.wbv = openpyxl.load_workbook(io.BytesIO(cls.data), data_only=True)
 
+    def test_total_name_and_chart_axes(self):
+        from tests.layout_helper import build_layouts
+        ref = self.wb.defined_names["MACC_TotalAbatement"].attr_text
+        sheet, addr = ref.split("!")
+        self.assertEqual(sheet, "MACC")
+        total = self.wbv["MACC"][addr.replace("$", "")].value
+        self.assertEqual(total, sum(
+            self.wbv["MACC"].cell(row=r, column=5).value for r in range(59, 65)))
+        lay = build_layouts()["macc"]
+        self.assertGreater(lay.chart_step, 0)
+        self.assertGreaterEqual(lay.chart_axis_max, total)
+        self.assertEqual(lay.chart_axis_max % lay.chart_step, 0)
+
     def _check_state(self, out, basis, scen):
         ref = compute_measures(INPUTS, basis, scen)
         table = macc_table(ref)

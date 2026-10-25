@@ -210,6 +210,8 @@ def write_macc_c_block(cells, styles, ws, a_layout, sorted_ref,
     cells.text(ws, geometry.c_total_row, 1, "Total annual abatement (tCO2e)", lbl)
     cells.formula(ws, geometry.c_total_row, 3, "=SUM(%s!$E$%d:$E$%d)" % (a, s0, s1),
                   styles.get("link", "tco2e"), value=total)
+    cells.define_name("MACC_TotalAbatement", "=%s!$D$%d" % (
+        ws.get_name(), geometry.c_total_row + 1))
     cells.text(ws, geometry.c_total_row + 1, 1, "Number of bins", lbl)
     cells.formula(ws, geometry.c_total_row + 1, 3,
                   "=COUNT($B$%d:$B$%d)" % (first + 1, last + 1),

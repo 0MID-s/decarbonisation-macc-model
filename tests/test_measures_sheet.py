@@ -26,6 +26,15 @@ class MeasuresSheet(unittest.TestCase):
         cls.wbv = openpyxl.load_workbook(io.BytesIO(cls.data), data_only=True)
         cls.ref = compute_measures(INPUTS, "Market-based", "Central")
 
+    def test_layout_check_names(self):
+        from tests.layout_helper import build_layouts
+        names = build_layouts()["measures"].check_names
+        self.assertEqual(len(names), 37)
+        self.assertEqual(len(set(names)), 37)
+        for n in names:
+            self.assertTrue(n.startswith("M_Check_"))
+            self.assertNotEqual(n, "M_Check_All")
+
     def _cells(self, wb, name):
         sheet, addr = self.wb.defined_names[name].attr_text.split("!")
         a = addr.replace("$", "")
