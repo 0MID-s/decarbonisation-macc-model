@@ -136,6 +136,23 @@ class ExposureSheet(unittest.TestCase):
         for n in names:
             self.assertAlmostEqual(base[n], on[n], delta=1e-9)
 
+    def test_icp_follows_edited_grid_factor_change(self):
+        """WR-01: the ICP lens must use the per-year factor, so editing the
+        grid-factor change inputs moves the sheet and the reference alike."""
+        chg = {"EF_GridLB_Change": -0.02, "EF_ResidualMB_Change": -0.03}
+        names = ["Expo_ICP_DiscBAU", "Expo_ICP_DiscWith"]
+        ov = {self._target(k): x for k, x in chg.items()}
+        out = evaluate_names(self.data, names, overrides=ov)
+        ref = compute_exposure(self.ds.inputs, DEFAULT_STATE[0],
+                               DEFAULT_STATE[1], DEFAULT_DIRECT_ETS,
+                               overrides=chg)
+        self.assertAlmostEqual(out["Expo_ICP_DiscBAU"], ref.icp_disc_bau,
+                               delta=1e-6)
+        self.assertAlmostEqual(out["Expo_ICP_DiscWith"], ref.icp_disc_with,
+                               delta=1e-6)
+        self.assertNotAlmostEqual(ref.icp_disc_bau, self.ref.icp_disc_bau,
+                                  delta=1.0)
+
     def test_checks_true_default_and_on(self):
         names = ["Expo_Check_All", "Expo_Check_ETS2ZeroBeforeStart",
                  "Expo_Check_ETSExclusive", "Expo_Check_CashIsChannels",

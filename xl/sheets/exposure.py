@@ -411,9 +411,11 @@ def _results_layer(w, ws, cells, styles, ref, dataset, rows, cur, nxt, a, h,
         tr[name] = r
         return r
 
+    efsel_r = layouts["measures"].rows["ef_sel"] + 1
     icp_series("Expo_ICP_tBAU", "BAU Scope 1 + Scope 2 on the selected basis",
-               "tCO2e", lambda k, c: "=BL_Scope1+CHOOSE(M_BasisIdx,BL_S2_LB,"
-               "BL_S2_MB)", ref.icp_t_bau, "tco2e")
+               "tCO2e", lambda k, c: "=BL_Scope1+BL_Heat_MWh*EF_HeatProxy"
+               "+BL_Elec_MWh*Measures!%s$%d" % (c, efsel_r),
+               ref.icp_t_bau, "tco2e")
     mrows = layouts["measures"].blocks
     cprice_r = layouts["measures"].rows["cprice"] + 1
     icp_series("Expo_ICP_tWith", "With measures: Scope 1 + Scope 2 after the "
