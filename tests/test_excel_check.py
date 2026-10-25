@@ -61,8 +61,57 @@ class Harness(unittest.TestCase):
             js = fh.read()
         self.assertIn('Application("Microsoft Excel")', js)
         self.assertIsNone(re.search(r"saveas|\.save\(|doShellScript", js, re.I))
-        self.assertIn("G10", js)
         self.assertIn('saving: "no"', js)
+        # WR-05/WR-06: selector addresses come from argv, and the opened
+        # workbook is located explicitly rather than via activeWorkbook
+        self.assertNotIn("activeWorkbook", js)
+        self.assertNotIn("G10", js)
+        self.assertIn("findOpened", js)
+        self.assertIn("finally", js)
+        with open(os.path.join(ROOT, "tools", "excel_close.js")) as fh:
+            close_js = fh.read()
+        self.assertIsNone(re.search(r"saveas|\.save\(|doShellScript",
+                                    close_js, re.I))
+        self.assertIn('saving: "no"', close_js)
+
+    def test_selector_cells_resolved_from_names(self):
+        data, _ = build.build_bytes("main", build.load_dataset("config"))
+        self.assertEqual(ec.selector_cells(data), ec.SELECTOR_CELLS)
+
+    def test_zero_matches_empty_only_for_blank_formulas(self):
+        m, _ = ec.compare({"a!A1": ""}, {"a!A1": 0})
+        self.assertEqual(len(m), 1)
+        m, _ = ec.compare({"a!A1": ""}, {"a!A1": 0}, blank_ok={"a!A1"})
+        self.assertEqual(m, [])
+        m, _ = ec.compare({"a!A1": ""}, {"a!A1": ""})
+        self.assertEqual(m, [])
+        m, _ = ec.compare({"a!A1": ""}, {"a!A1": "text"},
+                          blank_ok={"a!A1"})
+        self.assertEqual(len(m), 1)
+
+    def test_blank_formula_cells_detected(self):
+        data, _ = build.build_bytes("main", build.load_dataset("config"))
+        keys = ec.blank_formula_cells(data)
+        formulas = set("%s!%s" % c for c in ec.formula_cells(data))
+        self.assertTrue(keys <= formulas)
+
+    def test_timeout_marks_state_failed_and_continues(self):
+        import subprocess
+        from unittest import mock
+        calls = []
+
+        def fake(state, base=None):
+            calls.append(state)
+            if len(calls) == 1:
+                raise subprocess.TimeoutExpired("osascript", 1)
+            return 10, [], []
+        with mock.patch.object(ec, "run_state", fake), \
+                mock.patch.object(ec, "STATES", ec.STATES[:2]), \
+                mock.patch("build.load_dataset", lambda *_: None), \
+                mock.patch("sys.stdout"):
+            rc = ec.main()
+        self.assertEqual(rc, 1)
+        self.assertEqual(len(calls), 2)
 
 
 if __name__ == "__main__":
