@@ -328,7 +328,7 @@ def build_carbon(wb, styles, cells, dataset, cfg, inputs_layout):
 
 
 CAVEAT_STEEP = (
-    "Central reaches the NGFS NDCs price (about EUR 226) by 2030, a steep "
+    "Central reaches the NGFS NDCs price by 2030, a steep "
     "2028-2030 rise; market forecasts are lower. Change Carbon_ETS1_ConvYear "
     "or Carbon_ETS2_ConvYear to test a slower convergence.")
 CAVEAT_LOW = (

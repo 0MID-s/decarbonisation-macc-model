@@ -361,28 +361,30 @@ NOTE_UNTESTED = (
     "needs Data Tables): LED and VSD lifetime, heat pump temperature share. "
     "Their effect is Python-verified and stated on the Notes sheet.")
 NOTE_RANK = (
-    "A company often demands more than its cost of capital (5.70% real here) "
+    "A company often demands more than its cost of capital "
     "before approving a project. If the order of measures does not change at "
     "8-10%, the 'do first' advice is robust.")
 
 RATIONALE = {
-    "rate": "Plus or minus 2 pp around the real discount rate (analyst range)",
-    "elec": "Plus or minus 20%: typical energy price uncertainty band (analyst)",
-    "gas": "Plus or minus 20%: typical energy price uncertainty band (analyst)",
+    "rate": "Symmetric change around the real discount rate (analyst range, see the Low and High inputs)",
+    "elec": "Symmetric percentage band for energy price uncertainty (analyst range, see the Low and High inputs)",
+    "gas": "Symmetric percentage band for energy price uncertainty (analyst range, see the Low and High inputs)",
     "carbon_level": "Low path (Current Policies) vs High path (Net Zero "
                     "2050), NGFS scenarios, cash carbon only",
-    "capex": "Plus or minus 20%: early-stage cost estimate band (analyst)",
-    "go": "Plus or minus 30%: guarantee-of-origin market is thin and volatile "
-          "(analyst)",
-    "ev": "Plus or minus 30%: EV premium is the most uncertain cost line (analyst)",
-    "ptr": "Range 0.6 to 1.0: Sijm et al. 60-100% pass-through; one-sided: 1.0 is "
-           "the top of the literature range",
-    "mef": "Plus or minus 15%: covers the GCV-versus-LHV basis gap (MEF 0.326 vs "
-           "0.361)",
+    "capex": "Symmetric percentage band for early-stage cost estimates (analyst range, see the Low and High inputs)",
+    "go": "Symmetric percentage band: the guarantee-of-origin market is thin and "
+          "volatile (analyst range, see the Low and High inputs)",
+    "ev": "Symmetric percentage band: the EV premium is an uncertain cost line "
+          "(analyst range, see the Low and High inputs)",
+    "ptr": "Low input taken from the Sijm et al. 60-100% pass-through literature "
+           "range; one-sided: 1.0 is the top of that range",
+    "mef": "Symmetric percentage band intended to cover the GCV-versus-LHV basis "
+           "gap in the marginal emission factor (see the Low and High inputs)",
     "ets2_delay": "One further year of ETS2 delay (open political risk, "
                   "EPRS); one-sided",
-    "ngfs_route": "Eurostat conversion route 1.0427 vs US-CPI about 1.31 "
-                  "(indicative analyst estimate); one-sided",
+    "ngfs_route": "Eurostat conversion route vs the alternative US-CPI route factor "
+                  "(Carbon_NGFS_AltRouteFactor, indicative analyst estimate); "
+                  "one-sided",
 }
 
 
