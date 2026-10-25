@@ -92,6 +92,66 @@ class ExposureSheet(unittest.TestCase):
         for g, x in zip(out["Expo_BAU_ETS2_NDC"], on.bau_ets2):
             self.assertLessEqual(abs(g - x), REL * max(1.0, abs(x)))
 
+    def _target(self, name):
+        sheet, ref_ = self.wb.defined_names[name].attr_text.split("!")
+        return sheet, ref_.replace("$", "")
+
+    def test_headlines_match_reference(self):
+        out = evaluate_names(self.data, [
+            "Expo_CumBAU_Sel", "Expo_CumWith_Sel", "Expo_DiscBAU_Sel",
+            "Expo_DiscWith_Sel", "Expo_DiscAvoided_Sel",
+            "Expo_DiscAvoided_CP", "Expo_CumAvoided_NZ50"])
+        sel = self.ref.scen[self.ref.sel_key]
+        for nm, want in (("Expo_CumBAU_Sel", sel.cum["total_bau"]),
+                         ("Expo_CumWith_Sel", sel.cum["total_with"]),
+                         ("Expo_DiscBAU_Sel", sel.disc["total_bau"]),
+                         ("Expo_DiscWith_Sel", sel.disc["total_with"]),
+                         ("Expo_DiscAvoided_Sel", sel.disc["avoided"]),
+                         ("Expo_DiscAvoided_CP",
+                          self.ref.scen["CP"].disc["avoided"]),
+                         ("Expo_CumAvoided_NZ50",
+                          self.ref.scen["NZ50"].cum["avoided"])):
+            self.assertLessEqual(abs(out[nm] - want),
+                                 REL * max(1.0, abs(want)), nm)
+
+    def test_choose_follows_scenario_override(self):
+        for tier, key in (("Low", "CP"), ("High", "NZ50")):
+            out = evaluate_names(
+                self.data, ["Expo_DiscBAU_Sel", "Expo_DiscBAU_" + key],
+                overrides={self._target("Sel_Scenario"): tier})
+            self.assertAlmostEqual(out["Expo_DiscBAU_Sel"],
+                                   out["Expo_DiscBAU_" + key], delta=1e-6)
+
+    def test_icp_values_and_toggle_independence(self):
+        names = ["Expo_ICP_DiscBAU", "Expo_ICP_DiscWith",
+                 "Expo_ICP_DiscAvoided"]
+        base = evaluate_names(self.data, names)
+        self.assertAlmostEqual(base["Expo_ICP_DiscBAU"],
+                               self.ref.icp_disc_bau, delta=1e-6)
+        self.assertAlmostEqual(base["Expo_ICP_DiscAvoided"],
+                               self.ref.icp_disc_avoided, delta=1e-6)
+        on = evaluate_names(self.data, names, overrides={
+            self._target("Sel_DirectETS"): "On"})
+        for n in names:
+            self.assertAlmostEqual(base[n], on[n], delta=1e-9)
+
+    def test_checks_true_default_and_on(self):
+        names = ["Expo_Check_All", "Expo_Check_ETS2ZeroBeforeStart",
+                 "Expo_Check_ETSExclusive", "Expo_Check_CashIsChannels",
+                 "Expo_Check_ConvYears"]
+        for ov in (None, {self._target("Sel_DirectETS"): "On"}):
+            out = evaluate_names(self.data, names, overrides=ov)
+            for n in names:
+                self.assertIs(out[n], True, (n, ov))
+
+    def test_toggle_cbam_text_present(self):
+        txt = " ".join(c.value for row in self.wb["Exposure"].iter_rows()
+                       for c in row if isinstance(c.value, str)
+                       and not c.value.startswith("="))
+        self.assertIn("Management lens: not a cash cost", txt)
+        self.assertIn("20 MW rated thermal input", txt)
+        self.assertIn("as of 2026-10-25", txt)
+
     def test_notes_present(self):
         txt = " ".join(c.value for row in self.wb["Exposure"].iter_rows()
                        for c in row if isinstance(c.value, str)
