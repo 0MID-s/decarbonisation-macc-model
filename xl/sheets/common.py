@@ -157,3 +157,26 @@ def disclaimer_text(sources):
             "derived from official Eurostat statistics (%s, retrieved %s). "
             "It does not represent any real company."
             % (", ".join(codes), max(dates).isoformat()))
+
+
+# Sheet name -> (kind word, one-phrase purpose) in the final D-23 order.
+# Phrases carry no input values.
+SHEET_INFO = {
+    "Cover": ("cover", "Title, disclaimer, contents, colour key, master check"),
+    "ReadMe": ("reference", "How the model flows and how to use it"),
+    "Dashboard": ("output", "Headline results and charts"),
+    "Inputs": ("input", "Every input with its source, and the selectors"),
+    "Sources": ("reference", "Source register"),
+    "Baseline": ("calc", "Representative firm energy and Scope 1 and 2"),
+    "Rates": ("calc", "Inflation restatement and discount rate"),
+    "Carbon": ("calc", "Carbon price paths by scenario"),
+    "Measures": ("calc", "Six measures: cash flows, NPV, IRR, abatement cost"),
+    "MACC": ("output", "Ranked marginal abatement cost curve"),
+    "Exposure": ("calc", "Carbon cost by scenario and channel, with and "
+                         "without measures"),
+    "Sensitivity": ("calc", "Grids, tornado and rank stability"),
+    "Disclosure": ("output", "IFRS S2 and ESRS E1 mapping"),
+    "Checks": ("check", "All model checks and the master flag"),
+    "Notes": ("reference", "Method, limitations, version log"),
+    "Lists": ("reference", "Dropdown lists"),
+}

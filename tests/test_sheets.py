@@ -153,6 +153,10 @@ class ListsCover(unittest.TestCase):
         self.assertEqual([ws.cell(r, 3).value for r in range(7, 14)],
                          [m for _, m in LEGEND_MEANINGS])
         self.assertEqual([ws.cell(r, 2).value for r in range(17, 21)], names)
+        for r, n in zip(range(17, 21), names):
+            hl = ws.cell(r, 2).hyperlink
+            self.assertIsNotNone(hl, n)
+            self.assertEqual(hl.location, "%s!A1" % n)
         self.assertEqual(ws["B16"].value, "Contents")
         flat = [c.value for row in ws.iter_rows() for c in row]
         self.assertIn(BUILD.version, flat)
