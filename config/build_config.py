@@ -45,3 +45,19 @@ VERSION_LOG = (
     ("0.4.0-phase4", "2026-10-25",
      "Phase 4: carbon cost exposure, scenarios and sensitivity"),
 )
+
+# Excel verification record shown on Notes. Only what has happened so far
+# (docs/EXCEL_CHECKS.md, docs/SPIKE_RESULTS.md). Plan 05-10 replaces these
+# lines after GATE-B.
+EXCEL_RECORD = (
+    "GATE-A passed on Excel for Mac desktop on 2026-10-18 (MACC technique A "
+    "chosen).",
+    "Phase 3 scripted recalculation in Excel for Mac 16.114 on 2026-10-21: "
+    "every formula cell compared with the cached reference values, no "
+    "mismatches and no error values.",
+    "Phase 4 scripted recalculation in Excel for Mac 16.114.1 on 2026-10-25: "
+    "12 selector states, no mismatches and no error values (re-run after the "
+    "code-review fixes, same result).",
+    "Phase 5 GATE-B: pending.",
+    "Excel for the web: not verified.",
+)

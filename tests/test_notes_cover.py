@@ -52,7 +52,7 @@ class Notes(unittest.TestCase):
         self.assertIn("Measures and MACC method (Phase 3)", vals)
         t = self._text()
         for w in ("not an optimiser", "Kesicki", "stack", "shadow-price",
-                  "Phase 3: Measures engine"):
+                  "Phase 3: measures engine"):
             self.assertIn(w, t)
         fx = build.load_dataset("fixtures")
         data, _ = build.build_bytes("main", fx)
@@ -66,7 +66,7 @@ class Notes(unittest.TestCase):
         self.assertIn("Carbon exposure and sensitivity method (Phase 4)", vals)
         t = " ".join(self._text().split())
         for w in ("not a live cell", "Python-verified at build",
-                  "upper end of the literature", "Phase 4: carbon exposure"):
+                  "upper end of the literature", "Phase 4: carbon cost exposure"):
             self.assertIn(w, t)
         fx = build.load_dataset("fixtures")
         data, _ = build.build_bytes("main", fx)
@@ -116,9 +116,12 @@ class Notes(unittest.TestCase):
         from checkmodel.baseline_reference import model_values
         vals = set(model_values(self.ds.inputs).values())
         prose = " ".join(nt.ABOUT + nt.CONVENTIONS + nt.LIMITATIONS
-                         + nt.EXCLUSIONS
+                         + nt.EXCLUSIONS + nt.METHOD_CHOICES
+                         + nt.LIMITATIONS_P5
                          + (nt.legal_status_note(self.ds.inputs),))
         prose = re.sub(r"(Phase|Scope) \d", "", prose)
+        # bibliographic citation, not a model figure
+        prose = re.sub(r"Climate Policy 12\(2\), 219-236, doi:\S+", "", prose)
         for tok in re.findall(r"(?<![\w.-])\d+(?:\.\d+)?(?![\w.-])", prose):
             x = float(tok)
             if 1900 <= x <= 2100:
@@ -141,6 +144,51 @@ class Notes(unittest.TestCase):
                           r.id)
         self.assertIn("Dir. (EU) 2023/959 as enacted", text)
         self.assertIn("original 2003 Annex I wording", text)
+
+    def test_phase5_sections(self):
+        vals = [c.value for row in self.wb["Notes"].iter_rows() for c in row]
+        for h in ("Method choices", "Limitations (Phase 5)",
+                  "Disclosure and Dashboard corrections",
+                  "Excel verification record"):
+            self.assertIn(h, vals)
+        t = " ".join(self._text().split())
+        for w in ("10.1080/14693062.2011.582347", "pre-tax", "ex-VAT",
+                  "independent", "cumulative and undiscounted"):
+            self.assertIn(w, t)
+        self.assertNotIn("full method and version log in Phase 5", t)
+
+    def test_corrections_rendered(self):
+        from config.disclosure import CORRECTIONS
+        vals = [c.value for row in self.wb["Notes"].iter_rows() for c in row]
+        for row in CORRECTIONS:
+            for cell in row:
+                self.assertIn(cell, vals)
+
+    def test_no_citation_hyperlinks(self):
+        for row in self.wb["Notes"].iter_rows():
+            for c in row:
+                if c.hyperlink is not None:
+                    tgt = str(c.hyperlink.target or "") + str(c.hyperlink.location or "")
+                    self.assertNotIn("tandfonline.com", tgt)
+                    self.assertNotIn("doi.org", tgt)
+
+    def test_version_log_table(self):
+        from config.build_config import VERSION_LOG
+        ws = self.wb["Notes"]
+        rows = [tuple(ws.cell(r, c).value for c in (2, 3, 4))
+                for r in range(1, ws.max_row + 1)]
+        i = rows.index(("Version", "Date", "Change"))
+        got = rows[i + 1:i + 1 + len(VERSION_LOG)]
+        self.assertEqual(tuple(got), tuple(VERSION_LOG))
+
+    def test_excel_record_honest(self):
+        from config.build_config import EXCEL_RECORD
+        t = " ".join(self._text().split())
+        for line in EXCEL_RECORD:
+            self.assertIn(line, t)
+        self.assertIn("Excel for the web", t)
+        if any("not verified" in l for l in EXCEL_RECORD):
+            self.assertNotIn("verified in Excel for the web", t)
 
 
 if __name__ == "__main__":

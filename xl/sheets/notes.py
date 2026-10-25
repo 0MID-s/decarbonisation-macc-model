@@ -6,6 +6,8 @@ Lists are generated from the dataset (transcribed inputs, ETS2 projection).
 import re
 from typing import Dict, List
 
+from config.build_config import EXCEL_RECORD, VERSION_LOG
+from config.disclosure import CORRECTIONS
 from config.schema import Status
 from xl.layout import LABEL_COL, setup_sheet
 from xl.sheets.carbon import (
@@ -207,10 +209,73 @@ EXPOSURE_LIMITATIONS = (
     "0).",
     "The CBAM screen is as of 2026-10-25.",
 )
-LAST_PHASE4_VERSION = (
-    "Phase 4: carbon exposure by scenario and channel (ETS2, pass-through, "
-    "direct ETS1 toggle), internal carbon price lens, CBAM screen, bridge, "
-    "sensitivity grids, tornado and rank stability")
+
+
+METHOD_CHOICES = (
+    "Representative firm: the baseline is built from official Eurostat "
+    "sector statistics for Belgian NACE C20 and scaled to one mid-sized "
+    "firm using the Base_* inputs. It is not a real company, so company-"
+    "specific data can replace the Base_* inputs without changing any "
+    "formula.",
+    "NGFS anchoring: the cash carbon price starts at the observed EUA "
+    "average (Carbon_EUA_Avg2025) and converges linearly to the NGFS path "
+    "by the convergence-year inputs (Carbon_ETS1_ConvYear, "
+    "Carbon_ETS2_ConvYear). Low, Central and High map to Current Policies, "
+    "NDCs and Net Zero 2050. Anchoring keeps the early years consistent "
+    "with the market while the scenarios still differ in the long run.",
+    "Levelised abatement cost: the cost of a measure is the present value "
+    "of its net cost divided by the present value of its abated tonnes, so "
+    "measures with different lives and cash profiles are comparable on one "
+    "number. The annuity form (Const_AnnuityTolRel) is an internal check "
+    "of the same figure.",
+    "Pass-through netting: the electricity carbon cost reaches the firm "
+    "through the power price at the pass-through rate Pass_PTR and is "
+    "netted against the embedded EUA already in the baseline price. The "
+    "renewable electricity contract therefore changes the emissions "
+    "inventory but saves no cash carbon cost.",
+    "Closed-form sensitivities: net present value is linear in the price "
+    "deltas, so each grid cell is a plain formula on gross carbon present "
+    "values. No Data Tables are used, the grid centre equals the base "
+    "case, and the grids work in Excel for the web.",
+    "Location-based and market-based treatment: both bases are calculated "
+    "from the same activity data and a selector picks one. The two are "
+    "never added. Under the location-based basis the renewable contract "
+    "abates nothing, because the grid factor does not change when "
+    "certificates are bought.",
+)
+LIMITATIONS_P5 = (
+    "Marginal abatement cost curves are criticised in Kesicki, F. and "
+    "Ekins, P. (2012), Climate Policy 12(2), 219-236, "
+    "doi:10.1080/14693062.2011.582347. The critiques that apply here are: "
+    "the curve has no interactions between measures beyond the stack "
+    "order; it is static, with no intertemporal dynamics; it ignores "
+    "non-financial barriers and ancillary benefits; and uncertainty is not "
+    "shown in the bar widths, while the assumptions behind a bar can be "
+    "opaque.",
+    "Scope: all cash flows are pre-tax and ex-VAT. Corporate tax, "
+    "depreciation allowances and subsidies other than the Meas_*_Subsidy "
+    "inputs are not modelled.",
+    "Independence: apart from the electricity stack order, measures are "
+    "treated as independent of each other. Real projects interact "
+    "through shared loads, shared roofs and shared budgets, which this "
+    "model does not capture.",
+    "The firm is a representative firm built from sector statistics, not a "
+    "real company, so results show the method and the order of magnitude, "
+    "not a prediction for any single site.",
+    "NGFS carbon prices are model shadow prices, not market forecasts. "
+    "They show what a scenario needs to reach its emissions path, not what "
+    "the EU ETS will clear at.",
+    "Some sensitivities are not tested in the sheet: the lifetime and "
+    "heat-share cases are note-only values calculated in Python at build "
+    "and are not live cells.",
+)
+CORRECTIONS_TITLE = "Disclosure and Dashboard corrections"
+DASHBOARD_CORRECTION = (
+    "Dashboard wording: the cost-of-not-acting tile and the exposure-by-"
+    "scenario chart use Expo_CumBAU_Sel and the Expo_Cum* series, which are "
+    "cumulative and undiscounted; the discounted figure (Expo_DiscBAU_Sel) "
+    "is shown as a sub-line. Context decisions D-07 and D-08 called this "
+    "series discounted; the labels follow the workbook.")
 
 
 def _eur(x):
@@ -309,8 +374,8 @@ def build_notes(wb, styles, cells, dataset, cfg):
     setup_sheet(ws, SheetKind.NOTES, freeze_row=4, freeze_col=1)
     write_title_band(
         cells, styles, ws, "Notes",
-        "Method notes, limitations and exclusions (full method and version "
-        "log in Phase 5)", "Prose refers to input ids rather than repeating "
+        "Method choices, limitations, corrections, version log and Excel "
+        "verification record", "Prose refers to input ids rather than repeating "
         "figures", LAST_COL)
     n = _N(ws, cells, styles)
     cells.text(ws, 4, LABEL_COL, disclaimer_text(dataset.sources),
@@ -350,11 +415,32 @@ def build_notes(wb, styles, cells, dataset, cfg):
         for t in EXPOSURE_LIMITATIONS:
             n.para(t)
         n.para(python_verified_note(dataset.inputs))
+        n.section("Method choices")
+        for t in METHOD_CHOICES:
+            n.para(t)
+        n.section("Limitations (Phase 5)")
+        for t in LIMITATIONS_P5:
+            n.para(t)
+        n.section(CORRECTIONS_TITLE)
+        n.r += 1
+        for c, h in zip((LABEL_COL, LABEL_COL + 1, LABEL_COL + 2),
+                        ("Hypothesis", "Official finding", "Action")):
+            cells.text(ws, n.r, c, h, styles.get("header"))
+        for row in CORRECTIONS:
+            n.r += 1
+            for c, t in zip((LABEL_COL, LABEL_COL + 1, LABEL_COL + 2), row):
+                cells.text(ws, n.r, c, t, styles.get("label"))
+        n.para(DASHBOARD_CORRECTION)
     n.section("Version log")
-    n.para("Phase 2: real cited data, Baseline, Rates, Carbon and Notes")
-    if not dataset.synthetic:
-        n.para("Phase 3: Measures engine (six measures, stack, NPV/IRR/"
-               "payback/abatement cost, LB/MB and scenario selectors) and "
-               "MACC")
-        n.para(LAST_PHASE4_VERSION)
+    n.r += 1
+    for c, h in zip((LABEL_COL, LABEL_COL + 1, LABEL_COL + 2),
+                    ("Version", "Date", "Change")):
+        cells.text(ws, n.r, c, h, styles.get("header"))
+    for v, d, ch in VERSION_LOG:
+        n.r += 1
+        for c, t in zip((LABEL_COL, LABEL_COL + 1, LABEL_COL + 2), (v, d, ch)):
+            cells.text(ws, n.r, c, t, styles.get("label"))
+    n.section("Excel verification record")
+    for t in EXCEL_RECORD:
+        n.para(t)
     return None
