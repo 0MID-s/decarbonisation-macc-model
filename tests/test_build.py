@@ -131,7 +131,7 @@ class BuildTests(unittest.TestCase):
                          list(build.REAL_ORDER))
         self.assertEqual(wb.sheetnames[-1], "Lists")
         # D-23: Dashboard follows Cover (and the Read-me once it exists)
-        self.assertEqual(wb.sheetnames[:2], ["Cover", "Dashboard"])
+        self.assertEqual(wb.sheetnames[:3], ["Cover", "ReadMe", "Dashboard"])
         self.assertEqual(list(build.main_sheets(build.load_dataset("config"))),
                          wb.sheetnames)
 

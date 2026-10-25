@@ -42,6 +42,7 @@ from xl.sheets.lists import build_lists
 from xl.sheets.macc import build_macc
 from xl.sheets.measures import build_measures
 from xl.sheets.notes import build_notes
+from xl.sheets.readme import build_readme
 from xl.sheets.rates import build_rates
 from xl.sheets.sensitivity import build_sensitivity
 from xl.sheets.sources import build_sources
@@ -98,7 +99,7 @@ NOTES_SHEETS = ("Notes",)
 # Tab order of the real workbook (D-23, restricted to sheets that exist now).
 # Plans 05-03 to 05-06 insert Checks, Dashboard, ReadMe and Disclosure here at
 # their D-23 positions. Worksheets are pre-created in this order.
-REAL_ORDER = ("Cover", "Dashboard", "Inputs", "Sources", "Baseline", "Rates", "Carbon",
+REAL_ORDER = ("Cover", "ReadMe", "Dashboard", "Inputs", "Sources", "Baseline", "Rates", "Carbon",
               "Measures", "MACC", "Exposure", "Sensitivity", "Checks", "Notes",
               "Lists")
 
@@ -114,7 +115,8 @@ def _build_main(wb, styles, cells, dataset, cfg):
     if not dataset.synthetic:
         for name in main_sheets(dataset):
             get_or_add(wb, name)
-    build_cover(wb, styles, cells, dataset, cfg, list(main_sheets(dataset)))
+    if dataset.synthetic:
+        build_cover(wb, styles, cells, dataset, cfg, list(main_sheets(dataset)))
     inputs = build_inputs(wb, styles, cells, dataset, cfg)
     build_sources(wb, styles, cells, dataset, cfg)
     lists = build_lists(wb, styles, cells, dataset, cfg)
@@ -132,6 +134,8 @@ def _build_main(wb, styles, cells, dataset, cfg):
         out["dashboard"] = build_dashboard(wb, styles, cells, dataset, cfg,
                                            out)
         out["checks"] = build_checks(wb, styles, cells, dataset, cfg, out)
+        build_readme(wb, styles, cells, dataset, cfg)
+        build_cover(wb, styles, cells, dataset, cfg, list(main_sheets(dataset)))
     out["notes"] = build_notes(wb, styles, cells, dataset, cfg)
     return out
 
