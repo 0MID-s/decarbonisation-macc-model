@@ -152,6 +152,90 @@ MEASURES_METHOD = (
     "Const_AnnuityTolRel, not a client output.",
 )
 
+EXPOSURE_TITLE = "Carbon exposure and sensitivity method (Phase 4)"
+EXPOSURE_METHOD = (
+    "Cash carbon price paths are market-anchored: the observed 2025 EUA "
+    "average (Carbon_EUA_Avg2025) is the starting point, converges linearly "
+    "to the selected NGFS scenario path by the convergence years "
+    "(Carbon_ETS1_ConvYear, Carbon_ETS2_ConvYear), and follows NGFS "
+    "afterwards.",
+    "ETS2 cost = ETS2-scope tonnes x ETS2 price. It is zero before "
+    "Carbon_ETS2_StartYear. Fuel suppliers are the regulated parties and "
+    "are assumed to pass 100% of the cost on to the firm (an analyst "
+    "assumption).",
+    "Electricity pass-through = purchased MWh x MEF x PTR x (ETS1 price - "
+    "embedded 2025 EUA). Subtracting the EUA already embedded in the 2025 "
+    "power price makes it a change versus what the baseline already paid, "
+    "so it can be negative under the Low scenario.",
+    "The renewable electricity contract does not reduce cash carbon cost: "
+    "the power price is set by the marginal plant whichever certificates "
+    "the firm buys. It affects only the market-based emissions inventory "
+    "and the internal carbon price lens.",
+    "The direct ETS1 toggle (Sel_DirectETS) moves stationary fuel from "
+    "ETS2 to ETS1; the two are mutually exclusive and a check proves the "
+    "price rows never overlap.",
+    "The internal carbon price is a non-cash decision lens on Scope 1 + 2 "
+    "of the selected basis. It is never added to a cash total.",
+    "Discounting uses 2026 as year 0 over the exposure window "
+    "(Expo_LastYear), the same discount factors as the Measures sheet.",
+    "The sensitivity metric is the carbon-inclusive portfolio NPV: "
+    "financial NPV plus the discounted avoided cash carbon cost.",
+    "Sensitivity grids are closed-form formulas built from gross carbon "
+    "present values, so there are no Data Tables and they work in Excel "
+    "for the web.",
+    "The tornado ranks one-at-a-time swings of the main drivers; rank "
+    "stability re-ranks the measures at several hurdle rates.",
+)
+EXPOSURE_LIMITATIONS = (
+    "PTR 1.0 is the upper end of the literature (Fabra and Reguant; Sijm "
+    "et al.); the range 0.6 to 1.0 is tested.",
+    "Industrial retail tariffs are assumed to pass the wholesale carbon "
+    "change through one-for-one on top of a flat real tariff, a "
+    "simplification.",
+    "ETS2 prices CO2 while the DESNZ factors are CO2e, and the diesel "
+    "factor includes an average biofuel blend; the effect is under 1%.",
+    "The DEA efficiency figures are assumed to be on a lower heating value "
+    "(LHV) basis.",
+    "The Annex III exclusivity of ETS1 and ETS2 was read from Commission "
+    "material, not from the primary legal text.",
+    "Central reaches the NGFS price by 2030, a steep 2028-2030 rise above "
+    "market forecasts; change the convergence years to test.",
+    "No ETS2 price floor is modelled.",
+    "Free-allocation benchmarks are not modelled (a share input, default "
+    "0).",
+    "The CBAM screen is as of 2026-10-25.",
+)
+LAST_PHASE4_VERSION = (
+    "Phase 4: carbon exposure by scenario and channel (ETS2, pass-through, "
+    "direct ETS1 toggle), internal carbon price lens, CBAM screen, bridge, "
+    "sensitivity grids, tornado and rank stability")
+
+
+def _eur(x):
+    return "%s EUR %s" % ("minus" if x < 0 else "plus",
+                          format(abs(round(x)), ","))
+
+
+def python_verified_note(inputs):
+    """One paragraph of note-only sensitivities, computed in Python at
+    build time (text, not formulas)."""
+    from checkmodel.baseline_reference import model_values
+    from checkmodel.sensitivity_reference import untested_note_values
+    o = untested_note_values(inputs)
+    v = model_values(inputs)
+    lp, hs = v["Sens_Note_LifePct"] * 100, v["Sens_Note_HPShareDelta"] * 100
+    return (
+        "Python-verified at build for the default inputs, not a live cell "
+        "and not updated when inputs change: portfolio NPV incl. carbon "
+        "changes by %s / %s when LED lifetime moves by minus %g%% / plus %g%%, by "
+        "%s / %s when VSD lifetime moves by minus %g%% / plus %g%%, and by %s / %s "
+        "when the low-temperature heat share moves by minus %g / plus %g percentage "
+        "points." % (
+            _eur(o["led_life_low"]), _eur(o["led_life_high"]), lp, lp,
+            _eur(o["vsd_life_low"]), _eur(o["vsd_life_high"]), lp, lp,
+            _eur(o["hp_share_low"]), _eur(o["hp_share_high"]), hs, hs))
+
+
 EXCLUSIONS = (
     "Scope 3 is excluded: no official sector-level Scope 3 intensity for "
     "Belgian chemicals was found and no synthetic figure is used (D-13).",
@@ -257,10 +341,18 @@ def build_notes(wb, styles, cells, dataset, cfg):
         n.section(MEASURES_TITLE)
         for t in MEASURES_METHOD:
             n.para(t)
+        n.section(EXPOSURE_TITLE)
+        for t in EXPOSURE_METHOD:
+            n.para(t)
+        n.section("Limitations (Phase 4)")
+        for t in EXPOSURE_LIMITATIONS:
+            n.para(t)
+        n.para(python_verified_note(dataset.inputs))
     n.section("Version log")
     n.para("Phase 2: real cited data, Baseline, Rates, Carbon and Notes")
     if not dataset.synthetic:
         n.para("Phase 3: Measures engine (six measures, stack, NPV/IRR/"
                "payback/abatement cost, LB/MB and scenario selectors) and "
                "MACC")
+        n.para(LAST_PHASE4_VERSION)
     return None
