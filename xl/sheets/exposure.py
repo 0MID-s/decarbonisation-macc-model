@@ -19,6 +19,8 @@ from xl.layout import (
 from xl.selector import direct_ets_state, selector_state
 from xl.sheets.common import write_title_band
 from xl.sheets.rowwriter import RowWriter
+from config.measures_catalog import MEASURES
+from xl.charts import BridgeLayout, bridge_chart
 from xl.styles import SheetKind, apply_bool_check_format
 
 SHEET = "Exposure"
@@ -254,12 +256,12 @@ def build_exposure(wb, styles, cells, dataset, cfg, layouts):
         nxt()
 
     _results_layer(w, ws, cells, styles, ref, dataset, rows, cur, nxt, a, h,
-                   layouts)
+                   layouts, wb)
     return ExposureLayout(tuple(rows), cur[0], HDR_ROW)
 
 
 def _results_layer(w, ws, cells, styles, ref, dataset, rows, cur, nxt, a, h,
-                   layouts):
+                   layouts, wb):
     """Plan 04-06: totals, toggle rationale, CBAM, ICP lens, checks."""
     ny = len(ref.years)
     c0 = TIMELINE_FIRST_COL
@@ -457,6 +459,10 @@ def _results_layer(w, ws, cells, styles, ref, dataset, rows, cur, nxt, a, h,
         icp_last + 1))
     nxt()
 
+    # ---- (F) per-measure attribution and bridge (plan 04-07) -----------
+    extra_checks = _bridge_layer(w, ws, wb, cells, styles, ref, dataset, rows,
+                                 cur, nxt, a, h, layouts)
+
     # ---- (E) checks ---------------------------------------------------
     w.band(nxt(), "Checks")
     series_pre = nxt()
@@ -501,6 +507,8 @@ def _results_layer(w, ws, cells, styles, ref, dataset, rows, cur, nxt, a, h,
           "=AND(%s)" % ",".join(parts), True)
     check("Expo_Check_ConvYears", "Check: convergence years are valid",
           "=Carb_Check_ConvYears", True)
+    for nm_, text_, f_, val_ in extra_checks:
+        check(nm_, text_, f_, val_)
     r = nxt()
     w.line(r, "All Exposure checks (TRUE = every check passes)", "TRUE/FALSE")
     w.scalar(r, "=AND(%s)" % ",".join(CHECK_NAMES), True, "general",
@@ -515,3 +523,253 @@ def _agg(scen, kind):
 
 def dataset_value(dataset, name):
     return model_values(dataset.inputs)[name]
+
+
+SHORT = {m.key: m.short for m in MEASURES}
+NOTE_CONTRACT = ("Contract: zero cash saving. It changes reported "
+                 "(market-based) emissions, not the power price or purchased "
+                 "MWh (D-11).")
+NOTE_NET = ("Heat pump and fleet: ETS2 on gas or diesel falls, but extra "
+            "electricity raises the pass-through term; the bar is the net.")
+# bridge helper table columns (zero-based)
+B_A, B_B, B_BPOS, B_BNEG = 3, 4, 5, 6
+B_TPOS, B_TNEG, B_SPOS, B_SNEG, B_IPOS = 7, 8, 9, 10, 11
+B_INEG, B_VAL = 13, 14  # column M (12) is the narrow timeline spacer
+B_LBL0 = 15  # six label columns P..U: Total pos/neg, Saving pos/neg, Incr...
+B_COLOURS = ("#595959", "#009E73", "#D55E00")
+BRIDGE_HDRS = (
+    (B_A, "Start"), (B_B, "End"), (B_BPOS, "Base above zero"),
+    (B_BNEG, "Base below zero"), (B_TPOS, "Total"),
+    (B_TNEG, "Total (below zero)"), (B_SPOS, "Cost saving"),
+    (B_SNEG, "Cost saving (below zero)"), (B_IPOS, "Cost increase"),
+    (B_INEG, "Cost increase (below zero)"), (B_VAL, "Bar value"),
+    (B_LBL0, "Label total (+)"), (B_LBL0 + 1, "Label total (-)"),
+    (B_LBL0 + 2, "Label saving (+)"), (B_LBL0 + 3, "Label saving (-)"),
+    (B_LBL0 + 4, "Label increase (+)"), (B_LBL0 + 5, "Label increase (-)"))
+
+
+def _split(a_, b_):
+    """Python mirror of the helper formulas: (basepos, baseneg, barpos,
+    barneg)."""
+    bpos = max(0.0, min(a_, b_))
+    bneg = min(0.0, max(a_, b_))
+    return (bpos, bneg, max(0.0, max(a_, b_)) - bpos,
+            min(0.0, min(a_, b_)) - bneg)
+
+
+def _bridge_layer(w, ws, wb, cells, styles, ref, dataset, rows, cur, nxt, a,
+                  h, layouts):
+    """Plan 04-07: avoided cash carbon cost per measure and the bridge."""
+    ny = len(ref.years)
+    ms_blocks = layouts["measures"].blocks
+    v = model_values(dataset.inputs)
+    scale = v["Const_PerThousand"]
+    sel = ref.scen[ref.sel_key]
+    keys = MEASURE_KEYS
+
+    def reg(name, r):
+        rows.append((name, r))
+
+    # ---- per-measure avoided rows -------------------------------------
+    w.band(nxt(), "Carbon cost avoided per measure, selected scenario "
+           "(stack order: LED, VSD, heat pump, fleet, solar PV, contract; "
+           "D-17)")
+    r = nxt()
+    w.line(r, "Avoided cash carbon cost, selected scenario (total)", "EUR")
+    w.series(r, lambda k, c: "=CHOOSE(M_ScenIdx,%s,%s,%s)" % tuple(
+        a(c, "Expo_Avoided_%s" % kk) for kk in ("CP", "NDC", "NZ50")),
+        sel.avoided, "eur", name="Expo_Avoided_Sel")
+    reg("Expo_Avoided_Sel", r)
+    for key in keys:
+        b = ms_blocks[key]
+        dg, dd, de = b["dG"] + 1, b["dD"] + 1, b["dE"] + 1
+
+        def f(k, c, dg=dg, dd=dd, de=de):
+            return (
+                "=-(Measures!%s$%d*EF_Gas_NCV*Carbon_ETS2_Scope_Gas*(%s+%s)"
+                "+Measures!%s$%d*EF_Diesel_l/Const_kg_per_t"
+                "*Carbon_ETS2_Scope_FleetDiesel*%s"
+                "+Measures!%s$%d*Expo_MEF*Pass_PTR*(%s-Expo_EmbeddedEUA))" % (
+                    c, dg, a(c, "Expo_PStat1_Sel"), a(c, "Expo_PStat2_Sel"),
+                    c, dd, a(c, "Expo_PETS2_Sel"),
+                    c, de, a(c, "Expo_PETS1_Sel")))
+        r = nxt()
+        w.line(r, "Avoided: %s" % SHORT[key], "EUR")
+        w.series(r, f, ref.measure_avoided[key], "eur",
+                 name="Expo_Avoided_%s" % key)
+        if key == "RC":
+            w.note(r, NOTE_CONTRACT)
+        elif key in ("HP", "Fleet"):
+            w.note(r, NOTE_NET)
+        reg("Expo_Avoided_%s" % key, r)
+    tol = v["Const_CheckTolMoney"]
+    diff = [d_ if abs(d_) > tol else 0.0 for d_ in (
+        sum(ref.measure_avoided[k][n] for k in keys) - sel.avoided[n]
+        for n in range(ny))]
+    r = nxt()
+    w.line(r, "Helper: sum of the six measures minus the selected-scenario "
+           "total, floating-point noise below the check tolerance set to 0 (should be zero)", "EUR")
+    def _diff_f(k, c):
+        x = "(%s-%s)" % ("+".join(a(c, "Expo_Avoided_%s" % kk)
+                                  for kk in keys), a(c, "Expo_Avoided_Sel"))
+        return "=IF(ABS(%s)<=Const_CheckTolMoney,0,%s)" % (x, x)
+    w.series(r, _diff_f, diff, "eur", name="Expo_Avoided_Diff")
+    reg("Expo_Avoided_Diff", r)
+    for key in keys:
+        r = nxt()
+        w.line(r, "Discounted avoided: %s" % SHORT[key], "EUR")
+        w.scalar(r, "=SUMPRODUCT(Expo_Avoided_%s,M_DF,Expo_Window)" % key,
+                 ref.measure_disc_avoided[key], "eur",
+                 name="Expo_DiscAvoided_%s" % key)
+        reg("Expo_DiscAvoided_%s" % key, r)
+    nxt()
+
+    # ---- bridge helper table ------------------------------------------
+    w.band(nxt(), "Bridge: BAU to after acting, discounted, selected "
+           "scenario (EUR thousand)")
+    r = nxt()
+    w.line(r, "Chart title (text)")
+    title = ("Discounted cash carbon cost over the exposure window, BAU to "
+             "after acting: %s scenario, %s basis, direct ETS1 %s" % (
+                 ref.scenario, ref.basis, ref.direct_ets))
+    cells.formula(
+        ws, r, 3,
+        '="Discounted cash carbon cost over the exposure window, BAU to '
+        'after acting: "&Sel_Scenario&" scenario, "&Sel_Basis&" basis, '
+        'direct ETS1 "&Sel_DirectETS', styles.get("calc"), value=title)
+    cells.define_name("Expo_BridgeTitle", "=%s!$D$%d" % (SHEET, r + 1))
+    reg("Expo_BridgeTitle", r)
+    hr = nxt()
+    hdr = styles.get("header")
+    cells.text(ws, hr, LABEL_COL, "Step", hdr)
+    cells.text(ws, hr, UNIT_COL, "Unit", hdr)
+    for col, txt in BRIDGE_HDRS:
+        cells.text(ws, hr, col, txt, hdr)
+    calc = styles.get("calc", "eur")
+    first = cur[0]
+    steps = [("BAU", "total")] + [(SHORT[k], k) for k in keys] + [
+        ("After acting", "total")]
+    br = ref.bridge
+    cols = {n: [] for n in range(3, B_LBL0 + 6)}
+
+    def L(c):
+        return col_letter(c)
+
+    for i, (lab, kind) in enumerate(steps):
+        rr = nxt()
+        R = rr + 1
+        total = kind == "total"
+        w.line(rr, lab, "EUR thousand")
+        # numeric values (EUR thousand)
+        if i == 0:
+            av, bv = 0.0, br[0][2] * scale
+        elif i == len(steps) - 1:
+            av, bv = 0.0, br[-1][2] * scale
+        else:
+            av = cols[B_B][-1]
+            bv = av - ref.measure_disc_avoided[kind] * scale
+        bp, bn, brp, brn = _split(av, bv)
+        A, B_ = "%s%d" % (L(B_A), R), "%s%d" % (L(B_B), R)
+        BP, BN = "%s%d" % (L(B_BPOS), R), "%s%d" % (L(B_BNEG), R)
+        barpos = "(MAX(0,MAX(%s,%s))-%s)" % (A, B_, BP)
+        barneg = "(MIN(0,MIN(%s,%s))-%s)" % (A, B_, BN)
+        if i == 0:
+            fa, fb = "=0", "=Expo_DiscBAU_Sel*Const_PerThousand"
+        elif i == len(steps) - 1:
+            fa, fb = "=0", "=Expo_DiscWith_Sel*Const_PerThousand"
+        else:
+            fa = "=%s%d" % (L(B_B), R - 1)
+            fb = "=%s-Expo_DiscAvoided_%s*Const_PerThousand" % (A, kind)
+        val = bv if total else bv - av
+        sv = {k_: 0.0 for k_ in range(3, B_LBL0 + 6)}
+        sv[B_A], sv[B_B], sv[B_BPOS], sv[B_BNEG] = av, bv, bp, bn
+        fm = {B_A: fa, B_B: fb, B_BPOS: "=MAX(0,MIN(%s,%s))" % (A, B_),
+              B_BNEG: "=MIN(0,MAX(%s,%s))" % (A, B_),
+              B_VAL: ("=%s" % B_) if total else "=%s-%s" % (B_, A)}
+        sv[B_VAL] = val
+        zero = "=0"
+        for c_ in (B_TPOS, B_TNEG, B_SPOS, B_SNEG, B_IPOS, B_INEG):
+            fm[c_] = zero
+        save = av >= bv
+        if total:
+            fm[B_TPOS], fm[B_TNEG] = "=" + barpos, "=" + barneg
+            sv[B_TPOS], sv[B_TNEG] = brp, brn
+        else:
+            fm[B_SPOS] = "=IF(%s>=%s,%s,0)" % (A, B_, barpos)
+            fm[B_SNEG] = "=IF(%s>=%s,%s,0)" % (A, B_, barneg)
+            fm[B_IPOS] = "=IF(%s>%s,%s,0)" % (B_, A, barpos)
+            fm[B_INEG] = "=IF(%s>%s,%s,0)" % (B_, A, barneg)
+            if save:
+                sv[B_SPOS], sv[B_SNEG] = brp, brn
+            else:
+                sv[B_IPOS], sv[B_INEG] = brp, brn
+        negonly = "AND(%s=0,%s<0)" % (barpos, barneg)
+        is_negonly = brp == 0 and brn < 0
+        val_cell = "%s%d" % (L(B_VAL), R)
+        for j in range(6):
+            c_ = B_LBL0 + j
+            grp, pos = j // 2, j % 2 == 0
+            app = (total and grp == 0) or (not total and grp == 1 and save
+                                           ) or (not total and grp == 2
+                                                 and not save)
+            if not ((total and grp == 0) or (not total and grp > 0)):
+                fm[c_], sv[c_] = '=""', ""
+                continue
+            cond = {0: "", 1: "%s>=%s," % (A, B_), 2: "%s>%s," % (B_, A)}[grp]
+            core = negonly if not pos else "NOT(%s)" % negonly
+            fm[c_] = '=IF(AND(%s%s),%s,"")' % (cond, core, val_cell)
+            sv[c_] = val if (app and (is_negonly != pos)) else ""
+        for c_ in range(3, B_LBL0 + 6):
+            if c_ in (12,):
+                continue
+            cells.formula(ws, rr, c_, fm[c_], calc, value=sv[c_])
+            cols[c_].append(sv[c_])
+    last = cur[0] - 1
+    for nm, c_ in (("Expo_Br_Start", B_A), ("Expo_Br_End", B_B),
+                   ("Expo_Br_BasePos", B_BPOS), ("Expo_Br_BaseNeg", B_BNEG),
+                   ("Expo_Br_TotalPos", B_TPOS), ("Expo_Br_TotalNeg", B_TNEG),
+                   ("Expo_Br_SavePos", B_SPOS), ("Expo_Br_SaveNeg", B_SNEG),
+                   ("Expo_Br_IncPos", B_IPOS), ("Expo_Br_IncNeg", B_INEG),
+                   ("Expo_Br_Value", B_VAL)):
+        cells.define_name(nm, "=%s!$%s$%d:$%s$%d" % (
+            SHEET, L(c_), first + 1, L(c_), last + 1))
+    w.note(nxt(), "Read the chart left to right: BAU bill, then one bar per "
+           "measure (green falls, orange rises), then the bill after acting. "
+           "The invisible base columns only position the bars, so they also "
+           "work when the bill is negative.", LABEL_COL)
+    chart_row = nxt()
+    layout = BridgeLayout(
+        SHEET, first, last, LABEL_COL, B_BPOS, B_BNEG,
+        ((("Total"), B_TPOS, B_TNEG, B_COLOURS[0], B_LBL0, B_LBL0 + 1),
+         (("Cost saving"), B_SPOS, B_SNEG, B_COLOURS[1], B_LBL0 + 2,
+          B_LBL0 + 3),
+         (("Cost increase"), B_IPOS, B_INEG, B_COLOURS[2], B_LBL0 + 4,
+          B_LBL0 + 5)), B_VAL, hr)
+    chart = bridge_chart(
+        wb, layout, "=%s!$D$%d" % (SHEET, [rr for n, rr in rows
+                                           if n == "Expo_BridgeTitle"][0] + 1),
+        (980, 460))
+    cells.insert_chart(ws, "B%d" % (chart_row + 1), chart)
+    for _ in range(24):
+        nxt()
+
+    ctol = "Const_CheckTolMoney"
+    disc_sum = "+".join("Expo_DiscAvoided_%s" % k for k in keys)
+    contract_sq = sum(x * x for x in ref.measure_avoided["RC"])
+    return [
+        ("Expo_Check_MeasuresReconcile", "Check: the six per-measure rows "
+         "sum to the selected-scenario avoided cost",
+         "=SUMPRODUCT(Expo_Avoided_Diff,Expo_Avoided_Diff)<=%s" % ctol,
+         sum(x * x for x in diff) <= v["Const_CheckTolMoney"]),
+        ("Expo_Check_ContractZero", "Check: the renewable contract saves no "
+         "cash carbon cost",
+         "=SUMPRODUCT(Expo_Avoided_RC,Expo_Avoided_RC)<=%s" % ctol,
+         contract_sq <= v["Const_CheckTolMoney"]),
+        ("Expo_Check_BridgeSums", "Check: BAU minus the six measure bars "
+         "equals the cost after acting",
+         "=ABS(Expo_DiscBAU_Sel-(%s)-Expo_DiscWith_Sel)<=%s" % (disc_sum,
+                                                                  ctol),
+         abs(sel.disc["total_bau"] - sum(
+             ref.measure_disc_avoided[k] for k in keys)
+             - sel.disc["total_with"]) <= v["Const_CheckTolMoney"]),
+    ]

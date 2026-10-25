@@ -9,7 +9,8 @@ import xlsxwriter
 from checkmodel import macc_reference as ref
 from tests.fixtures.synthetic import SYNTHETIC_MEASURES, SYNTHETIC_REFERENCE_PRICE
 from xl.cells import CellWriter
-from xl.charts import macc_area_chart, macc_column_chart
+from xl.charts import (BridgeLayout, bridge_chart, macc_area_chart,
+                       macc_column_chart)
 from xl.macc import write_macc_a_block, write_macc_c_block
 from xl.styles import Styles
 
@@ -65,6 +66,41 @@ class Charts(unittest.TestCase):
     def test_x_cache_equals_reference(self):
         self.assertEqual(_cat_values(self.xml[0]),
                          [float(p[3]) for p in self.points])
+
+
+class BridgeChart(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        buf = io.BytesIO()
+        wb = xlsxwriter.Workbook(buf, OPTIONS)
+        ws = wb.add_worksheet("Exposure")
+        layout = BridgeLayout(
+            "Exposure", 3, 10, 1, 5, 6,
+            (("Total", 7, 8, "#595959", 15, 16),
+             ("Cost saving", 9, 10, "#009E73", 17, 18),
+             ("Cost increase", 11, 13, "#D55E00", 19, 20)), 14, 2)
+        ws.insert_chart("B20", bridge_chart(wb, layout, "=Exposure!$D$1"))
+        wb.close()
+        with zipfile.ZipFile(io.BytesIO(buf.getvalue())) as z:
+            names = [n for n in z.namelist() if n.startswith("xl/charts/chart")]
+            cls.xml = z.read(names[0]).decode("utf-8")
+
+    def test_stacked_column_with_invisible_bases(self):
+        x = self.xml
+        self.assertIn("<c:barChart>", x)
+        self.assertIn('<c:grouping val="stacked"/>', x)
+        sers = x.split("<c:ser>")[1:]
+        self.assertEqual(len(sers), 8)
+        for s in sers[:2]:
+            self.assertIn("<a:noFill/>", s.split("<c:cat>")[0])
+
+    def test_no_axis_bounds_or_date_axis(self):
+        self.assertNotIn("<c:max ", self.xml)
+        self.assertNotIn("<c:min ", self.xml)
+        self.assertNotIn("<c:dateAx>", self.xml)
+
+    def test_legend_keeps_one_entry_per_colour(self):
+        self.assertEqual(self.xml.count("<c:legendEntry>"), 5)
 
 
 if __name__ == "__main__":

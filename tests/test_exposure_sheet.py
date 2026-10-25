@@ -11,6 +11,7 @@ from qa.formula_eval import compare_cached, evaluate_names
 from xl.layout import TIMELINE_FIRST_COL, TIMELINE_LAST_COL
 
 KEYS = ("CP", "NDC", "NZ50")
+MKEYS = ("LED", "VSD", "HP", "Fleet", "PV", "RC")
 REL = 1e-9
 
 
@@ -158,6 +159,86 @@ class ExposureSheet(unittest.TestCase):
                        and not c.value.startswith("="))
         self.assertIn("is negative", txt)
         self.assertIn("Never added to the internal carbon price", txt)
+
+    # ---- plan 04-07: per-measure attribution and bridge ------------------
+    def test_measure_avoided_match_reference(self):
+        for k in MKEYS:
+            self._close("Expo_Avoided_" + k, self.ref.measure_avoided[k])
+        out = evaluate_names(self.data, ["Expo_DiscAvoided_" + k
+                                         for k in MKEYS])
+        for k in MKEYS:
+            want = self.ref.measure_disc_avoided[k]
+            self.assertLessEqual(abs(out["Expo_DiscAvoided_" + k] - want),
+                                 REL * max(1.0, abs(want)), k)
+        self.assertEqual(self._row(self.wbv, "Expo_Avoided_RC"), [0] * 30)
+
+    def test_bridge_checks_states(self):
+        names = ["Expo_Check_BridgeSums", "Expo_Check_ContractZero",
+                 "Expo_Check_MeasuresReconcile", "Expo_Check_All"]
+        for ov in (None, {self._target("Sel_Scenario"): "Low"},
+                   {self._target("Sel_DirectETS"): "On"}):
+            out = evaluate_names(self.data, names, overrides=ov)
+            for n in names:
+                self.assertIs(out[n], True, (n, ov))
+
+    def _bridge(self, ov=None):
+        names = ["Expo_Br_Start", "Expo_Br_End", "Expo_Br_BasePos",
+                 "Expo_Br_BaseNeg", "Expo_Br_TotalPos", "Expo_Br_TotalNeg",
+                 "Expo_Br_SavePos", "Expo_Br_SaveNeg", "Expo_Br_IncPos",
+                 "Expo_Br_IncNeg", "Expo_Br_Value"]
+        return evaluate_names(self.data, names, overrides=ov)
+
+    def _check_bridge(self, out):
+        n = len(out["Expo_Br_Start"])
+        self.assertEqual(n, 8)
+        for i in range(n):
+            a, b = out["Expo_Br_Start"][i], out["Expo_Br_End"][i]
+            pos = (out["Expo_Br_TotalPos"][i] + out["Expo_Br_SavePos"][i]
+                   + out["Expo_Br_IncPos"][i])
+            neg = (out["Expo_Br_TotalNeg"][i] + out["Expo_Br_SaveNeg"][i]
+                   + out["Expo_Br_IncNeg"][i])
+            bp, bn = out["Expo_Br_BasePos"][i], out["Expo_Br_BaseNeg"][i]
+            # visible extent above and below zero reproduces [min, max]
+            self.assertAlmostEqual(bp + pos, max(0.0, a, b), delta=1e-9)
+            self.assertAlmostEqual(bn + neg, min(0.0, a, b), delta=1e-9)
+            self.assertAlmostEqual(pos - neg, abs(b - a), delta=1e-9)
+            self.assertGreaterEqual(pos, -1e-12)
+            self.assertLessEqual(neg, 1e-12)
+        return n
+
+    def test_bridge_default_matches_reference(self):
+        out = self._bridge()
+        self._check_bridge(out)
+        for i, (_lab, a, b) in enumerate(self.ref.bridge):
+            self.assertAlmostEqual(out["Expo_Br_End"][i],
+                                   b * 0.001, delta=1e-9 * max(1, abs(b)))
+        self.assertEqual(out["Expo_Br_Start"][0], 0)
+        self.assertEqual(out["Expo_Br_Start"][7], 0)
+        self.assertAlmostEqual(out["Expo_Br_End"][6],
+                               out["Expo_Br_Start"][6], delta=1e-12)
+        self.assertAlmostEqual(out["Expo_Br_End"][6], out["Expo_Br_End"][7],
+                               delta=1e-6)
+
+    def test_bridge_low_zero_crossing(self):
+        out = self._bridge({self._target("Sel_Scenario"): "Low"})
+        self._check_bridge(out)
+        ends = out["Expo_Br_End"]
+        starts = out["Expo_Br_Start"]
+        crossing = any(min(a, b) < 0 < max(a, b)
+                       for a, b in zip(starts, ends))
+        negative = any(max(a, b) < 0 for a, b in zip(starts, ends))
+        self.assertTrue(crossing or negative)
+
+    def test_bridge_title_and_notes(self):
+        out = evaluate_names(self.data, ["Expo_BridgeTitle"])
+        self.assertIn("Central scenario", out["Expo_BridgeTitle"])
+        self.assertIn("Market-based basis", out["Expo_BridgeTitle"])
+        self.assertIn("direct ETS1 Off", out["Expo_BridgeTitle"])
+        txt = " ".join(c.value for row in self.wb["Exposure"].iter_rows()
+                       for c in row if isinstance(c.value, str)
+                       and not c.value.startswith("="))
+        self.assertIn("Contract: zero cash saving", txt)
+        self.assertIn("the bar is the net", txt)
 
 
 if __name__ == "__main__":

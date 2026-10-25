@@ -3,6 +3,9 @@
 Charts reference the helper tables written by xl/macc.py. Arial fonts, the
 Okabe-Ito palette in slot order, no 3D, gradients or shadows.
 """
+from dataclasses import dataclass
+from typing import Tuple
+
 from xl.macc import MaccALayout, MaccCLayout
 from xl.styles import OKABE_ITO
 from xlsxwriter.utility import xl_col_to_name
@@ -118,5 +121,68 @@ def macc_column_chart(wb, c_layout, title=None, size=(900, 420)):
                       "major_gridlines": {"visible": True,
                                           "line": {"color": "#D9D9D9"}}})
     chart.set_legend({"position": "bottom", "font": FONT})
+    chart.set_size({"width": size[0], "height": size[1]})
+    return chart
+
+
+@dataclass(frozen=True)
+class BridgeLayout:
+    """Where the bridge helper table sits (zero-based rows and columns).
+
+    series_cols entries: (name, pos_col, neg_col, colour, label_pos_col,
+    label_neg_col). The header row holds the series names.
+    """
+    sheet: str
+    first_row: int
+    last_row: int
+    label_col: int
+    base_pos_col: int
+    base_neg_col: int
+    series_cols: Tuple[Tuple[str, int, int, str, int, int], ...]
+    value_col: int
+    header_row: int
+
+
+def bridge_chart(wb, layout, title, size=(900, 420)):
+    # type: (object, BridgeLayout, str, tuple) -> object
+    """Waterfall as a stacked column: invisible positive and negative bases
+    place each bar, so the chart survives bars that cross or sit below zero.
+    No axis bounds are written (they would clip when inputs change) and no
+    date axis is used."""
+    chart = wb.add_chart({"type": "column", "subtype": "stacked"})
+    sh = layout.sheet
+    r0, r1 = layout.first_row, layout.last_row
+    cats = [sh, r0, layout.label_col, r1, layout.label_col]
+    n = r1 - r0 + 1
+    for col in (layout.base_pos_col, layout.base_neg_col):
+        chart.add_series({
+            "name": [sh, layout.header_row, col], "categories": cats,
+            "values": [sh, r0, col, r1, col],
+            "fill": {"none": True}, "border": {"none": True},
+            "gap": 50, "overlap": 100,
+        })
+    for _name, pos, neg, colour, lpos, lneg in layout.series_cols:
+        for col, lcol in ((pos, lpos), (neg, lneg)):
+            labels = [{"value": "=%s!$%s$%d" % (
+                _q(sh), xl_col_to_name(lcol), r0 + i + 1)} for i in range(n)]
+            chart.add_series({
+                "name": [sh, layout.header_row, col], "categories": cats,
+                "values": [sh, r0, col, r1, col],
+                "fill": {"color": colour}, "border": {"none": True},
+                "data_labels": {"value": True, "custom": labels,
+                                "font": {"name": "Arial", "size": 8}},
+                "gap": 50, "overlap": 100,
+            })
+    chart.set_title({"name": title,
+                     "name_font": {"name": "Arial", "size": 11}})
+    chart.set_x_axis({"num_font": FONT, "label_position": "low"})
+    chart.set_y_axis({
+        "num_format": "#,##0", "name": "EUR thousand, discounted, real 2025",
+        "name_font": dict(FONT, bold=False), "num_font": FONT,
+        "major_gridlines": {"visible": True, "line": {"color": "#D9D9D9"}},
+    })
+    # one legend entry per colour: delete the bases and the below-zero twins
+    chart.set_legend({"position": "bottom", "font": FONT,
+                      "delete_series": [0, 1, 3, 5, 7]})
     chart.set_size({"width": size[0], "height": size[1]})
     return chart
