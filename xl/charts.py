@@ -186,3 +186,45 @@ def bridge_chart(wb, layout, title, size=(900, 420)):
                       "delete_series": [0, 1, 3, 5, 7]})
     chart.set_size({"width": size[0], "height": size[1]})
     return chart
+
+
+@dataclass(frozen=True)
+class TornadoLayout:
+    """Sorted tornado table: label, downside and upside columns (zero-based)."""
+    sheet: str
+    first_row: int
+    last_row: int
+    label_col: int
+    down_col: int
+    up_col: int
+
+
+def tornado_chart(wb, layout, title, size=(800, 420)):
+    # type: (object, TornadoLayout, str, tuple) -> object
+    """Horizontal bars around the base: downside (left) and upside (right),
+    largest swing on top (category axis reversed). No axis bounds, no date
+    axis."""
+    chart = wb.add_chart({"type": "bar"})
+    sh = layout.sheet
+    r0, r1 = layout.first_row, layout.last_row
+    cats = [sh, r0, layout.label_col, r1, layout.label_col]
+    for k, (col, name) in enumerate(((layout.down_col, "Downside"),
+                                     (layout.up_col, "Upside"))):
+        chart.add_series({
+            "name": name, "categories": cats,
+            "values": [sh, r0, col, r1, col],
+            "fill": {"color": OKABE_ITO[k + 1]}, "border": {"none": True},
+            "gap": 40, "overlap": 100,
+        })
+    chart.set_title({"name": title,
+                     "name_font": {"name": "Arial", "size": 11}})
+    chart.set_y_axis({"reverse": True, "label_position": "low",
+                      "num_font": FONT})
+    chart.set_x_axis({"num_format": "#,##0", "num_font": FONT,
+                      "name": "Change in portfolio NPV (EUR, real 2025)",
+                      "name_font": dict(FONT, bold=False),
+                      "major_gridlines": {"visible": True,
+                                          "line": {"color": "#D9D9D9"}}})
+    chart.set_legend({"position": "bottom", "font": FONT})
+    chart.set_size({"width": size[0], "height": size[1]})
+    return chart

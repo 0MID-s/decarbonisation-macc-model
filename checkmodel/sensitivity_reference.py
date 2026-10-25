@@ -113,6 +113,16 @@ class SensitivityResult:
     tornado: Tuple[TornadoRow, ...]
     tornado_order: Tuple[str, ...]
     rank_stab: Tuple[RankStabRow, ...]
+    # per-year helper rows behind the ETS2-delay and NGFS-route tornado bars
+    delay_w: Tuple[float, ...] = ()
+    delay_p: Tuple[float, ...] = ()
+    delay_dstat: Tuple[float, ...] = ()
+    delay_dfleet: Tuple[float, ...] = ()
+    route_ratio: float = 1.0
+    route_d1: Tuple[float, ...] = ()
+    route_d2: Tuple[float, ...] = ()
+    route_dstat: Tuple[float, ...] = ()
+    hurdles: Tuple[float, ...] = ()
 
 
 def _pv(df, row):
@@ -284,6 +294,14 @@ def compute_sensitivity(inputs, basis, scenario, direct_ets, overrides=None):
                         ex.years, start_year=start2 + delay)
     on = direct_ets == "On"
     d_ets2 = [alt2[n] - sel.ets2[n] for n in rng]
+    s0 = start2 + delay
+    dl_w = [min(1.0, max(0.0, (ex.years[n] - s0)
+                         / max(v["Carbon_ETS2_ConvYear"] - s0, 1.0)))
+            for n in rng]
+    dl_p = [0.0 if ex.years[n] < s0 else (1.0 - dl_w[n]) * stab
+            + dl_w[n] * ng[n] for n in rng]
+    dl_stat = [(0.0 if on else dl_p[n]) - sel.p_stat2[n] for n in rng]
+    dl_fleet = [dl_p[n] - sel.ets2[n] for n in rng]
     d_term = _pv(df, [(tf[n] + (0.0 if on else ts[n])) * d_ets2[n]
                       for n in rng])
     raw["ets2_delay"] = (start2, start2 + delay, npv_incl, npv_incl + d_term)
@@ -300,6 +318,9 @@ def compute_sensitivity(inputs, basis, scenario, direct_ets, overrides=None):
         ts[n] * (d1[n] * (1.0 - fa) if on else d2[n]) + tf[n] * d2[n]
         + ex.mef * ptr * elec_saved[n] * d1[n] for n in rng])
     raw["ngfs_route"] = (1.0, s, npv_incl, npv_incl + d_route)
+
+    rt_d1, rt_d2 = d1, d2
+    rt_stat = [d1[n] * (1.0 - fa) if on else d2[n] for n in rng]
 
     swings = [abs(raw[d][3] - raw[d][2]) for d in TORNADO_DRIVERS]
     rows = []
@@ -352,7 +373,11 @@ def compute_sensitivity(inputs, basis, scenario, direct_ets, overrides=None):
         pv_pt_embedded=pv_pt_emb, pv_pt_net=pv_pt_net, pv_capex=pv_capex,
         pv_ev=pv_ev, pv_go_cost=pv_go, grid_axis=axis, grid=grid,
         rate_axis=raxis, rate_npvs=rnpvs, tornado=tuple(rows),
-        tornado_order=order, rank_stab=tuple(stab))
+        tornado_order=order, rank_stab=tuple(stab),
+        delay_w=tuple(dl_w), delay_p=tuple(dl_p), delay_dstat=tuple(dl_stat),
+        delay_dfleet=tuple(dl_fleet), route_ratio=s, route_d1=tuple(rt_d1),
+        route_d2=tuple(rt_d2), route_dstat=tuple(rt_stat),
+        hurdles=tuple(hurdles))
 
 
 def untested_note_values(inputs, basis="Market-based", scenario="Central",

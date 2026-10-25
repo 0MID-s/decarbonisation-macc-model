@@ -9,7 +9,8 @@ import xlsxwriter
 from checkmodel import macc_reference as ref
 from tests.fixtures.synthetic import SYNTHETIC_MEASURES, SYNTHETIC_REFERENCE_PRICE
 from xl.cells import CellWriter
-from xl.charts import (BridgeLayout, bridge_chart, macc_area_chart,
+from xl.charts import (BridgeLayout, TornadoLayout, bridge_chart,
+                       tornado_chart, macc_area_chart,
                        macc_column_chart)
 from xl.macc import write_macc_a_block, write_macc_c_block
 from xl.styles import Styles
@@ -101,6 +102,32 @@ class BridgeChart(unittest.TestCase):
 
     def test_legend_keeps_one_entry_per_colour(self):
         self.assertEqual(self.xml.count("<c:legendEntry>"), 5)
+
+
+class TornadoChart(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        buf = io.BytesIO()
+        wb = xlsxwriter.Workbook(buf, OPTIONS)
+        ws = wb.add_worksheet("Sensitivity")
+        layout = TornadoLayout("Sensitivity", 3, 13, 1, 3, 4)
+        ws.insert_chart("G3", tornado_chart(wb, layout, "=Sensitivity!$D$1"))
+        wb.close()
+        with zipfile.ZipFile(io.BytesIO(buf.getvalue())) as z:
+            names = [n for n in z.namelist() if n.startswith("xl/charts/chart")]
+            cls.xml = z.read(names[0]).decode("utf-8")
+
+    def test_horizontal_bars_overlapping_and_reversed(self):
+        x = self.xml
+        self.assertIn('<c:barDir val="bar"/>', x)
+        self.assertIn('<c:overlap val="100"/>', x)
+        self.assertIn('<c:orientation val="maxMin"/>', x)
+        self.assertEqual(x.count("<c:ser>"), 2)
+
+    def test_no_axis_bounds_or_date_axis(self):
+        self.assertNotIn("<c:max ", self.xml)
+        self.assertNotIn("<c:min ", self.xml)
+        self.assertNotIn("<c:dateAx>", self.xml)
 
 
 if __name__ == "__main__":
