@@ -304,7 +304,7 @@ def _results_layer(w, ws, cells, styles, ref, dataset, rows, cur, nxt, a, h,
                     f = "=SUMPRODUCT(Expo_%s_%s_%s,%sExpo_Window)" % (
                         cl, cn, key, win_df)
                     cells.formula(ws, r, 3 + i, f, styles.get("calc", "eur"),
-                                  value=getattr(ref.scen[key], kind)[
+                                  value=_agg(ref.scen[key], kind)[
                                       "%s_%s" % (ck, case)])
                     if ck == "total":
                         cells.define_name("Expo_%s%s_%s" % (tag, cl, key),
@@ -313,7 +313,7 @@ def _results_layer(w, ws, cells, styles, ref, dataset, rows, cur, nxt, a, h,
                 if ck == "total":
                     tot_r[case] = r
                 _sel_cell(r, "Expo_%s%s_Sel" % (tag, cl) if ck == "total"
-                          else None, getattr(ref.scen[ref.sel_key], kind)[
+                          else None, _agg(ref.scen[ref.sel_key], kind)[
                               "%s_%s" % (ck, case)])
         r = nxt()
         w.line(r, "Carbon cost avoided (BAU minus with measures)", "EUR")
@@ -322,11 +322,11 @@ def _results_layer(w, ws, cells, styles, ref, dataset, rows, cur, nxt, a, h,
             cells.formula(ws, r, 3 + i, "=%s%d-%s%d" % (
                 col, tot_r["bau"] + 1, col, tot_r["with"] + 1),
                 styles.get("calc", "eur"),
-                value=getattr(ref.scen[key], kind)["avoided"])
+                value=_agg(ref.scen[key], kind)["avoided"])
             cells.define_name("Expo_%sAvoided_%s" % (tag, key),
                               "=%s!$%s$%d" % (SHEET, col_letter(3 + i), r + 1))
         _sel_cell(r, "Expo_%sAvoided_Sel" % tag,
-                  getattr(ref.scen[ref.sel_key], kind)["avoided"])
+                  _agg(ref.scen[ref.sel_key], kind)["avoided"])
         w.note(r, "Positive = cash carbon cost saved by acting", TBL_NOTE_COL)
         nxt()
     w.note(nxt(), "Discounted at the real rate with 2026 = year 0, as in the "
@@ -507,6 +507,10 @@ def _results_layer(w, ws, cells, styles, ref, dataset, rows, cur, nxt, a, h,
              name="Expo_Check_All")
     apply_bool_check_format(ws, styles, r, 3, r, 3)
     reg("Expo_Check_All", r)
+
+
+def _agg(scen, kind):
+    return scen.cum if kind == "cum" else scen.disc
 
 
 def dataset_value(dataset, name):
