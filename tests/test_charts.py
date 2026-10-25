@@ -10,7 +10,7 @@ from checkmodel import macc_reference as ref
 from tests.fixtures.synthetic import SYNTHETIC_MEASURES, SYNTHETIC_REFERENCE_PRICE
 from xl.cells import CellWriter
 from xl.charts import (BridgeLayout, TornadoLayout, bridge_chart,
-                       tornado_chart, macc_area_chart,
+                       tornado_chart, macc_area_chart, exposure_scenario_chart,
                        macc_column_chart)
 from xl.macc import write_macc_a_block, write_macc_c_block
 from xl.styles import Styles
@@ -128,6 +128,39 @@ class TornadoChart(unittest.TestCase):
         self.assertNotIn("<c:max ", self.xml)
         self.assertNotIn("<c:min ", self.xml)
         self.assertNotIn("<c:dateAx>", self.xml)
+
+
+class ExposureScenarioChart(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        buf = io.BytesIO()
+        wb = xlsxwriter.Workbook(buf, OPTIONS)
+        ws = wb.add_worksheet("Dashboard")
+        ws.insert_chart("B20", exposure_scenario_chart(
+            wb, "Dashboard", 30, 31, 33, 1, 2, 3, "=Dashboard!$B$40"))
+        wb.close()
+        with zipfile.ZipFile(io.BytesIO(buf.getvalue())) as z:
+            names = [n for n in z.namelist() if n.startswith("xl/charts/chart")]
+            cls.xml = z.read(names[0]).decode("utf-8")
+
+    def test_clustered_two_series(self):
+        x = self.xml
+        self.assertIn("<c:barChart>", x)
+        self.assertIn('<c:barDir val="col"/>', x)
+        self.assertIn('<c:grouping val="clustered"/>', x)
+        self.assertEqual(x.count("<c:ser>"), 2)
+        self.assertEqual(x.count("<c:cat>"), 2)
+        self.assertIn("Dashboard!$C$32:$C$34", x)
+        self.assertIn("Dashboard!$D$32:$D$34", x)
+        self.assertIn("Dashboard!$B$32:$B$34", x)
+
+    def test_linked_title_legend_no_date_axis(self):
+        x = self.xml
+        self.assertRegex(x, r"<c:title><c:tx><c:strRef><c:f>Dashboard!\$B\$40")
+        self.assertIn('<c:legendPos val="b"/>', x)
+        self.assertNotIn("<c:dateAx>", x)
+        self.assertNotIn("<c:max ", x)
+        self.assertNotIn("<c:min ", x)
 
 
 if __name__ == "__main__":

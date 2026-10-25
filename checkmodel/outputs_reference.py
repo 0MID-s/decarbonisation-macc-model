@@ -38,7 +38,7 @@ class OutputsResult:
     checks: Dict[str, bool]
     chk_master: str
     chk_fail_count: int
-    labels: Dict[str, str] = field(default_factory=dict)
+    labels: Dict[str, object] = field(default_factory=dict)
     # named values behind linked_value()
     named: Dict[str, object] = field(default_factory=dict)
 
@@ -99,6 +99,17 @@ def compute_outputs(inputs, basis, scenario, direct_ets):
     # financial one; sens.npv_fin equals the Measures portfolio NPV.
     named["M_Portfolio_NPV"] = sum(m.npv for m in meas.measures)
 
+    labels = {
+        "abated": "Abated per year, %s basis" % basis,
+        "share": "Share of Scope 1+2 abated, %s basis" % basis,
+        "npv_incl": "Including carbon cash savings, %s scenario, %s basis"
+                    % (scenario, basis),
+        "cost": "Cost of not acting, %s scenario" % scenario,
+        "scen_chart": "Cost of not acting by scenario: BAU vs with measures "
+                      "(%s basis, Direct ETS %s)" % (basis, direct_ets),
+        "selectors": {"Sel_Scenario": scenario, "Sel_Basis": basis,
+                      "Sel_DirectETS": direct_ets},
+    }
     fails = sum(1 for v in checks.values() if not v)
     return OutputsResult(
         npv_fin=named["M_Portfolio_NPV"], npv_incl=sens.npv_incl,
@@ -108,7 +119,7 @@ def compute_outputs(inputs, basis, scenario, direct_ets):
         cum_avoided_sel=sel.cum["avoided"], disc_bau_sel=sel.disc["total_bau"],
         disc_avoided_sel=sel.disc["avoided"], chart_block=chart,
         checks=checks, chk_master="OK" if fails == 0 else "ERROR",
-        chk_fail_count=fails, labels={}, named=named)
+        chk_fail_count=fails, labels=labels, named=named)
 
 
 def all_states(inputs=INPUTS):

@@ -71,6 +71,26 @@ class OutputsReference(unittest.TestCase):
         with self.assertRaises(KeyError):
             o.linked_value("Nope", DEFAULT)
 
+    def test_labels_all_states(self):
+        for st, r in o.all_states().items():
+            basis, scen, ets = st
+            lb = r.labels
+            self.assertEqual(lb["abated"], "Abated per year, %s basis" % basis)
+            self.assertEqual(lb["share"],
+                             "Share of Scope 1+2 abated, %s basis" % basis)
+            self.assertEqual(lb["npv_incl"],
+                             "Including carbon cash savings, %s scenario, %s "
+                             "basis" % (scen, basis))
+            self.assertEqual(lb["cost"], "Cost of not acting, %s scenario" % scen)
+            self.assertEqual(lb["scen_chart"],
+                             "Cost of not acting by scenario: BAU vs with "
+                             "measures (%s basis, Direct ETS %s)" % (basis, ets))
+            self.assertEqual(lb["selectors"], {
+                "Sel_Scenario": scen, "Sel_Basis": basis, "Sel_DirectETS": ets})
+        r = o.compute_outputs(INPUTS, "Market-based", "Central", "Off")
+        self.assertEqual(r.labels["abated"],
+                         "Abated per year, Market-based basis")
+
     def test_no_forbidden_imports(self):
         import re
         with open(o.__file__) as fh:

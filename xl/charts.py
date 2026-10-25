@@ -228,3 +228,32 @@ def tornado_chart(wb, layout, title, size=(800, 420)):
     chart.set_legend({"position": "bottom", "font": FONT})
     chart.set_size({"width": size[0], "height": size[1]})
     return chart
+
+
+def exposure_scenario_chart(wb, sheet, hdr_row, first_row, last_row, cat_col,
+                            bau_col, with_col, title, size=(520, 300)):
+    # type: (object, str, int, int, int, int, int, int, str, tuple) -> object
+    """Clustered columns: cumulative undiscounted carbon cost without (BAU) and
+    with the measures, one cluster per carbon price scenario. Rows and columns
+    are zero-based. No axis bounds (the Low case can be negative), no date
+    axis."""
+    chart = wb.add_chart({"type": "column"})
+    cats = [sheet, first_row, cat_col, last_row, cat_col]
+    for k, col in enumerate((bau_col, with_col)):
+        chart.add_series({
+            "name": [sheet, hdr_row, col], "categories": cats,
+            "values": [sheet, first_row, col, last_row, col],
+            "fill": {"color": OKABE_ITO[k + 1]}, "border": {"none": True},
+            "gap": 80,
+        })
+    chart.set_title({"name": title,
+                     "name_font": {"name": "Arial", "size": 11}})
+    chart.set_x_axis({"num_font": FONT, "label_position": "low"})
+    chart.set_y_axis({
+        "num_format": "#,##0", "name": "EUR, real 2025, undiscounted",
+        "name_font": dict(FONT, bold=False), "num_font": FONT,
+        "major_gridlines": {"visible": True, "line": {"color": "#D9D9D9"}},
+    })
+    chart.set_legend({"position": "bottom", "font": FONT})
+    chart.set_size({"width": size[0], "height": size[1]})
+    return chart
