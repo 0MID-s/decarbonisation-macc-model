@@ -164,6 +164,51 @@ class CarbonSheet(unittest.TestCase):
             self.assertIn(want, txt)
         self.assertNotIn("CPI-U", txt)
 
+    def _named_vals(self, wb, name):
+        sheet, addr = self.wb.defined_names[name].attr_text.split("!")
+        r = wb[sheet][addr.replace("$", "").split(":")[0]].row
+        return [wb[sheet].cell(row=r, column=c + 1).value
+                for c in range(TIMELINE_FIRST_COL, TIMELINE_LAST_COL + 1)]
+
+    def test_market_paths(self):
+        for pre in ("Path_ETS1_", "Path_ETS2_"):
+            for key in ("CP", "NDC", "NZ50"):
+                self.assertIn(pre + key, self.wb.defined_names)
+        for n in ("Carb_Blend_W_ETS1", "Carb_Blend_W_ETS2",
+                  "Carb_Check_ConvYears"):
+            self.assertIn(n, self.wb.defined_names)
+        self.assertIs(self._cell(self.wbv, "Carb_Check_ConvYears").value, True)
+        ets2 = self._named_vals(self.wbv, "Path_ETS2_NDC")
+        self.assertEqual(ets2[0], 0)
+        self.assertEqual(ets2[1], 0)
+        self.assertGreater(ets2[2], 0)  # start year 2028
+        ets1 = self._named_vals(self.wbv, "Path_ETS1_NDC")
+        ndc = self._named_vals(self.wbv, "Path_Carbon_NDC")
+        self.assertAlmostEqual(ets1[4], ndc[4], delta=1e-9)  # 2030
+
+    def test_market_path_notes(self):
+        txt = " ".join(c.value for row in self.wb["Carbon"].iter_rows()
+                      for c in row if isinstance(c.value, str))
+        self.assertIn("steep 2028-2030 rise", txt)
+        self.assertIn("not a floor", txt)
+
+    def test_ets2_start_override(self):
+        from qa.formula_eval import evaluate_names
+        ds = self.ds
+        data, _ = build.build_bytes("main", ds)
+        ws = self.wb["Inputs"]
+        addr = None
+        for row in ws.iter_rows(min_col=2, max_col=2):
+            if row[0].value == "Carbon_ETS2_StartYear":
+                addr = row[0].row
+        self.assertIsNotNone(addr)
+        sheet, ref = self.wb.defined_names["Carbon_ETS2_StartYear"].attr_text.split("!")
+        out = evaluate_names(data, ["Path_ETS2_NDC"],
+                             overrides={(sheet, ref): 2029})
+        vals = out["Path_ETS2_NDC"]
+        self.assertEqual(vals[2], 0)  # 2028
+        self.assertGreater(vals[3], 0)  # 2029
+
     def test_anchor_limit(self):
         import xl.sheets.carbon as carbon
         self.assertEqual(carbon.GRID_MAX, 9)

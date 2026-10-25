@@ -15,7 +15,10 @@ from xl.layout import (
     LABEL_COL, TIMELINE_FIRST_COL, TIMELINE_LAST_COL, UNIT_COL, col_for_year,
     col_letter, setup_sheet)
 from xl.sheets.common import num_role_for_unit, write_title_band
-from xl.styles import SheetKind, apply_check_format
+from xl.styles import SheetKind, apply_bool_check_format, apply_check_format
+from checkmodel.exposure_reference import compute_exposure
+from xl.selector import direct_ets_state, selector_state
+from xl.sheets.rowwriter import RowWriter
 
 LAST_COL = TIMELINE_LAST_COL
 HDR_ROW = 4  # zero-based; Excel row 5
@@ -319,4 +322,81 @@ def build_carbon(wb, styles, cells, dataset, cfg, inputs_layout):
                       styles.get("link", role), value=val)
         rows.append((iid, r))
         r += 1
+    r += 1
+    _market_paths(ws, cells, styles, dataset, cfg, rows, r, hdr_ref)
     return CarbonLayout(tuple(rows), tuple(path_names))
+
+
+CAVEAT_STEEP = (
+    "Central reaches the NGFS NDCs price (about EUR 226) by 2030, a steep "
+    "2028-2030 rise; market forecasts are lower. Change Carbon_ETS1_ConvYear "
+    "or Carbon_ETS2_ConvYear to test a slower convergence.")
+CAVEAT_LOW = (
+    "Low (Current Policies) falls below today's EUA and below the ETS2 EUR 45 "
+    "(2020 prices) trigger. The stability mechanism releases allowances above "
+    "a price; it is not a floor.")
+CAVEAT_METHOD = (
+    "Cash channels start at an observed or legal anchor and move in a "
+    "straight line to the NGFS scenario price by the convergence year (inputs "
+    "on the Inputs sheet), then follow NGFS.")
+
+
+def _market_paths(ws, cells, styles, dataset, cfg, rows, r, hdr_ref):
+    """Market-anchored ETS1 and ETS2 cash price paths (D-01 to D-03)."""
+    ref = compute_exposure(dataset.inputs, *(selector_state(dataset)
+                                             + (direct_ets_state(dataset),)))
+    mv = model_values(dataset.inputs)
+    conv_ok = bool(
+        mv["Carbon_ETS1_ConvYear"] >= mv["Carbon_EUA_AnchorYear"]
+        and mv["Carbon_ETS2_ConvYear"] >= mv["Carbon_ETS2_StartYear"])
+    w = RowWriter(ws, cells, styles, "Carbon", LAST_COL)
+    named = dict(rows)
+    h = hdr_ref
+    w.band(r, "Market-anchored cash price paths (D-01 to D-03)")
+    r += 1
+    w.line(r, "ETS1 blend weight (0 = observed EUA, 1 = scenario)", "fraction")
+    w.series(r, lambda k, c: (
+        "=MIN(1,MAX(0,(%s$%d-Carbon_EUA_AnchorYear)/MAX(Carbon_ETS1_ConvYear-"
+        "Carbon_EUA_AnchorYear,1)))" % (c, h)), ref.w_ets1, "dec5",
+        name="Carb_Blend_W_ETS1")
+    rows.append(("Carb_Blend_W_ETS1", r))
+    r += 1
+    w.line(r, "ETS2 blend weight (0 = stability price, 1 = scenario)",
+           "fraction")
+    w.series(r, lambda k, c: (
+        "=MIN(1,MAX(0,(%s$%d-Carbon_ETS2_StartYear)/MAX(Carbon_ETS2_ConvYear-"
+        "Carbon_ETS2_StartYear,1)))" % (c, h)), ref.w_ets2, "dec5",
+        name="Carb_Blend_W_ETS2")
+    rows.append(("Carb_Blend_W_ETS2", r))
+    r += 1
+    named = dict(rows)
+    w1, w2 = named["Carb_Blend_W_ETS1"] + 1, named["Carb_Blend_W_ETS2"] + 1
+    for key, tier, name in SCENARIOS:
+        pc = named["Path_Carbon_%s" % key] + 1
+        sc = ref.scen[key]
+        w.line(r, "%s ETS1 cash path (EUR 2025)" % tier, "EUR/tCO2")
+        w.series(r, lambda k, c, pc=pc: (
+            "=(1-%s$%d)*Carbon_EUA_Avg2025+%s$%d*%s$%d" % (c, w1, c, w1, c, pc)),
+            sc.ets1, "eur2", name="Path_ETS1_%s" % key)
+        rows.append(("Path_ETS1_%s" % key, r))
+        r += 1
+        w.line(r, "%s ETS2 cash path (EUR 2025)" % tier, "EUR/tCO2")
+        w.series(r, lambda k, c, pc=pc: (
+            "=IF(%s$%d<Carbon_ETS2_StartYear,0,(1-%s$%d)*"
+            "Carbon_ETS2_StabPrice_EUR2025+%s$%d*%s$%d)" % (
+                c, h, c, w2, c, w2, c, pc)),
+            sc.ets2, "eur2", name="Path_ETS2_%s" % key)
+        rows.append(("Path_ETS2_%s" % key, r))
+        r += 1
+    w.line(r, "Check: convergence years are not before the anchor / start "
+           "year", "TRUE/FALSE")
+    w.scalar(r, "=AND(Carbon_ETS1_ConvYear>=Carbon_EUA_AnchorYear,"
+             "Carbon_ETS2_ConvYear>=Carbon_ETS2_StartYear)",
+             conv_ok, "general", name="Carb_Check_ConvYears")
+    apply_bool_check_format(ws, styles, r, GRID_FIRST, r, GRID_FIRST)
+    rows.append(("Carb_Check_ConvYears", r))
+    r += 1
+    for t in (CAVEAT_METHOD, CAVEAT_STEEP, CAVEAT_LOW):
+        w.note(r, t, LABEL_COL)
+        r += 1
+    return r
