@@ -74,6 +74,26 @@ class StylesTests(unittest.TestCase):
         with self.assertRaises(KeyError):
             self.st.get("calc", "nope")
 
+    def test_new_roles(self):
+        for r in ("nav_link", "tile_label", "tile", "flag"):
+            self.assertIsNotNone(self.st.get(r))
+        for num in ("eur", "tco2e", "pct"):
+            self.assertIsNotNone(self.st.get("tile", num))
+
+    def test_dashboard_print(self):
+        import openpyxl
+        wb, buf = new_workbook()
+        ws = wb.add_worksheet("Dashboard")
+        ws.write_number(0, 0, 1)
+        layout.dashboard_print(ws, 40, 12)
+        wb.close()
+        buf.seek(0)
+        sh = openpyxl.load_workbook(buf)["Dashboard"]
+        self.assertTrue(sh.print_area)
+        self.assertTrue(sh.sheet_properties.pageSetUpPr.fitToPage)
+        self.assertIn(sh.page_setup.fitToHeight, (None, 1))  # 1 is the OOXML default, omitted
+        self.assertEqual(sh.page_setup.orientation, "landscape")
+
     def test_cache(self):
         self.assertIs(self.st.get("calc", "eur"), self.st.get("calc", "eur"))
 

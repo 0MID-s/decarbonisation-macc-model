@@ -84,6 +84,7 @@ ROLES = (
     "status_sourced", "status_assumption", "synthetic_banner",
     "legend_input", "legend_calc", "legend_link", "legend_selector",
     "legend_assumption", "legend_ok", "legend_err", "check_ok", "check_err",
+    "nav_link", "tile_label", "tile", "flag",
 )
 
 _BASE = {"font_name": "Arial", "font_size": 10, "valign": "vcenter"}
@@ -128,6 +129,13 @@ def _role_props(role):
         "legend_err": dict(box, font_color=P["err_font"], bg_color=P["err_fill"], pattern=1),
         "check_ok": {"font_color": P["ok_font"], "bg_color": P["ok_fill"]},
         "check_err": {"font_color": P["err_font"], "bg_color": P["err_fill"]},
+        "nav_link": {"font_color": P["accent"], "underline": 1},
+        "tile_label": {"font_color": P["index_font"], "italic": True,
+                       "text_wrap": True, "align": "center"},
+        "tile": {"bold": True, "font_size": 16, "center_across": True,
+                 "valign": "vcenter"},
+        "flag": {"bold": True, "align": "center", "border": 1,
+                 "border_color": "#BFBFBF"},
     }
     return table[role]
 

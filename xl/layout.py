@@ -90,3 +90,13 @@ def setup_sheet(ws, kind, *, freeze_row, freeze_col, header_last_row=2):
     for first, last, width in COLUMN_WIDTHS[kind]:
         ws.set_column(first, last, width)
     ws.freeze_panes(freeze_row, freeze_col)
+
+
+def dashboard_print(ws, last_row, last_col):
+    """One-page A4 landscape print setup for the Dashboard (D-10).
+    The only place a print area is set."""
+    ws.print_area(0, 0, last_row, last_col)
+    ws.set_landscape()
+    ws.set_paper(9)
+    ws.fit_to_pages(1, 1)
+    ws.center_horizontally()
