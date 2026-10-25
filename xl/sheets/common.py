@@ -107,6 +107,7 @@ _UNIT_ROLES = {
     "fraction": "factor",
     "abs tolerance (currency units)": "general",
     "abs tolerance (currency units per tonne)": "general",
+    "tCO2e per measure": "tco2e",
 }
 
 
