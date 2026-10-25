@@ -128,10 +128,11 @@ class TornadoTests(unittest.TestCase):
     def _check(self, driver, low_kw, high_kw):
         s = _s()
         row = _row(s, driver)
+        lk, hk = dict(low_kw), dict(high_kw)
         _close(self, row.npv_low, full_recompute_npv(
-            INPUTS, MB, CE, OFF, **low_kw))
+            INPUTS, MB, lk.pop("scenario", CE), OFF, **lk))
         _close(self, row.npv_high, full_recompute_npv(
-            INPUTS, MB, CE, OFF, **high_kw))
+            INPUTS, MB, hk.pop("scenario", CE), OFF, **hk))
         _close(self, row.swing, abs(row.npv_high - row.npv_low))
 
     def test_rate(self):
@@ -244,7 +245,8 @@ class StateAndNoteTests(unittest.TestCase):
         self.assertNotEqual(n["led_life_low"], n["led_life_high"])
 
     def test_no_xl_qa_import(self):
-        src = open(sr.__file__).read()
+        with open(sr.__file__) as fh:
+            src = fh.read()
         for line in src.splitlines():
             self.assertFalse(line.startswith(
                 ("from xl", "import xl", "from qa", "import qa")))
