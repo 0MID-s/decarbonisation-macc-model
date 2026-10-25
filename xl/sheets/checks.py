@@ -3,7 +3,7 @@
 Every existing owner check is linked exactly once, wrapped in IFERROR so that a
 broken input shows FALSE (and the master "ERROR"), never an error value. No
 check is recomputed here. Group flags and counts feed Chk_Master and
-Chk_FailCount. Plan 05-04 adds the Dashboard-dependent checks to groups 5 and 6.
+Chk_FailCount. Plan 05-04 adds the Dashboard-dependent checks to groups 5 and 6 (CUSTOM).
 """
 from xl.layout import col_letter, setup_sheet
 from xl.sheets.common import get_or_add, write_title_band
@@ -100,7 +100,30 @@ SELECTORS = (
 )
 
 
+# Dashboard-dependent checks (plan 05-04): name -> (formula, description,
+# name of the Dashboard cell the row links to). They are calculated here.
+CUSTOM = {
+    "Chk_TileVsMACC": (
+        "=IFERROR(ABS(Dash_AbatedSel-MACC_TotalAbatement)<="
+        "COUNT(MACC_Chart_Width)*Const_MACCRoundTol,FALSE)",
+        "Dashboard abatement tile equals the MACC width total (MACC widths "
+        "are rounded to whole tonnes; tolerance Const_MACCRoundTol per "
+        "measure)", "Dash_AbatedSel"),
+    "Chk_ShareInRange": (
+        "=IFERROR(AND(Dash_Share>=0,Dash_Share<=1),FALSE)",
+        "Share of Scope 1+2 abated is between 0 and 1", "Dash_Share"),
+    "Chk_BasisExact": (
+        "=IFERROR(OR(Dash_AbatedSel=M_Total_tLB,Dash_AbatedSel=M_Total_tMB),"
+        "FALSE)",
+        "Bookkeeping check: the selected-basis abatement equals exactly the "
+        "LB total or the MB total, never their sum (companion to the "
+        "build-time lint guarantee)", "Dash_AbatedSel"),
+}
+
+
 def _describe(name):
+    if name in CUSTOM:
+        return CUSTOM[name][1]
     if name in DESC:
         return DESC[name]
     parts = name.split("_")  # M_Check_<K>_<suffix>
@@ -141,8 +164,9 @@ def _groups(measure_checks):
           "Sens_Check_LevBase", "Sens_Check_Reconcile",
           "Sens_Check_CarbonPV", "Sens_Check_Torn"]),
         ("5. Abatement-method reconciliation",
-         per_measure("Annuity") + per_measure("BreakEven")),
-        ("6. LB/MB never summed", None),
+         per_measure("Annuity") + per_measure("BreakEven")
+         + ["Chk_TileVsMACC", "Chk_ShareInRange"]),
+        ("6. LB/MB never summed", ["Chk_BasisExact"]),
         ("7. Exposure integrity", list(EXPO_CHECKS)),
         ("8. Selector validity", [s[0] for s in SELECTORS]),
     ]
@@ -152,7 +176,7 @@ def build_checks(wb, styles, cells, dataset, cfg, out):
     measure_checks = list(out["measures"].check_names)
     groups = _groups(measure_checks)
     listed = [n for _, ns in groups if ns for n in ns
-              if not n.startswith("Chk_Sel_")]
+              if not n.startswith("Chk_")]
     for n in listed:
         if n not in cells.names:
             raise ValueError("Checks: owner check %s is not a defined name" % n)
@@ -187,12 +211,11 @@ def build_checks(wb, styles, cells, dataset, cfg, out):
         head = r
         r += 1
         rows = []
-        if names:
-            for n in names:
-                rows.append((n, r))
-                r += 1
-        else:
-            rows.append((None, r))
+        for n in names:
+            rows.append((n, r))
+            r += 1
+        if title.startswith("6."):
+            rows.append((None, r))  # text row, after the Boolean rows
             r += 1
         plan.append((title, head, rows))
 
@@ -206,7 +229,8 @@ def build_checks(wb, styles, cells, dataset, cfg, out):
         for c in range(2, 6):
             cells.blank(ws, head, c, sec)
         if names:
-            first, last = rows[0][1] + 1, rows[-1][1] + 1
+            bool_rows = [row for n, row in rows if n]
+            first, last = bool_rows[0] + 1, bool_rows[-1] + 1
             rng = "$D$%d:$D$%d" % (first, last)
             cells.formula(ws, head, 6, "=AND(%s)" % rng, flag, value=True)
             cells.formula(ws, head, 7, "=COUNTIF(%s,FALSE)" % rng, flag,
@@ -227,7 +251,12 @@ def build_checks(wb, styles, cells, dataset, cfg, out):
             cells.text(ws, row, 2, _describe(name) if not name.startswith(
                 "Chk_Sel_") else dict((s[0], s[3]) for s in SELECTORS)[name],
                        text)
-            if name.startswith("Chk_Sel_"):
+            if name in CUSTOM:
+                f, _desc, src = CUSTOM[name]
+                sheet, cell = cells.target_of(src)
+                cells.formula(ws, row, 3, f, calc, value=True)
+                cells.define_name(name, "=%s!$D$%d" % (SHEET, row + 1))
+            elif name.startswith("Chk_Sel_"):
                 sel, lst = next((s[1], s[2]) for s in SELECTORS
                                 if s[0] == name)
                 f = "=IFERROR(ISNUMBER(MATCH(%s,%s,0)),FALSE)" % (sel, lst)
