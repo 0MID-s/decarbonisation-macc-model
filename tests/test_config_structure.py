@@ -22,6 +22,7 @@ EXPECTED = {
     "Const_MWh_per_GO": 1, "Const_IRR_Guess": 0.1,
     "Const_CheckTolMoney": 1, "Const_IRRCheckTolMoney": 10,
     "Const_AnnuityTolRel": 0.05, "Const_AnnuityTolAbs": 1,
+    "Const_MACCRoundTol": 0.5,
 }
 MONEY = re.compile(r"€|EUR|USD|US\$|GBP")
 
@@ -29,7 +30,7 @@ MONEY = re.compile(r"€|EUR|USD|US\$|GBP")
 class ConstantsTests(unittest.TestCase):
     def test_values(self):
         by = {r.id: r for r in inputs_constants.INPUTS}
-        self.assertEqual(len(by), 22)
+        self.assertEqual(len(by), 23)
         for k, v in EXPECTED.items():
             self.assertAlmostEqual(by[k].published_value, v, delta=1e-12)
 
@@ -63,6 +64,21 @@ class AggregatorTests(unittest.TestCase):
         self.assertEqual(ids.count("Const_None"), 1)
         self.assertEqual(ids.count("Time_FirstYear"), 1)
         self.assertEqual(len(ids), len(set(ids)))
+
+
+class VersionLogTests(unittest.TestCase):
+    def test_version_log(self):
+        import datetime
+        from config.build_config import VERSION_LOG
+        self.assertEqual(len(VERSION_LOG), 4)
+        dates = [datetime.date.fromisoformat(d) for _v, d, _c in VERSION_LOG]
+        self.assertEqual(dates, sorted(dates))
+        for v, _d, c in VERSION_LOG:
+            self.assertTrue(v and c)
+
+    def test_macc_tol_is_assumption(self):
+        r = {x.id: x for x in INPUTS}["Const_MACCRoundTol"]
+        self.assertEqual(r.status, Status.ASSUMPTION)
 
 
 if __name__ == "__main__":

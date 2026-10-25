@@ -33,3 +33,15 @@ BUILD = BuildConfig(
     macc_technique="A",
     dropdown_source="name",
 )
+
+# Version log source for the ReadMe (D-13): (version, ISO date, change).
+VERSION_LOG = (
+    ("0.1.0-phase1", "2026-10-18",
+     "Phase 1: foundation, security controls and rendering spikes"),
+    ("0.2.0-phase2", "2026-10-20",
+     "Phase 2: real data, company baseline, rates and carbon price paths"),
+    ("0.3.0-phase3", "2026-10-25",
+     "Phase 3: measures engine, basis selector and MACC"),
+    ("0.4.0-phase4", "2026-10-25",
+     "Phase 4: carbon cost exposure, scenarios and sensitivity"),
+)

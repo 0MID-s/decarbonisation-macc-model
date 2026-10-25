@@ -88,6 +88,12 @@ INPUTS = (
     _c("Const_AnnuityTolAbs", "Annuity reconciliation tolerance, absolute",
        1.0, "abs tolerance (currency units per tonne)",
        "Absolute floor for the annuity reconciliation for costs near zero"),
+    _c("Const_MACCRoundTol", "MACC rounding tolerance per measure", 0.5,
+       "tCO2e per measure",
+       "Analyst assumption: MACC chart widths are rounded to whole tonnes "
+       "(ROUND to 0 decimals in xl/macc.py), so the chart total can differ "
+       "from the unrounded Measures total by up to half a tonne per "
+       "measure; used only by the Dashboard tile vs MACC total check"),
 )  # type: Tuple[InputRecord, ...]
 
 SOURCES = ()
