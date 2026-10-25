@@ -9,6 +9,7 @@ import openpyxl
 
 import build
 from checkmodel.exposure_reference import STATES, compute_exposure
+from checkmodel.outputs_reference import compute_outputs
 from checkmodel.measures_reference import DEFAULT_STATE
 from checkmodel.sensitivity_reference import compute_sensitivity
 from qa.formula_eval import compare_cached, evaluate_names
@@ -42,10 +43,27 @@ class TwelveStateQA(unittest.TestCase):
                 names = (CHECKS + ["Expo_DiscBAU_Sel", "Expo_DiscAvoided_Sel",
                                    "Sens_PortfolioNPV", "Expo_Avoided_RC"]
                          + ["Expo_PStat1_%s" % k for k in keys]
-                         + ["Expo_PStat2_%s" % k for k in keys])
+                         + ["Expo_PStat2_%s" % k for k in keys]
+                         + ["Chk_Master", "Chk_FailCount", "Dash_NPVFin",
+                            "Dash_NPVIncl", "Dash_AbatedSel", "Dash_Share",
+                            "Dash_CostNotActing", "Dash_CostAvoided",
+                            "Dash_CostNotActingDisc"])
                 out = evaluate_names(data, names)
                 for c in CHECKS:
                     self.assertIs(out[c], True, c)
+                self.assertEqual(out["Chk_Master"], "OK")
+                self.assertEqual(out["Chk_FailCount"], 0)
+                oref = compute_outputs(ds.inputs, basis, scen, direct_ets)
+                for nm, val in (
+                        ("Dash_NPVFin", oref.npv_fin),
+                        ("Dash_NPVIncl", oref.npv_incl),
+                        ("Dash_AbatedSel", oref.abated_sel),
+                        ("Dash_Share", oref.share),
+                        ("Dash_CostNotActing", oref.cum_bau_sel),
+                        ("Dash_CostAvoided", oref.cum_avoided_sel),
+                        ("Dash_CostNotActingDisc", oref.disc_bau_sel)):
+                    self.assertAlmostEqual(
+                        out[nm], val, delta=1e-9 * max(1.0, abs(val)), msg=nm)
                 sel = ref.scen[ref.sel_key]
                 self.assertAlmostEqual(
                     out["Expo_DiscBAU_Sel"], sel.disc["total_bau"],
