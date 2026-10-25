@@ -657,6 +657,8 @@ class FormulaEvaluator(object):
         try:
             out = _unwrap(eval(compile(py, "<formula>", "eval"), env, {}))
             if isinstance(out, _Err):
+                if getattr(self, "allow_err", False):
+                    return out  # intermediate cell holds an Excel error value
                 raise FormulaEvalError("%s in %s" % (out.code, formula))
             return _scalar(out, "the formula result")
         except FormulaEvalError:
@@ -705,7 +707,7 @@ def compare_cached(data, rel_tol=1e-9, overrides=None):
     return bad, n
 
 
-def evaluate_names(data, names, overrides=None):
+def evaluate_names(data, names, overrides=None, tolerate_errors=False):
     """Evaluate defined names from their formulas under selector overrides.
 
     A single-cell name returns its scalar value; a range name returns the
@@ -713,6 +715,10 @@ def evaluate_names(data, names, overrides=None):
     """
     wf = openpyxl.load_workbook(io.BytesIO(data))
     ev = FormulaEvaluator(wf, overrides)
+    # tolerate_errors: intermediate cells may hold Excel error values (as Excel
+    # does for a pasted invalid selector); IFERROR in the formulas swallows
+    # them. A requested name that ends in an error still raises.
+    ev.allow_err = tolerate_errors
     out = {}
     for n in names:
         sheet, ref = ev.name_target(n)
@@ -720,4 +726,6 @@ def evaluate_names(data, names, overrides=None):
             out[n] = list(ev._ref(sheet, ref))
         else:
             out[n] = ev.value(sheet, ref)
+            if isinstance(out[n], _Err):
+                raise FormulaEvalError("%s in name %s" % (out[n].code, n))
     return out
