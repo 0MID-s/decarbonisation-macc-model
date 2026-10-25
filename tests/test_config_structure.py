@@ -70,7 +70,7 @@ class VersionLogTests(unittest.TestCase):
     def test_version_log(self):
         import datetime
         from config.build_config import VERSION_LOG
-        self.assertEqual(len(VERSION_LOG), 4)
+        self.assertEqual(len(VERSION_LOG), 5)
         dates = [datetime.date.fromisoformat(d) for _v, d, _c in VERSION_LOG]
         self.assertEqual(dates, sorted(dates))
         for v, _d, c in VERSION_LOG:

@@ -240,7 +240,7 @@ class ProvenanceTests(unittest.TestCase):
                                      "%s imports %s" % (path, n))
 
     def test_build_config_fixed(self):
-        self.assertEqual(BUILD.created, datetime.datetime(2026, 10, 17, 0, 0, 0))
+        self.assertEqual(BUILD.created, datetime.datetime(2026, 10, 25, 0, 0, 0))
         self.assertEqual(BUILD.timeline_years[0], 2026)
         self.assertEqual(BUILD.timeline_years[-1], 2055)
 

@@ -24,10 +24,10 @@ class BuildConfig:
 BUILD = BuildConfig(
     title="Maison Veritas - Decarbonisation Business Case and Carbon Cost Exposure Model",
     subject="Illustrative model, fictitious company, real public data",
-    author="Model generator",
+    author="0MID-s",
     company="Maison Veritas (fictitious)",
-    version="0.2.0-phase2",
-    created=datetime.datetime(2026, 10, 17, 0, 0, 0),
+    version="1.0.0",
+    created=datetime.datetime(2026, 10, 25, 0, 0, 0),
     timeline_start=2026,
     timeline_end=2055,
     macc_technique="A",
@@ -44,6 +44,9 @@ VERSION_LOG = (
      "Phase 3: measures engine, basis selector and MACC"),
     ("0.4.0-phase4", "2026-10-25",
      "Phase 4: carbon cost exposure, scenarios and sensitivity"),
+    ("1.0.0", "2026-10-25",
+     "Outputs, hardening and interview pack: Dashboard, Disclosure, Checks, "
+     "ReadMe, finished Cover and Notes"),
 )
 
 # Excel verification record shown on Notes. Only what has happened so far
