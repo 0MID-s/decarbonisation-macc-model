@@ -35,6 +35,7 @@ from xl.sheets.checks import build_checks
 from xl.sheets.carbon import build_carbon
 from xl.sheets.common import get_or_add
 from xl.sheets.cover import build_cover
+from xl.sheets.disclosure import build_disclosure
 from xl.sheets.dashboard import build_dashboard
 from xl.sheets.exposure import build_exposure
 from xl.sheets.inputs import build_inputs
@@ -100,8 +101,8 @@ NOTES_SHEETS = ("Notes",)
 # Plans 05-03 to 05-06 insert Checks, Dashboard, ReadMe and Disclosure here at
 # their D-23 positions. Worksheets are pre-created in this order.
 REAL_ORDER = ("Cover", "ReadMe", "Dashboard", "Inputs", "Sources", "Baseline", "Rates", "Carbon",
-              "Measures", "MACC", "Exposure", "Sensitivity", "Checks", "Notes",
-              "Lists")
+              "Measures", "MACC", "Exposure", "Sensitivity", "Disclosure",
+              "Checks", "Notes", "Lists")
 
 
 def main_sheets(dataset):
@@ -133,6 +134,7 @@ def _build_main(wb, styles, cells, dataset, cfg):
                                                out)
         out["dashboard"] = build_dashboard(wb, styles, cells, dataset, cfg,
                                            out)
+        build_disclosure(wb, styles, cells, dataset, cfg)
         out["checks"] = build_checks(wb, styles, cells, dataset, cfg, out)
         build_readme(wb, styles, cells, dataset, cfg)
         build_cover(wb, styles, cells, dataset, cfg, list(main_sheets(dataset)))

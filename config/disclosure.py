@@ -17,6 +17,8 @@ STRENGTHS = ("Direct", "Supports", "Not covered")
 STATUSES = ("Verified", "Verified (amendment summary only)",
             "Partly verified, flagged", "Reference not verified", "n/a")
 
+NONE = "\u2013"  # en dash: no value (a plain hyphen is a formula prefix)
+
 FLAG_1563 = ("OJ number checked via EUR-Lex listing and two secondary "
              "sources; EUR-Lex page not machine-readable")
 
@@ -141,41 +143,41 @@ _V = "Verified (amendment summary only)"
 
 DISCLOSURE_ROWS = (
     # ---- IFRS S2 -------------------------------------------------------
-    _s2("14(a)(ii)", "-", "Say what direct mitigation actions are taken or "
+    _s2("14(a)(ii)", NONE, "Say what direct mitigation actions are taken or "
         "planned", ("MACC_Rank_Measure", "M_Portfolio_NPV"), "Supports",
         "Six candidate measures, not committed actions"),
-    _s2("14(a)(iv)", "-", "Disclose any climate transition plan with its key "
+    _s2("14(a)(iv)", NONE, "Disclose any climate transition plan with its key "
         "assumptions and dependencies", ("MACC_Rank_Tier",), "Supports",
         "No board-approved plan exists for a representative firm"),
-    _s2("14(a)(v)", "-", "Explain how any stated climate targets will be "
+    _s2("14(a)(v)", NONE, "Explain how any stated climate targets will be "
         "reached", ("MACC_TotalAbatement",), "Supports",
         "The model sets no target"),
-    _s2("14(b)", "-", "Describe how these activities are or will be "
+    _s2("14(b)", NONE, "Describe how these activities are or will be "
         "resourced", ("M_HP_Capex", "M_PV_Capex"), "Supports",
         "Planned appraisal capex only"),
-    _s2("14(c)", "-", "Report progress against previously disclosed plans",
+    _s2("14(c)", NONE, "Report progress against previously disclosed plans",
         (), "Not covered", "First-period model, no prior plan"),
-    _s2("15(a)", "-", "Current financial effects of climate risks and "
+    _s2("15(a)", NONE, "Current financial effects of climate risks and "
         "opportunities on position, performance and cash flows", (),
         "Not covered", "The model is forward-looking"),
-    _s2("15(b), 16(c)-(d)", "-", "Anticipated effects on position, "
+    _s2("15(b), 16(c)-(d)", NONE, "Anticipated effects on position, "
         "performance and cash flows over time, including investment and "
         "funding plans",
         ("M_Portfolio_NPV", "Sens_PortfolioNPV", "Expo_CumBAU_Sel",
          "Expo_CumAvoided_Sel"), "Supports",
         "Pre-tax, ex-VAT, 10-year exposure window, no balance-sheet items"),
-    _s2("16(a)-(b)", "-", "Effects in the reporting period and items at risk "
+    _s2("16(a)-(b)", NONE, "Effects in the reporting period and items at risk "
         "of material adjustment next period", (), "Not covered",
         "Needs actual accounts"),
-    _s2("17-21", "-", "A single amount or a range is allowed; use supportable "
+    _s2("17-21", NONE, "A single amount or a range is allowed; use supportable "
         "information; explain if quantification is omitted", ("Sens_Grid",),
         "Supports", "Model supplies ranges and sensitivities; the omission "
         "logic is a reporter judgement"),
-    _s2("22(a)", "-", "Assess the resilience of strategy to climate change, "
+    _s2("22(a)", NONE, "Assess the resilience of strategy to climate change, "
         "the uncertainties and the capacity to adapt",
         ("Sens_RankStab_AnyChanged", "Sens_Grid"), "Supports",
         "Quantitative stress only; no strategic narrative"),
-    _s2("22(b)", "-", "Describe the scenario analysis: scenarios, sources, "
+    _s2("22(b)", NONE, "Describe the scenario analysis: scenarios, sources, "
         "time horizon and key assumptions", ("Sel_Scenario",), "Supports",
         "NGFS Low, Central, High map to Current Policies, NDCs and Net Zero "
         "2050; transition scenarios only, no physical"),
@@ -229,7 +231,7 @@ DISCLOSURE_ROWS = (
     _s2("33-36", "E1-4 (30-34)", "Climate targets: metric, scope, period and "
         "base year, including any Scope 3 targets", (), "Not covered",
         "The model sets no targets, so Scope 3 targets are also absent"),
-    _s2("6 (governance)", "-", "Governance bodies "
+    _s2("6 (governance)", NONE, "Governance bodies "
         "overseeing climate-related risks and opportunities", (),
         "Not covered", "Governance is outside the model",
         "Reference not verified",
@@ -290,7 +292,7 @@ DISCLOSURE_ROWS = (
         "climate opportunities", ("M_Portfolio_NPV",), "Supports",
         "NPV, not an asset or revenue amount"),
     # ---- assurance ---------------------------------------------------------
-    DisclosureRow("IFRS S2 / ESRS", "-", "-", "Assurance of the "
+    DisclosureRow("IFRS S2 / ESRS", NONE, NONE, "Assurance of the "
                   "sustainability statement is outside the disclosure "
                   "content of both standards", (), "Not covered",
                   "Outside this model", "n/a",

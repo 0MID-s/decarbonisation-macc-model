@@ -194,7 +194,9 @@ def build_dashboard(wb, styles, cells, dataset, cfg, out):
              "Open the bridge on the Exposure sheet"),
             ("Sensitivity tornado", tsheet, tcell,
              "Open the tornado on the Sensitivity sheet"),
-            ("Checks", "Checks", "A1", "Open the Checks sheet"))):
+            ("Checks", "Checks", "A1", "Open the Checks sheet"),
+            ("Disclosure map", "Disclosure", "A1",
+             "Open the IFRS S2 and ESRS E1 mapping"))):
         cells.internal_link(ws, n + 1 + k, 3, sh, ce, txt, nav, tip)
     cells.text(ws, n + 6, 3, "Source of every figure: the sheet named in each "
                "link; inputs and sources are on Inputs and Sources.", note)

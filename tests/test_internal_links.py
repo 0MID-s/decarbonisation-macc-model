@@ -6,6 +6,7 @@ import unittest
 import openpyxl
 
 import build
+from config.security import host_allowed
 
 CELL = re.compile(r"^[A-Z]{1,3}[0-9]{1,7}$")
 
@@ -22,7 +23,12 @@ class InternalLinkTests(unittest.TestCase):
                     if hl is None:
                         continue
                     n += 1
-                    self.assertIsNone(hl.target, (ws.title, c.coordinate))
+                    if hl.target:
+                        # external links: only the Disclosure register, https
+                        # on an allowlisted host
+                        self.assertEqual(ws.title, "Disclosure", c.coordinate)
+                        self.assertTrue(host_allowed(hl.target), hl.target)
+                        continue
                     self.assertTrue(hl.location, (ws.title, c.coordinate))
                     sheet, sep, addr = hl.location.partition("!")
                     self.assertEqual(sep, "!", hl.location)

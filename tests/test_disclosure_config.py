@@ -59,7 +59,7 @@ class DisclosureConfig(unittest.TestCase):
             self.assertIn(topic, text)
         assur = [r for r in nc if "assurance" in r.requirement.lower()]
         self.assertEqual(assur[0].status, "n/a")
-        self.assertEqual(assur[0].reference, "-")
+        self.assertEqual(assur[0].reference, d.NONE)
 
     def test_paraphrase_bound(self):
         for r in d.DISCLOSURE_ROWS:
