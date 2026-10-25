@@ -15,7 +15,7 @@ from xl.charts import macc_area_chart, macc_column_chart, nice_step
 from xl.layout import setup_sheet
 from xl.macc import (
     LinkedRow, MaccGeometry, write_macc_c_block, write_macc_linked_block)
-from xl.sheets.common import write_title_band
+from xl.sheets.common import get_or_add, write_title_band
 from xl.styles import SheetKind
 
 SHEET = "MACC"
@@ -92,7 +92,7 @@ def build_macc(wb, styles, cells, dataset, cfg, layouts):
     ref = compute_measures(dataset.inputs, *selector_state(dataset))
     n = len(ref.measures)
     g = GEOMETRY
-    ws = wb.add_worksheet(SHEET)
+    ws = get_or_add(wb, SHEET)
     setup_sheet(ws, SheetKind.CALC, freeze_row=5, freeze_col=2,
                 header_last_row=2)
     write_title_band(cells, styles, ws, "MACC", PURPOSE, NOTE, LAST_COL)

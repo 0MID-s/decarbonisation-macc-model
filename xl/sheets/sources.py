@@ -1,6 +1,6 @@
 """Sources sheet: one row per source ID, URLs as plain text (DATA-02, D-13)."""
 from xl.layout import setup_sheet
-from xl.sheets.common import write_synthetic_banner, write_title_band
+from xl.sheets.common import get_or_add, write_synthetic_banner, write_title_band
 from xl.styles import SheetKind
 
 SOURCE_COLUMNS = ("Source ID", "Publisher", "Document or dataset", "URL",
@@ -10,7 +10,7 @@ LAST_COL = 7
 
 
 def build_sources(wb, styles, cells, dataset, cfg):
-    ws = wb.add_worksheet("Sources")
+    ws = get_or_add(wb, "Sources")
     setup_sheet(ws, SheetKind.SOURCES, freeze_row=5, freeze_col=2,
                 header_last_row=HEADER_ROW)
     write_title_band(

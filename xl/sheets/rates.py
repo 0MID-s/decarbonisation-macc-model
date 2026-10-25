@@ -11,7 +11,7 @@ from checkmodel.rates_reference import (
     discount_rate_real, eur2025_conversions, fisher_real, hicp_ratio,
     restate_eur2025)
 from xl.layout import LABEL_COL, UNIT_COL, setup_sheet
-from xl.sheets.common import num_role_for_unit, write_title_band
+from xl.sheets.common import get_or_add, num_role_for_unit, write_title_band
 from xl.styles import SheetKind
 
 LAST_COL = 8
@@ -28,7 +28,7 @@ def build_rates(wb, styles, cells, dataset, cfg):
     by_id = {r.id: r for r in dataset.inputs}
     conv = eur2025_conversions(dataset.inputs)
     years = sorted(set(y for _, y in conv))
-    ws = wb.add_worksheet("Rates")
+    ws = get_or_add(wb, "Rates")
     setup_sheet(ws, SheetKind.CALC, freeze_row=5, freeze_col=3,
                 header_last_row=4)
     write_title_band(

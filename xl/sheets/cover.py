@@ -1,6 +1,7 @@
 """Cover shell: title, legend, contents, version (D-02)."""
 from xl.layout import setup_sheet
 from xl.sheets.common import (
+    get_or_add,
     FICTITIOUS_NOTE, disclaimer_text, write_synthetic_banner, write_title_band)
 from xl.styles import SheetKind
 
@@ -18,7 +19,7 @@ LAST_COL = 8
 
 
 def build_cover(wb, styles, cells, dataset, cfg, sheet_names):
-    ws = wb.add_worksheet("Cover")
+    ws = get_or_add(wb, "Cover")
     setup_sheet(ws, SheetKind.COVER, freeze_row=3, freeze_col=1)
     write_title_band(cells, styles, ws, cfg.company, cfg.title, cfg.subject,
                      LAST_COL)

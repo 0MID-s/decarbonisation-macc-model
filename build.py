@@ -31,6 +31,7 @@ from xl.selector import direct_ets_state, selector_state  # noqa: F401 (re-expor
 from xl.cells import CellWriter, FormulaRecord, UnsafeCellError
 from xl.sheets.baseline import build_baseline
 from xl.sheets.carbon import build_carbon
+from xl.sheets.common import get_or_add
 from xl.sheets.cover import build_cover
 from xl.sheets.exposure import build_exposure
 from xl.sheets.inputs import build_inputs
@@ -87,14 +88,24 @@ MAIN_SHEETS_BASE = ("Cover", "Inputs", "Sources", "Lists")
 REAL_DATA_SHEETS = ("Baseline", "Rates", "Carbon", "Measures", "MACC",
                    "Exposure", "Sensitivity")
 NOTES_SHEETS = ("Notes",)
+# Tab order of the real workbook (D-23, restricted to sheets that exist now).
+# Plans 05-03 to 05-06 insert Checks, Dashboard, ReadMe and Disclosure here at
+# their D-23 positions. Worksheets are pre-created in this order.
+REAL_ORDER = ("Cover", "Inputs", "Sources", "Baseline", "Rates", "Carbon",
+              "Measures", "MACC", "Exposure", "Sensitivity", "Notes", "Lists")
 
 
 def main_sheets(dataset):
+    if not dataset.synthetic:
+        return REAL_ORDER
     return (MAIN_SHEETS_BASE + (() if dataset.synthetic else REAL_DATA_SHEETS)
             + NOTES_SHEETS)
 
 
 def _build_main(wb, styles, cells, dataset, cfg):
+    if not dataset.synthetic:
+        for name in main_sheets(dataset):
+            get_or_add(wb, name)
     build_cover(wb, styles, cells, dataset, cfg, list(main_sheets(dataset)))
     inputs = build_inputs(wb, styles, cells, dataset, cfg)
     build_sources(wb, styles, cells, dataset, cfg)

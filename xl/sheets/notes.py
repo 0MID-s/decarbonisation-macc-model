@@ -11,7 +11,7 @@ from xl.layout import LABEL_COL, setup_sheet
 from xl.sheets.carbon import (
     EUA_NOTE, NGFS_ATTRIBUTION, NGFS_LICENCE, NGFS_MODIFIED,
     ngfs_model_text)
-from xl.sheets.common import disclaimer_text, write_title_band
+from xl.sheets.common import get_or_add, disclaimer_text, write_title_band
 from xl.styles import SheetKind
 
 LAST_COL = 8
@@ -305,7 +305,7 @@ def carbon_notes(sources):
 
 
 def build_notes(wb, styles, cells, dataset, cfg):
-    ws = wb.add_worksheet("Notes")
+    ws = get_or_add(wb, "Notes")
     setup_sheet(ws, SheetKind.NOTES, freeze_row=4, freeze_col=1)
     write_title_band(
         cells, styles, ws, "Notes",

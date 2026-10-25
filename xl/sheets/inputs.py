@@ -9,6 +9,7 @@ from xl.layout import (
 )
 from xl.selector import direct_ets_state, selector_state
 from xl.sheets.common import (
+    get_or_add,
     num_role_for_unit, write_legend_row, write_synthetic_banner,
     write_title_band,
 )
@@ -94,7 +95,7 @@ def _selector_band(ws, styles, cells, state=("Market-based", "Central"),
 
 
 def build_inputs(wb, styles, cells, dataset, cfg):
-    ws = wb.add_worksheet("Inputs")
+    ws = get_or_add(wb, "Inputs")
     setup_sheet(ws, SheetKind.INPUTS, freeze_row=FIRST_RECORD_ROW, freeze_col=3,
                 header_last_row=HEADER_ROW)
     write_title_band(

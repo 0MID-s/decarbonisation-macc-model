@@ -3,6 +3,15 @@ import re
 
 from xl.styles import Styles
 
+def get_or_add(wb, name):
+    """Return the worksheet called name, creating it if it does not exist yet.
+    build.py pre-creates sheets in tab order; builders then fetch them."""
+    for ws in wb.worksheets():
+        if ws.get_name() == name:
+            return ws
+    return wb.add_worksheet(name)
+
+
 FICTITIOUS_NOTE = ("Maison Veritas is a fictitious company. All figures are "
                    "built from cited public data or labelled analyst "
                    "assumptions.")

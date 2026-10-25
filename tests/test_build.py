@@ -128,9 +128,15 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(scan_xlsx_bytes(data), [])
         wb = openpyxl.load_workbook(io.BytesIO(data))
         self.assertEqual(wb.sheetnames,
-                         ["Cover", "Inputs", "Sources", "Lists", "Baseline", "Rates", "Carbon", "Measures", "MACC", "Exposure", "Sensitivity", "Notes"])
+                         list(build.REAL_ORDER))
+        self.assertEqual(wb.sheetnames[-1], "Lists")
         self.assertEqual(list(build.main_sheets(build.load_dataset("config"))),
                          wb.sheetnames)
+
+    def test_synthetic_order_unchanged(self):
+        data, _ = build.build_bytes("main", build.load_dataset("fixtures"))
+        wb = openpyxl.load_workbook(io.BytesIO(data))
+        self.assertEqual(wb.sheetnames, ["Cover", "Inputs", "Sources", "Lists", "Notes"])
 
     def test_fixtures_main_has_no_baseline(self):
         data, _ = build.build_bytes("main", build.load_dataset("fixtures"))

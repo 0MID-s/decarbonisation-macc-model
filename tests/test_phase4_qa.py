@@ -80,6 +80,7 @@ class TwelveStateQA(unittest.TestCase):
         self.assertLess(i("MACC"), i("Exposure"))
         self.assertLess(i("Exposure"), i("Sensitivity"))
         self.assertLess(i("Sensitivity"), i("Notes"))
+        self.assertEqual(tuple(names), build.REAL_ORDER)
 
 
 if __name__ == "__main__":

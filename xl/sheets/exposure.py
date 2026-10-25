@@ -17,7 +17,7 @@ from xl.layout import (
     LABEL_COL, TIMELINE_FIRST_COL, TIMELINE_LAST_COL, UNIT_COL, col_letter,
     setup_sheet)
 from xl.selector import direct_ets_state, selector_state
-from xl.sheets.common import write_title_band
+from xl.sheets.common import get_or_add, write_title_band
 from xl.sheets.rowwriter import RowWriter
 from config.measures_catalog import MEASURES
 from xl.charts import BridgeLayout, bridge_chart
@@ -62,7 +62,7 @@ def build_exposure(wb, styles, cells, dataset, cfg, layouts):
     gas_r, dsl_r, s5_r = (ms_rows["gasA"] + 1, ms_rows["dslA"] + 1,
                           ms_rows["s5"] + 1)
 
-    ws = wb.add_worksheet(SHEET)
+    ws = get_or_add(wb, SHEET)
     setup_sheet(ws, SheetKind.CALC, freeze_row=5, freeze_col=3,
                 header_last_row=HDR_ROW)
     write_title_band(

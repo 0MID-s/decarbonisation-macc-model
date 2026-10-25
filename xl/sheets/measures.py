@@ -19,7 +19,7 @@ from config.measures_catalog import COUNTERFACTUAL_NOTE, MEASURES
 from xl.layout import (
     LABEL_COL, TIMELINE_FIRST_COL, TIMELINE_LAST_COL, UNIT_COL, col_letter,
     setup_sheet)
-from xl.sheets.common import write_title_band
+from xl.sheets.common import get_or_add, write_title_band
 from xl.styles import SheetKind, apply_bool_check_format
 
 SHEET = "Measures"
@@ -188,7 +188,7 @@ def build_measures(wb, styles, cells, dataset, cfg, layouts):
     if ny != NYEARS:
         raise ValueError("timeline length mismatch")
 
-    ws = wb.add_worksheet(SHEET)
+    ws = get_or_add(wb, SHEET)
     setup_sheet(ws, SheetKind.CALC, freeze_row=5, freeze_col=3,
                 header_last_row=HDR_ROW)
     write_title_band(

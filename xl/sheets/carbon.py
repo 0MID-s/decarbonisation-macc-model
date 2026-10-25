@@ -14,7 +14,7 @@ from checkmodel.rates_reference import restate_eur2025
 from xl.layout import (
     LABEL_COL, TIMELINE_FIRST_COL, TIMELINE_LAST_COL, UNIT_COL, col_for_year,
     col_letter, setup_sheet)
-from xl.sheets.common import num_role_for_unit, write_title_band
+from xl.sheets.common import get_or_add, num_role_for_unit, write_title_band
 from xl.styles import SheetKind, apply_bool_check_format, apply_check_format
 from checkmodel.exposure_reference import compute_exposure
 from xl.selector import direct_ets_state, selector_state
@@ -83,7 +83,7 @@ def build_carbon(wb, styles, cells, dataset, cfg, inputs_layout):
     factor = eur_route_factor(v, unit_year)
     model_text = ngfs_model_text(dataset.sources)
 
-    ws = wb.add_worksheet("Carbon")
+    ws = get_or_add(wb, "Carbon")
     setup_sheet(ws, SheetKind.CALC, freeze_row=5, freeze_col=3,
                 header_last_row=HDR_ROW)
     write_title_band(

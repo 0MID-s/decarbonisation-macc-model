@@ -19,7 +19,7 @@ from xl.layout import (
     setup_sheet)
 from xl.selector import direct_ets_state, selector_state
 from xl.charts import TornadoLayout, tornado_chart
-from xl.sheets.common import write_title_band
+from xl.sheets.common import get_or_add, write_title_band
 from xl.sheets.rowwriter import RowWriter
 from xl.styles import SheetKind, apply_bool_check_format
 
@@ -67,7 +67,7 @@ def build_sensitivity(wb, styles, cells, dataset, cfg, layouts):
     blocks = layouts["measures"].blocks
     idx_r = ms_rows["idx"] + 1
 
-    ws = wb.add_worksheet(SHEET)
+    ws = get_or_add(wb, SHEET)
     setup_sheet(ws, SheetKind.CALC, freeze_row=5, freeze_col=3,
                 header_last_row=HDR_ROW)
     write_title_band(cells, styles, ws, "Sensitivity", PURPOSE, TITLE_NOTE,

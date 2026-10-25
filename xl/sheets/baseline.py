@@ -9,7 +9,7 @@ from typing import Tuple
 
 from checkmodel.baseline_reference import compute_baseline, model_values
 from xl.layout import LABEL_COL, UNIT_COL, setup_sheet
-from xl.sheets.common import write_title_band
+from xl.sheets.common import get_or_add, write_title_band
 from xl.styles import SheetKind, apply_check_format
 
 LB_COL = 3
@@ -140,7 +140,7 @@ class _Sheet(object):
 def build_baseline(wb, styles, cells, dataset, cfg, inputs_layout):
     v = model_values(dataset.inputs)
     x = compute_baseline(v)
-    ws = wb.add_worksheet("Baseline")
+    ws = get_or_add(wb, "Baseline")
     setup_sheet(ws, SheetKind.CALC, freeze_row=5, freeze_col=3,
                 header_last_row=4)
     write_title_band(
