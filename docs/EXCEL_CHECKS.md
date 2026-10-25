@@ -158,3 +158,19 @@ rendering was not part of the user's check and will be re-checked at GATE-B
   rank-stability indicator showing "Same".
 - Verdict (verbatim): "looks good"
 - Findings: none.
+
+### Re-run after code-review fixes (Phase 4)
+
+- Date: 2026-10-25, after commits ebf677e..7d67200 (review warnings WR-01 to
+  WR-08: per-year grid factor in the internal carbon price lens, per-unit
+  pass-through tornado row, text fixes, hardened Excel harness with strict
+  blank comparison).
+- Method: `.venv/bin/python tools/excel_check.py`, Excel for Mac, all 12 states.
+- Result: 12,145 formula cells per state (one new helper cell), 0 mismatches
+  and 0 error values in every state. The stricter blank-versus-zero comparison
+  (WR-08) exposed no hidden mismatches.
+- `dist/maison_veritas.xlsx` was unchanged by the run (sha256
+  `e4822ca03be4a23bca85d8c8676e26bcb3f5faf14206c3265e10e66af93d9019`), and no
+  check folders were left behind.
+- The user's visual verdict above was given before these fixes. The fixes do
+  not touch the bridge or tornado chart definitions.
