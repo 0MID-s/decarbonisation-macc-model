@@ -110,3 +110,41 @@ after the user's check (cell K18, right of chart A), using the same technique
 above the largest cumulative "Do first" abatement over all six states. Its
 rendering was not part of the user's check and will be re-checked at GATE-B
 (Excel for the web) and in the final review.
+
+## Phase 4 (Exposure and Sensitivity), Excel desktop
+
+- Date: 2026-10-25
+- Excel: Excel for Mac 16.114.1, driven by osascript (JXA) addressed to Microsoft Excel only
+- Deliverable: dist/maison_veritas.xlsx, sha256
+  `173559767165b4c13e0b1dc642e9a42ab1ebb450aa450273e217d58ccb06182d`
+  (unchanged after the run; only throwaway copies were opened)
+- Method: `.venv/bin/python tools/excel_check.py` (tracked script, with
+  `tools/excel_recalc.js`). For each of the 12 states
+  (exposure_reference.STATES) it builds the workbook of that state, writes a
+  throwaway copy to `dist/excel-check-<timestamp>/check.xlsx`, sets
+  Inputs!G8 (scenario), G9 (basis) and G10 (direct ETS Off/On) in Excel, runs a
+  full recalculation, reads the numeric value of every formula cell on every
+  sheet (never displayed text) and compares with the cached reference values at
+  relative tolerance 1e-7 (absolute 1e-9 near zero). Error values are counted
+  separately. The copy is closed without saving and deleted; no data_raw file
+  is opened. Unit tests for the harness need no Excel
+  (`tests/test_excel_check.py`).
+
+| Basis | Scenario | Direct ETS | Formula cells | Mismatches | Error values |
+|---|---|---|---|---|---|
+| Location-based | Low | Off | 12,144 | 0 | 0 |
+| Location-based | Low | On | 12,144 | 0 | 0 |
+| Location-based | Central | Off | 12,144 | 0 | 0 |
+| Location-based | Central | On | 12,144 | 0 | 0 |
+| Location-based | High | Off | 12,144 | 0 | 0 |
+| Location-based | High | On | 12,144 | 0 | 0 |
+| Market-based | Low | Off | 12,144 | 0 | 0 |
+| Market-based | Low | On | 12,144 | 0 | 0 |
+| Market-based | Central | Off | 12,144 | 0 | 0 |
+| Market-based | Central | On | 12,144 | 0 | 0 |
+| Market-based | High | Off | 12,144 | 0 | 0 |
+| Market-based | High | On | 12,144 | 0 | 0 |
+
+- Excel-only findings: none. No workbook fix was needed. All throwaway copies
+  and check folders were deleted afterwards.
+- Excel for the web: still open, GATE-B (Phase 5).
