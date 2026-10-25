@@ -103,6 +103,7 @@ class SensitivityResult:
     pv_pt_gross: float
     pv_pt_embedded: float
     pv_pt_net: float
+    pv_pt_net_unit: float
     pv_capex: float
     pv_ev: float
     pv_go_cost: float
@@ -232,6 +233,10 @@ def compute_sensitivity(inputs, basis, scenario, direct_ets, overrides=None):
                                           for n in rng])
     pv_pt_emb = ex.mef * ptr * ex.embedded_eua * _pv(df, elec_saved)
     pv_pt_net = pv_pt_gross - pv_pt_emb
+    # net pass-through PV per unit of pass-through rate (no division by ptr)
+    pv_pt_net_unit = ex.mef * (_pv(df, [elec_saved[n] * sel.ets1[n]
+                                        for n in rng])
+                               - ex.embedded_eua * _pv(df, elec_saved))
 
     # ---- capex / EV helpers ------------------------------------------
     def kfac(m):
@@ -280,7 +285,7 @@ def compute_sensitivity(inputs, basis, scenario, direct_ets, overrides=None):
     p = pct("Sens_Torn_EVPct")
     raw["ev"] = (-p, p, npv_incl + p * pv_ev, npv_incl - p * pv_ev)
     plow = pct("Sens_Torn_PTRLow")
-    raw["ptr"] = (plow, ptr, npv_incl + (plow / ptr - 1.0) * pv_pt_net,
+    raw["ptr"] = (plow, ptr, npv_incl + (plow - ptr) * pv_pt_net_unit,
                   npv_incl)
     p = pct("Sens_Torn_MEFPct")
     raw["mef"] = (-p, p, npv_incl - p * pv_pt_net, npv_incl + p * pv_pt_net)
@@ -370,7 +375,8 @@ def compute_sensitivity(inputs, basis, scenario, direct_ets, overrides=None):
         t_stat_saved=ts, t_fleet_saved=tf, portfolio_cf=cf, pv_elec=pv_elec,
         pv_gas=pv_gas, pv_diesel=pv_dsl, pv_go=pv_go, pv_energy=pv_energy,
         pv_ets2_gross=pv_ets2_gross, pv_pt_gross=pv_pt_gross,
-        pv_pt_embedded=pv_pt_emb, pv_pt_net=pv_pt_net, pv_capex=pv_capex,
+        pv_pt_embedded=pv_pt_emb, pv_pt_net=pv_pt_net,
+        pv_pt_net_unit=pv_pt_net_unit, pv_capex=pv_capex,
         pv_ev=pv_ev, pv_go_cost=pv_go, grid_axis=axis, grid=grid,
         rate_axis=raxis, rate_npvs=rnpvs, tornado=tuple(rows),
         tornado_order=order, rank_stab=tuple(stab),

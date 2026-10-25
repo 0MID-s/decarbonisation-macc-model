@@ -226,6 +226,11 @@ def build_sensitivity(wb, styles, cells, dataset, cfg, layouts):
            "M_DF)", ref.pv_pt_embedded, "eur")
     scalar("Sens_PV_PTNet", "PV of pass-through avoided (net)", "EUR",
            "=Sens_PV_PTGross-Sens_PV_PTEmbedded", ref.pv_pt_net, "eur")
+    scalar("Sens_PV_PTNetPerUnit", "PV of pass-through avoided (net), per "
+           "unit of pass-through rate", "EUR",
+           "=Expo_MEF*(SUMPRODUCT(Sens_ElecSaved,Expo_PETS1_Sel,M_DF)"
+           "-Expo_EmbeddedEUA*SUMPRODUCT(Sens_ElecSaved,M_DF))",
+           ref.pv_pt_net_unit, "eur")
     w.note(nxt(), NOTE_GROSS, LABEL_COL)
     check("Sens_Check_CarbonPV", "Check: gross carbon PVs less the embedded "
           "part equal the PV of avoided carbon cost",
@@ -515,7 +520,7 @@ def _tornado(ws, wb, cells, styles, w, ref, nxt, reg, check, rows, ny, idx_r,
                "=%s-Sens_Torn_EVPct*Sens_PV_EV" % P, pct),
         "ptr": ("pass-through rate", "=Sens_Torn_PTRLow", "=Pass_PTR",
                 "=Pass_PTR",
-                "=%s+(Sens_Torn_PTRLow/Pass_PTR-1)*Sens_PV_PTNet" % P,
+                "=%s+(Sens_Torn_PTRLow-Pass_PTR)*Sens_PV_PTNetPerUnit" % P,
                 "=%s" % P, pct),
         "mef": ("factor change", "=-Sens_Torn_MEFPct", 0.0,
                 "=Sens_Torn_MEFPct",

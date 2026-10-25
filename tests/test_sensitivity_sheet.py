@@ -49,12 +49,14 @@ class SensitivitySheet(unittest.TestCase):
                  "Sens_PVCarbon", "Sens_PV_Elec", "Sens_PV_Gas",
                  "Sens_PV_Diesel", "Sens_PV_Energy", "Sens_PV_GO",
                  "Sens_PV_ETS2Gross", "Sens_PV_PTGross",
-                 "Sens_PV_PTEmbedded", "Sens_PV_PTNet"]
+                 "Sens_PV_PTEmbedded", "Sens_PV_PTNet",
+                 "Sens_PV_PTNetPerUnit"]
         out = evaluate_names(self.data, names)
         for n, want in zip(names, (
                 r.npv_incl, r.npv_fin, r.pv_carbon, r.pv_elec, r.pv_gas,
                 r.pv_diesel, r.pv_energy, r.pv_go, r.pv_ets2_gross,
-                r.pv_pt_gross, r.pv_pt_embedded, r.pv_pt_net)):
+                r.pv_pt_gross, r.pv_pt_embedded, r.pv_pt_net,
+                r.pv_pt_net_unit)):
             self._close(out[n], want, n)
         rate = evaluate_names(self.data, ["Sens_RateNPV_%d" % i
                                           for i in range(1, 6)])
@@ -221,6 +223,16 @@ class TornadoAndRankStability(SensitivitySheet):
         self.assertEqual(out["Sens_RankStab_Flags"], want)
         chk = evaluate_names(self.data, ["Sens_Check_All"], overrides=ov)
         self.assertIs(chk["Sens_Check_All"], True)
+
+    def test_zero_pass_through_does_not_break_tornado(self):
+        """WR-02: the PTR tornado row must not divide by Pass_PTR."""
+        ov = {self._target("Pass_PTR"): 0.0}
+        out = evaluate_names(self.data, ["Sens_Check_Torn", "Sens_Check_All",
+                                         "Sens_PV_PTNetPerUnit"],
+                             overrides=ov)
+        self.assertIs(out["Sens_Check_Torn"], True)
+        self.assertIs(out["Sens_Check_All"], True)
+        self.assertIsInstance(out["Sens_PV_PTNetPerUnit"], float)
 
     def test_location_based_contract_ranked_last(self):
         ov = {self._target("Sel_Basis"): "Location-based"}
