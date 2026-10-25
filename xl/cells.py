@@ -23,6 +23,8 @@ class UnsafeCellError(ValueError):
 
 
 _CELL_LIKE = re.compile(r"^([A-Za-z]{1,3})([0-9]+)$")
+_SHEET_OK = re.compile(r"^[A-Za-z0-9_]+$")
+_ADDR_OK = re.compile(r"^\$?[A-Z]{1,3}\$?[0-9]+$")
 _R1C1_LIKE = re.compile(r"^[Rr]([0-9]*)([Cc]([0-9]*))?$|^[Cc][0-9]*$")
 
 
@@ -99,6 +101,26 @@ class CellWriter(object):
         if string is not None and (is_injection_string(string) or _has_bad_control(string)):
             raise UnsafeCellError("unsafe link display text")
         _check_rc(ws.write_url(row, col, url, fmt, string), "write_url", row, col)
+
+    def internal_link(self, ws, row, col, sheet, cell, string, fmt=None, tip=None):
+        """Navigation link to a cell in this workbook. Only 'internal:Sheet!A1'
+        targets are written; HYPERLINK() stays banned."""
+        if not isinstance(sheet, str) or not _SHEET_OK.match(sheet):
+            raise UnsafeCellError("unsafe link sheet name: %r" % (sheet,))
+        if not isinstance(cell, str) or not _ADDR_OK.match(cell):
+            raise UnsafeCellError("unsafe link cell address: %r" % (cell,))
+        for t in (string, tip):
+            if t is not None and (is_injection_string(t) or _has_bad_control(t)):
+                raise UnsafeCellError("unsafe link display text")
+        target = "internal:%s!%s" % (sheet, cell.replace("$", ""))
+        args = (row, col, target, fmt, string) + ((tip,) if tip is not None else ())
+        _check_rc(ws.write_url(*args), "write_url", row, col)
+
+    def target_of(self, name):
+        """(sheet, first cell) of a registered defined name."""
+        ref = self.names[name]
+        sheet, _, addr = ref.lstrip("=").partition("!")
+        return sheet.strip("'"), addr.split(":")[0].replace("$", "")
 
     def blank(self, ws, row, col, fmt):
         _check_rc(ws.write_blank(row, col, None, fmt), "write_blank", row, col)

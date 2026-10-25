@@ -196,6 +196,11 @@ def scan_xlsx_bytes(data):
                 tag = _local(el.tag)
                 if tag in FORBIDDEN_SHEET_TAGS:
                     findings.append("sheet %s contains %s" % (n, tag))
+                elif tag == "hyperlink":
+                    loc = el.get("location", "")
+                    low = loc.lower()
+                    if "[" in loc or "://" in low or "file:" in low or "\\" in loc:
+                        findings.append("hyperlink location not allowed in %s: %s" % (n, loc[:60]))
                 elif tag in FORMULA_TAGS:
                     findings.extend(_formula_findings(n, el.text or ""))
                 elif tag == "is":

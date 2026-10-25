@@ -187,5 +187,60 @@ class LinkNameValidationTests(unittest.TestCase):
         cw.blank(ws, 0, 0, wb.add_format({"bold": True}))
 
 
+class InternalLinkTests(unittest.TestCase):
+    def _loc(self, wb_bytes_fn):
+        import openpyxl
+        wb, ws, cw = make()
+        wb_bytes_fn(ws, cw)
+        wb.close()
+        wb.filename.seek(0)
+        book = openpyxl.load_workbook(wb.filename)
+        return book["Calc"]
+
+    def test_link_written(self):
+        sh = self._loc(lambda ws, cw: cw.internal_link(ws, 0, 0, "Calc", "A1", "Go to Calc"))
+        h = sh["A1"].hyperlink
+        self.assertEqual(h.location, "Calc!A1")
+        self.assertEqual(sh["A1"].value, "Go to Calc")
+        self.assertFalse(h.target)
+
+    def test_dollars_stripped(self):
+        sh = self._loc(lambda ws, cw: cw.internal_link(ws, 0, 0, "Calc", "$B$5", "x"))
+        self.assertEqual(sh["A1"].hyperlink.location, "Calc!B5")
+
+    def test_bad_sheet_and_cell(self):
+        wb, ws, cw = make()
+        for sheet in ("A B", "A!B", "Read-me", "'X'"):
+            with self.subTest(sheet=sheet), self.assertRaises(UnsafeCellError):
+                cw.internal_link(ws, 0, 0, sheet, "A1", "x")
+        for cell in ("B", "5", "A1:B2", "ZZZZ1"):
+            with self.subTest(cell=cell), self.assertRaises(UnsafeCellError):
+                cw.internal_link(ws, 0, 0, "Calc", cell, "x")
+
+    def test_bad_display(self):
+        wb, ws, cw = make()
+        for s in ("=1+1", "+X", "@SUM", "a\x01b"):
+            with self.subTest(s=s), self.assertRaises(UnsafeCellError):
+                cw.internal_link(ws, 0, 0, "Calc", "A1", s)
+
+    def test_target_of(self):
+        wb, ws, cw = make()
+        cw.names["Foo"] = "=Exposure!$G$78"
+        cw.names["Bar"] = "=Exposure!$D$10:$G$10"
+        self.assertEqual(cw.target_of("Foo"), ("Exposure", "G78"))
+        self.assertEqual(cw.target_of("Bar"), ("Exposure", "D10"))
+        with self.assertRaises(KeyError):
+            cw.target_of("Nope")
+
+    def test_no_external_rel(self):
+        import zipfile
+        wb, ws, cw = make()
+        cw.internal_link(ws, 0, 0, "Calc", "A1", "x")
+        wb.close()
+        wb.filename.seek(0)
+        z = zipfile.ZipFile(wb.filename)
+        self.assertFalse([n for n in z.namelist() if "worksheets/_rels" in n])
+
+
 if __name__ == "__main__":
     unittest.main()

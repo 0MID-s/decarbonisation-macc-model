@@ -317,5 +317,19 @@ class UrlBypassTests(unittest.TestCase):
         self.assertEqual(scan_xlsx_bytes(d), [])
 
 
+class InternalLocationTests(unittest.TestCase):
+    def test_internal_ok(self):
+        d = build(lambda wb, ws: ws.write_url("D1", "internal:Sheet1!A1"), chart=False)
+        self.assertEqual(scan_xlsx_bytes(d), [])
+
+    def test_bad_locations(self):
+        for loc in ("[1]Sheet1!A1", "file:x", "a://b", "a\\b"):
+            with self.subTest(loc=loc):
+                d = build(lambda wb, ws: ws.write_url("D1", "internal:Sheet1!A1"), chart=False)
+                d = mutate(d, replace={"xl/worksheets/sheet1.xml": sub(
+                    b'location="Sheet1!A1"', ('location="%s"' % loc).encode())})
+                self.assertTrue(has(scan_xlsx_bytes(d), "hyperlink location"), loc)
+
+
 if __name__ == "__main__":
     unittest.main()
