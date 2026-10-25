@@ -50,7 +50,7 @@ def format_value(x, rule):
     raise ValueError(rule)
 
 
-_NUM = r"-?\d[\d,]*(?:\.\d+)?"
+_NUM = r"-?\d(?:,\d{3}|\d)*(?:\.\d+)?"
 _TOKEN = re.compile(
     r"(?:-?EUR\s*" + _NUM + r"|-?€\s*" + _NUM + r"|" + _NUM + r"\s*%|" + _NUM + r"(?:\s*tCO2e)?)")
 _REFS = re.compile(r"\b(?:E1-\d+|S2-\d+|\d+\([a-z]\)(?:\([ivx]+\))?|v\d+(?:\.\d+)+|\d+\.\d+\.\d+)")
