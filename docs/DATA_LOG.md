@@ -501,3 +501,36 @@ Executor session 2026-10-21. New raw files were fetched only through `tools/fetc
 - Compressed-air share: Fraunhofer ISI about 10% (MEDIUM confidence), anchor of an analyst assumption.
 - EV charger cost and van maintenance saving: no source found; analyst assumptions.
 - LED and frequency-controller lifetimes: still not stated in any source read (see the Src_RVOEML lifetime search); labelled analyst assumptions.
+
+## Phase 4 (carbon exposure and sensitivity)
+
+Evidence for the Phase 4 inputs in `config/inputs_exposure.py`. Retrieved or checked 2026-10-25.
+
+### Pass_CCGT_Eff (DEA Technology Data for Generation of Electricity and District Heating, version 0019)
+
+- File: `data_raw/Src_DEAElectricity/technology_data_for_el_and_dh_alldatalong.xlsx`, sha256 `edfdb4c773f779c8b9d4e47b42004f09f0dd13e23fa3ef3de9f61fb24fdeb992` (unchanged from the Phase 3 entry; Intro!A3 reads "Version 0019"). Parsed with `.venv/bin/python -W ignore -I tools/parse_xlsx.py` (data only, never opened in Excel). The alldata_long sheet of this file already carries the CCGT rows, so the separate version 0019 datasheet (research hash afb78ded...) was not fetched.
+- Address: sheet `alldata_long`, technology sheet label "05 Gas turb. CC, steam extract." (gas turbine, combined cycle - extraction - natural gas - large), row "Electrical efficiency (net, annual average)", rows 1202-1209. Central (ctrl) values: 2015 **0.55** (row 1202), 2020 **0.56** (row 1203), 2030 **0.58** (row 1204), 2050 0.60 (row 1205). Uncertainty 2020: lower 0.52, upper 0.58 (rows 1206, 1208). Live value equals the research value 0.56; no difference.
+- Basis note: the efficiency basis is assumed LHV (research A1, not stated in the row). If the basis were GCV the marginal emission factor would be 0.326 tCO2/MWh_e instead of 0.361 (0.20199 / 0.56 = 0.3607), which lies inside the Sens_Torn_MEFPct tornado range.
+
+### Searched, not found
+
+- Official Commission ETS2 price projection: none found (the Commission ETS2 page carries only the EUR 45, 2020-prices stability threshold); no cross-check row (D-03). ETS2 follows the same market-anchored convergence logic as ETS1.
+- Belgian/CWE price-setting share of gas plants: not found from ACER, Elia, Ember or JRC; fallback = derived CCGT marginal emission factor, labelled upper-end (D-09).
+
+### Literature cited as text (read via search summaries only; not downloaded)
+
+- PTR (carbon cost pass-through to power prices), D-10: Fabra and Reguant, American Economic Review 104(9), 2014, pp. 2872-2899 (pass-through above 80%, about 100% at peak); Sijm, Neuhoff and Chen, Climate Policy 6, 2006, pp. 49-72 (60-100%). A 2026 preprint on Italy suggests lower pass-through. The Pass_PTR row is a labelled analyst assumption; the papers are not Source rows.
+- ICP (internal carbon price), D-12: High-Level Commission on Carbon Prices (2017), USD 40-80 by 2020 and USD 50-100 by 2030; CDP 2021 analysis, median about USD 25, about 10% above USD 100. The Carbon_ICP_Level row is a labelled analyst assumption.
+
+### Src_CBAM (European Commission, DG Taxation and Customs Union), Carbon_CBAM_InScope
+
+- CBAM as of 2026-10-25: Annex I goods of Regulation (EU) 2023/956 are cement, iron and steel, aluminium, fertilisers, hydrogen and electricity; the definitive regime applies from 1 January 2026; Regulation (EU) 2025/2083 introduces a 50 t threshold; proposal COM(2025) 989 would extend scope to downstream steel and aluminium products; no chemicals or polymers proposal found. The Annex I list was read from taxation-customs.ec.europa.eu, not from EUR-Lex (D-15).
+- Consequence: C20 household and chemical products are not Annex I goods, so Carbon_CBAM_InScope = 0; indirect exposure is only via imported hydrogen or fertiliser inputs.
+
+### ETS1/ETS2 exclusivity (D-14)
+
+- Annex III / Art. 30a exclusivity between ETS1 and ETS2 was read only from Commission slides; its status in the primary legal text was not read (research A4).
+
+### Allowlist
+
+- Allowlist unchanged in Phase 4: literature is cited as text in assumption rationales (no aeaweb.org, worldbank.org, cdp.net). `config/security.py` is not modified.
