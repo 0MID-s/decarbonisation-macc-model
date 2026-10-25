@@ -27,7 +27,7 @@ from config.validate import validate_provenance
 from qa.lint import LintError, lint_or_raise
 from qa.readback import ReadbackError, verify_workbook
 from qa.scan import ScanError, part_names, scan_or_raise
-from xl.selector import selector_state  # noqa: F401 (re-export)
+from xl.selector import direct_ets_state, selector_state  # noqa: F401 (re-export)
 from xl.cells import CellWriter, FormulaRecord, UnsafeCellError
 from xl.sheets.baseline import build_baseline
 from xl.sheets.carbon import build_carbon
@@ -62,6 +62,8 @@ class Dataset:
     reference_price: Optional[float] = None
     # Test-only (basis, scenario); None = deliverable default (T-03-24).
     selector_state: Optional[Tuple[str, str]] = None
+    # Test-only Off/On; None = deliverable default (Off)
+    direct_ets_state: Optional[str] = None
 
 
 def load_dataset(name):

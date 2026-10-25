@@ -25,6 +25,8 @@ from config.measures_catalog import MEASURES
 BASES = ("Location-based", "Market-based")
 SCENARIOS_UI = ("Low", "Central", "High")
 DEFAULT_STATE = ("Market-based", "Central")
+ONOFF = ("Off", "On")
+DEFAULT_DIRECT_ETS = "Off"
 
 Cost = Union[float, str]
 

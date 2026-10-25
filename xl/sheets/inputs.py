@@ -7,7 +7,7 @@ from xl.layout import (
     LABEL_COL, TIMELINE_FIRST_COL, TIMELINE_LAST_COL, col_for_year, col_letter,
     setup_sheet,
 )
-from xl.selector import selector_state
+from xl.selector import direct_ets_state, selector_state
 from xl.sheets.common import (
     num_role_for_unit, write_legend_row, write_synthetic_banner,
     write_title_band,
@@ -52,12 +52,13 @@ def _notes(r):
     return text if text.strip() else "–"
 
 
-def _selector_band(ws, styles, cells, state=("Market-based", "Central")):
-    """Model selectors (D-26, OUT-04): Sel_Scenario at G8, Sel_Basis at G9."""
+def _selector_band(ws, styles, cells, state=("Market-based", "Central"),
+                   toggle="Off"):
+    """Model selectors (D-26, OUT-04): Sel_Scenario at G8, Sel_Basis at G9, Sel_DirectETS at G10."""
     sec = styles.get("section")
     cells.text(ws, 6, LABEL_COL,
-               "Model selectors (choose here; every Measures and MACC "
-               "result follows)", sec)
+               "Model selectors (choose here; every Measures, MACC, "
+               "Exposure and Sensitivity result follows)", sec)
     for c in range(LABEL_COL + 1, LAST_COL + 1):
         cells.blank(ws, 6, c, sec)
     rows = (
@@ -69,6 +70,12 @@ def _selector_band(ws, styles, cells, state=("Market-based", "Central")):
          "(GHG Protocol Scope 2 Guidance)", state[0], "=List_Basis",
          "Select basis", "Default Market-based (CSRD/ESRS headline basis); "
          "location-based is one click away"),
+        (9, "Sel_DirectETS", "Direct EU ETS1 on stationary fuels (default "
+         "Off: average fuel load about 3 MW is far below the 20 MW rated "
+         "thermal input threshold of Directive 2003/87/EC Annex I; see the "
+         "Baseline thermal-load row)", toggle, "=List_OnOff",
+         "Select Off/On", "Default Off. On = stationary fuels pay the ETS1 "
+         "price instead of ETS2 (never both)"),
     )
     for r, name, desc, value, source, title, note in rows:
         cells.text(ws, r, 1, name, styles.get("label"))
@@ -100,7 +107,8 @@ def build_inputs(wb, styles, cells, dataset, cfg):
     if dataset.synthetic:
         write_synthetic_banner(cells, styles, ws, 3, LAST_COL)
     write_legend_row(cells, styles, ws, 4)
-    _selector_band(ws, styles, cells, selector_state(dataset))
+    _selector_band(ws, styles, cells, selector_state(dataset),
+                   direct_ets_state(dataset))
 
     hdr = styles.get("header")
     for i, name in enumerate(INPUT_COLUMNS):
