@@ -26,6 +26,17 @@ class DisclosureConfig(unittest.TestCase):
             self.assertIn(r.strength, ("Direct", "Supports", "Not covered"), r)
             self.assertIn(r.status, d.STATUSES, r)
 
+    def test_flagged_reference_never_bare_verified(self):
+        # WR-04: a row is never more verified than its source
+        flagged = [r for r in d.DISCLOSURE_ROWS
+                   if r.ref_id in d.STD_REFS
+                   and d.STD_REFS[r.ref_id].status_note == d.FLAG_1563]
+        self.assertGreaterEqual(len(flagged), 1)
+        for r in flagged:
+            self.assertEqual(r.status, "Partly verified, flagged", r.reference)
+        self.assertIn("Partly verified, flagged",
+                      {r.status for r in d.DISCLOSURE_ROWS})
+
     def test_ref_ids(self):
         for r in d.DISCLOSURE_ROWS:
             if r.status == "n/a":

@@ -131,9 +131,14 @@ def _s2(ref, set1, req, names, strength, gap, status="Verified",
 
 
 def _es(ref, set1, req, names, strength, gap):
+    # WR-04: the paragraph content was read, but the legal-basis reference
+    # (2026/1563) carries FLAG_1563, so the row status is never stronger
+    # than its source's status.
     return DisclosureRow("ESRS E1 (rev.)", ref, set1, req, tuple(names),
-                         strength, gap, "Verified",
-                         "EFRAG Knowledge Hub rendering of the adopted text",
+                         strength, gap, "Partly verified, flagged",
+                         "paragraph content read on the EFRAG Knowledge Hub "
+                         "rendering of the adopted text; regulation number "
+                         "flagged (see Std_ESRS_Rev2026)",
                          "Std_ESRS_Rev2026")
 
 
