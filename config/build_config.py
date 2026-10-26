@@ -64,5 +64,9 @@ EXCEL_RECORD = (
     "Phase 5 GATE-B on 2026-10-26 in Excel for Mac 16.114.1: 12 states "
     "recalculated in Excel desktop with no mismatches; master flag OK. Visual "
     "review approved by the user in Excel desktop.",
+    "Post-review rebuild on 2026-10-26 (code review fixes CR-01 to WR-04, "
+    "including new labels and checks): 12 states recalculated in Excel "
+    "desktop with no mismatches; master flag OK. Re-verified by script only; "
+    "the user's visual approval was of the build before these fixes.",
     "Excel for the web: not verified.",
 )
