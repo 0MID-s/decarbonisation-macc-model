@@ -20,6 +20,7 @@ from dataclasses import dataclass
 from typing import Callable, Dict, Optional, Sequence, Tuple
 
 import xlsxwriter
+from xlsxwriter.utility import xl_cell_to_rowcol
 
 from config.build_config import BUILD
 from config.schema import InputRecord, ProvenanceError, Source
@@ -193,15 +194,27 @@ def build_bytes(target, dataset, extra_builders=()):
         raise ReadbackError(problems)
     if "Chk_Master" in cells.names:
         # Evaluate from the formulas; never trust the cached "OK" (T-05-08).
-        value = evaluate_names(data, ["Chk_Master"])["Chk_Master"]
+        got = evaluate_names(data, ["Chk_Master", "Chk_FailCount"])
+        value = got["Chk_Master"]
         if value != "OK":
             raise BuildGateError("Chk_Master is %r in the built state" % (value,))
-        cached = [r.value for r in registry
-                  if r.sheet == "Checks" and r.text.startswith('=IF(AND(G')]
-        if cached != ["OK"]:
-            raise BuildGateError("cached Chk_Master is %r, expected 'OK'"
-                                 % (cached,))
+        # The cached values come from the reference model (WR-01), so they
+        # must agree with the formula evaluation.
+        for name in ("Chk_Master", "Chk_FailCount"):
+            cached = _cached_value(registry, cells.target_of(name))
+            if cached != [got[name]]:
+                raise BuildGateError(
+                    "cached %s is %r, formulas evaluate to %r"
+                    % (name, cached, got[name]))
     return data, registry
+
+
+def _cached_value(registry, target):
+    """Cached values of the formula records at a (sheet, "D5") target."""
+    sheet, cell = target
+    row, col = xl_cell_to_rowcol(cell.replace("$", ""))
+    return [r.value for r in registry
+            if r.sheet == sheet and r.row == row and r.col == col]
 
 
 def _write_atomic(out, data):

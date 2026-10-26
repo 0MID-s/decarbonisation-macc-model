@@ -22,6 +22,12 @@ ALLOWED = re.compile(
     r"|AND\(.*\)|COUNTIF\(.*,FALSE\)|SUM\(.*\)|IF\(AND\(.*\),\"OK\",\"ERROR\"\))$")
 
 
+def _as_bool(got):
+    """Owner text checks read "OK"/"ERROR"; the Checks row tests ="OK"."""
+    return dict((k, (v == "OK") if v in ("OK", "ERROR") else v)
+                for k, v in got.items())
+
+
 class ChecksSheet(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -129,6 +135,53 @@ class ChecksSheet(unittest.TestCase):
         got = evaluate_names(self.data, ["Chk_TileVsMACC"],
                              overrides={(sheet, addr): 1.0})
         self.assertIs(got["Chk_TileVsMACC"], False)
+
+    def test_cached_values_from_reference(self):
+        # WR-01: each status row caches the reference value, not a literal,
+        # and the inventory matches the reference model one to one.
+        from checkmodel.outputs_reference import compute_outputs
+        ref = compute_outputs(self.ds.inputs, "Market-based", "Central", "Off")
+        names = [n for n in ref.checks]
+        rows = [n for n in self.wb.defined_names
+                if CHECK_RE.match(n) and n not in AGG]
+        rows += [n for n in self.wb.defined_names if n.startswith("Chk_")
+                 and n not in ("Chk_Master", "Chk_FailCount")]
+        self.assertEqual(sorted(names), sorted(rows))
+        got = evaluate_names(self.data, names)
+        self.assertEqual(_as_bool(got), ref.checks)
+        # and the Checks status cells cache exactly those values
+        wbv = openpyxl.load_workbook(io.BytesIO(self.data), data_only=True)
+        cached = [c.value for row in wbv["Checks"].iter_rows(min_col=4,
+                                                             max_col=4)
+                  for c in row if isinstance(c.value, bool)]
+        self.assertEqual(len(cached), len(names))
+        self.assertEqual(cached, [True] * len(names))
+
+    def test_reference_matches_formulas_in_failing_state(self):
+        # WR-01: in a state where checks legitimately fail, the reference
+        # inventory and the workbook formulas agree name by name.
+        from checkmodel.outputs_reference import compute_outputs
+        ref = compute_outputs(self.ds.inputs, "Market-based", "Central", "Off",
+                              overrides={"Meas_PV_Size": 100000.0})
+        sheet, addr = self._addr("Meas_PV_Size")
+        names = list(ref.checks) + ["Chk_Master", "Chk_FailCount"]
+        got = evaluate_names(self.data, names,
+                             overrides={(sheet, addr): 100000.0})
+        self.assertEqual(got["Chk_Master"], ref.chk_master)
+        self.assertEqual(got["Chk_Master"], "ERROR")
+        self.assertEqual(got["Chk_FailCount"], ref.chk_fail_count)
+        got = _as_bool(got)
+        for n in ref.checks:
+            self.assertEqual(got[n], ref.checks[n], n)
+
+    def test_gate_compares_cached_with_evaluated(self):
+        # WR-01: the cached half of the gate can now fail.
+        with mock.patch.object(build, "evaluate_names",
+                               return_value={"Chk_Master": "OK",
+                                             "Chk_FailCount": 3}):
+            with self.assertRaises(build.BuildGateError) as cm:
+                build.build_bytes("main", self.ds)
+        self.assertIn("Chk_FailCount", str(cm.exception))
 
     def test_group6_text_row(self):
         hit = [c for row in self.ws.iter_rows(min_col=4, max_col=4)

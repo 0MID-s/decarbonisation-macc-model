@@ -4,8 +4,14 @@ Every existing owner check is linked exactly once, wrapped in IFERROR so that a
 broken input shows FALSE (and the master "ERROR"), never an error value. No
 check is recomputed here. Group flags and counts feed Chk_Master and
 Chk_FailCount. Plan 05-04 adds the Dashboard-dependent checks to groups 5 and 6 (CUSTOM).
+
+Cached values (WR-01): every status cell caches the reference value from
+checkmodel.outputs_reference.check_inventory; group flags, counts, the master
+and the fail count are derived from those, never written as literals.
 """
+from checkmodel.outputs_reference import compute_outputs
 from xl.layout import col_letter, setup_sheet
+from xl.selector import direct_ets_state, selector_state
 from xl.sheets.common import get_or_add, write_title_band
 from xl.sheets.exposure import CHECK_NAMES as EXPO_CHECKS
 from xl.sheets.sensitivity import CHECK_NAMES as SENS_CHECKS
@@ -194,6 +200,14 @@ def build_checks(wb, styles, cells, dataset, cfg, out):
     for n in measure_checks:
         if n not in listed:
             raise ValueError("Checks: measure check %s not grouped" % n)
+    basis, scenario = selector_state(dataset)
+    ref = compute_outputs(dataset.inputs, basis, scenario,
+                          direct_ets_state(dataset))
+    rows_all = [n for _, ns in groups for n in ns]
+    if sorted(rows_all) != sorted(ref.checks):
+        raise ValueError("Checks: reference inventory mismatch: %s" % sorted(
+            set(rows_all) ^ set(ref.checks)))
+    vals = ref.checks
 
     ws = get_or_add(wb, SHEET)
     setup_sheet(ws, SheetKind.CHECKS, freeze_row=8, freeze_col=0)
@@ -239,9 +253,11 @@ def build_checks(wb, styles, cells, dataset, cfg, out):
             bool_rows = [row for n, row in rows if n]
             first, last = bool_rows[0] + 1, bool_rows[-1] + 1
             rng = "$D$%d:$D$%d" % (first, last)
-            cells.formula(ws, head, 6, "=AND(%s)" % rng, flag, value=True)
+            g_ok = all(vals[n] for n in names)
+            g_fail = sum(1 for n in names if not vals[n])
+            cells.formula(ws, head, 6, "=AND(%s)" % rng, flag, value=g_ok)
             cells.formula(ws, head, 7, "=COUNTIF(%s,FALSE)" % rng, flag,
-                          value=0)
+                          value=g_fail)
             apply_bool_check_format(ws, styles, head, 6, head, 6)
             flag_cells.append("G%d" % (head + 1))
             count_cells.append("H%d" % (head + 1))
@@ -261,20 +277,20 @@ def build_checks(wb, styles, cells, dataset, cfg, out):
             if name in CUSTOM:
                 f, _desc, src = CUSTOM[name]
                 sheet, cell = cells.target_of(src)
-                cells.formula(ws, row, 3, f, calc, value=True)
+                cells.formula(ws, row, 3, f, calc, value=vals[name])
                 cells.define_name(name, "=%s!$D$%d" % (SHEET, row + 1))
             elif name.startswith("Chk_Sel_"):
                 sel, lst = next((s[1], s[2]) for s in SELECTORS
                                 if s[0] == name)
                 f = "=IFERROR(ISNUMBER(MATCH(%s,%s,0)),FALSE)" % (sel, lst)
                 sheet, cell = cells.target_of(sel)
-                cells.formula(ws, row, 3, f, calc, value=True)
+                cells.formula(ws, row, 3, f, calc, value=vals[name])
                 cells.define_name(name, "=%s!$D$%d" % (SHEET, row + 1))
             else:
                 f = ('=IFERROR(%s="OK",FALSE)' if name in TEXT_CHECKS
                      else "=IFERROR(%s,FALSE)") % name
                 sheet, cell = cells.target_of(name)
-                cells.formula(ws, row, 3, f, link, value=True)
+                cells.formula(ws, row, 3, f, link, value=vals[name])
             apply_bool_check_format(ws, styles, row, 3, row, 3)
             cells.internal_link(ws, row, 4, sheet, cell,
                                 "Go to %s!%s" % (sheet, cell), nav,
@@ -284,12 +300,12 @@ def build_checks(wb, styles, cells, dataset, cfg, out):
     cells.text(ws, r_master, 1, "Master check", lbl)
     cells.formula(ws, r_master, 3,
                   '=IF(AND(%s),"OK","ERROR")' % ",".join(flag_cells), flag,
-                  value="OK")
+                  value=ref.chk_master)
     cells.define_name("Chk_Master", "=%s!$D$%d" % (SHEET, r_master + 1))
     apply_check_format(ws, styles, r_master, 3, r_master, 3)
     cells.text(ws, r_fail, 1, "Failing checks", lbl)
     cells.formula(ws, r_fail, 3, "=SUM(%s)" % ",".join(count_cells), flag,
-                  value=0)
+                  value=ref.chk_fail_count)
     cells.define_name("Chk_FailCount", "=%s!$D$%d" % (SHEET, r_fail + 1))
     return {"master_cell": "D%d" % (r_master + 1),
             "fail_cell": "D%d" % (r_fail + 1),

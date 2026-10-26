@@ -10,10 +10,13 @@ Low = CP (Current Policies), Central = NDC, High = NZ50 (Net Zero 2050).
 from dataclasses import dataclass, field
 from typing import Dict, Tuple
 
+from checkmodel import appraisal as ap
 from checkmodel.baseline_reference import compute_baseline, model_values
+from checkmodel.carbon_reference import carbon_paths
 from checkmodel.exposure_reference import STATES, compute_exposure
 from checkmodel.macc_reference import _excel_round0
-from checkmodel.measures_reference import compute_measures
+from checkmodel.measures_reference import (BASES, ONOFF, SCENARIOS_UI,
+                                           compute_measures)
 from checkmodel.sensitivity_reference import compute_sensitivity
 from config.inputs import INPUTS
 
@@ -53,7 +56,8 @@ def compute_outputs(inputs, basis, scenario, direct_ets, overrides=None):
     if overrides:
         mv.update(overrides)
     base = compute_baseline(mv)
-    tol = float(next(r.published_value for r in inputs if r.id == _TOL_ID))
+    tol = float(mv.get(_TOL_ID, next(r.published_value for r in inputs
+                                     if r.id == _TOL_ID)))
 
     t_lb = sum(m.avg_t_lb for m in meas.measures)
     t_mb = sum(m.avg_t_mb for m in meas.measures)
@@ -69,22 +73,9 @@ def compute_outputs(inputs, basis, scenario, direct_ets, overrides=None):
         chart[tier] = {"cum_bau": c["total_bau"], "cum_with": c["total_with"],
                        "cum_avoided": c["avoided"]}
 
-    checks = {"BL_Check_Carriers": base.check_carriers == "OK",
-              "BL_Check_Ratio": base.check_ratio == "OK",
-              "M_StackCaps": bool(meas.stack.caps_ok)}
-    for m in meas.measures:
-        checks["M_Annuity_" + m.key] = bool(m.annuity_ok)
-    for k, v in expo.checks.items():
-        checks["Expo_" + k] = bool(v)
-    n_meas = len(meas.measures)
-    # Like for like (CR-01): the MACC leaves out measures with no abatement,
-    # so its width total is compared with the eligible measures only, and the
-    # tile (net sum of all six, negatives included) with the per-measure sum.
-    elig_t = sum(m.avg_t_sel for m in meas.measures if m.eligible)
-    checks["Dash_TileVsMACC"] = (
-        abs(elig_t - macc_total) <= n_meas * tol
-        and abs(sum(m.avg_t_sel for m in meas.measures) - abated)
-        <= float(mv["Const_CheckTolerance"]))
+    checks = check_inventory(inputs, mv, meas, expo, sens, base, basis,
+                             scenario, direct_ets, abated, t_lb, t_mb, s12,
+                             macc_total, tol)
 
     named = {
         "M_Portfolio_NPV": sens.npv_fin,
@@ -147,6 +138,133 @@ def compute_outputs(inputs, basis, scenario, direct_ets, overrides=None):
         disc_avoided_sel=sel.disc["avoided"], chart_block=chart,
         checks=checks, chk_master="OK" if fails == 0 else "ERROR",
         chk_fail_count=fails, labels=labels, named=named)
+
+
+_MKEYS = ("LED", "VSD", "HP", "PV", "Fleet", "RC")
+_STACK = (("M_Check_StackNonNeg", "cap_nonneg"),
+          ("M_Check_ElecReductionsCap", "cap_elec_reductions"),
+          ("M_Check_PVSelfConsumed", "cap_pv_le_s4"),
+          ("M_Check_ContractCap", "cap_covered_le_s5"),
+          ("M_Check_GasCap", "cap_gas"),
+          ("M_Check_DieselCap", "cap_diesel"))
+
+
+def check_inventory(inputs, mv, meas, expo, sens, base, basis, scenario,
+                    direct_ets, abated, t_lb, t_mb, s12, macc_total,
+                    round_tol):
+    """Reference value of every status row on the Checks sheet (WR-01).
+
+    Keyed by the workbook name each row links to (or defines, for Chk_*).
+    Each value restates the owner-sheet formula on the reference model's own
+    numbers, so the Checks sheet caches these instead of literals, and the
+    master flag and fail count derive from them.
+    """
+    tol_m = float(mv["Const_CheckTolMoney"])
+    tol = float(mv["Const_CheckTolerance"])
+    tol_irr = float(mv["Const_IRRCheckTolMoney"])
+    c = {}
+    # group 1: stack caps, PV peak, baseline, carbon anchors and conv. years
+    for name, attr in _STACK:
+        c[name] = bool(getattr(meas.stack, attr))
+    c["M_Check_PVPeakBelowLoad"] = bool(meas.by_key("PV").sizing["peak_ok"])
+    c["BL_Check_Carriers"] = base.check_carriers == "OK"
+    c["BL_Check_Ratio"] = base.check_ratio == "OK"
+    first_year = expo.years[0]
+    for key, (ays, _avs, _ann) in carbon_paths(inputs).items():
+        c["Carb_Check_Anchors_" + key] = bool(
+            all(a < b for a, b in zip(ays, ays[1:])) and ays[0] < first_year)
+    conv_ok = bool(mv["Carbon_ETS1_ConvYear"] >= mv["Carbon_EUA_AnchorYear"]
+                   and mv["Carbon_ETS2_ConvYear"]
+                   >= mv["Carbon_ETS2_StartYear"])
+    c["Carb_Check_ConvYears"] = conv_ok
+    # groups 2, 3 and 5: per-measure appraisal checks
+    for m in meas.measures:
+        k = m.key
+        cf = list(m.cf_fin)
+        c["M_Check_%s_NPVMemo" % k] = abs(m.npv - m.npv_memo) <= tol_m
+        c["M_Check_%s_NPVatZero" % k] = (
+            abs(cf[0] + sum(cf[1:]) - sum(cf)) <= tol_m)
+        c["M_Check_%s_NPVatIRR" % k] = (
+            abs(ap.npv0(m.irr, cf)) <= tol_irr
+            if isinstance(m.irr, float) else True)
+        c["M_Check_%s_Annuity" % k] = bool(m.annuity_ok) if m.eligible \
+            else True
+        c["M_Check_%s_BreakEven" % k] = (
+            abs(m.lev - m.break_even) <= tol
+            if isinstance(m.lev, float) else True)
+    # group 4: sensitivity
+    sel = expo.scen[expo.sel_key]
+    base_npv = sens.npv_incl
+    avoided_pv = sum(a * d * o for a, d, o in zip(sel.avoided, meas.df,
+                                                  meas.op))
+    c["Sens_Check_Reconcile"] = abs(
+        base_npv - (sum(m.npv for m in meas.measures) + avoided_pv)) <= tol_m
+    c["Sens_Check_CarbonPV"] = abs(sens.pv_carbon - (
+        sens.pv_ets2_gross + sens.pv_pt_gross - sens.pv_pt_embedded)) <= tol_m
+    mid = len(sens.grid) // 2
+    c["Sens_Check_GridCentre"] = abs(
+        sens.grid[mid][len(sens.grid[mid]) // 2] - base_npv) <= tol_m
+    c["Sens_Check_RateCentre"] = abs(
+        sens.rate_npvs[len(sens.rate_npvs) // 2] - base_npv) <= tol_m
+
+    def _z(x):
+        return 0.0 if abs(x) <= tol_m else x
+    ranks = [t.rank for t in sens.tornado]
+    downs = [_z(min(t.npv_low, t.npv_high) - base_npv) for t in sens.tornado]
+    ups = [_z(max(t.npv_low, t.npv_high) - base_npv) for t in sens.tornado]
+    n_t = len(ranks)
+    c["Sens_Check_Torn"] = bool(
+        max(ranks) == n_t and sum(ranks) == n_t * (n_t + 1) // 2
+        and max(downs) <= 0 and min(ups) >= 0)
+    lev_ok = True
+    for rs in sens.rank_stab:
+        m = meas.by_key(rs.key)
+        if m.eligible and isinstance(rs.lev_base, float) \
+                and isinstance(m.lev, float):
+            lev_ok = lev_ok and abs(rs.lev_base - m.lev) <= tol_m
+    c["Sens_Check_LevBase"] = bool(lev_ok)
+    # group 5 and 6: Dashboard-dependent checks (defined on Checks).
+    # Like for like (CR-01): the MACC leaves out measures with no abatement,
+    # so its width total is compared with the eligible measures only, and the
+    # tile (net sum of all six, negatives included) with the per-measure sum.
+    elig_t = sum(m.avg_t_sel for m in meas.measures if m.eligible)
+    c["Chk_TileVsMACC"] = bool(
+        abs(elig_t - macc_total) <= len(meas.measures) * round_tol
+        and abs(sum(m.avg_t_sel for m in meas.measures) - abated) <= tol)
+    share = abated / s12 if s12 else 0.0
+    c["Chk_ShareInRange"] = 0.0 <= share <= 1.0
+    c["Chk_BasisExact"] = abated == t_lb or abated == t_mb
+    # group 7: exposure integrity
+    scen = list(expo.scen.values())
+    start2 = mv["Carbon_ETS2_StartYear"]
+    pre = [1 if y < start2 else 0 for y in expo.years]
+    c["Expo_Check_ETS2ZeroBeforeStart"] = all(
+        sum(x * p for x, p in zip(s.ets2, pre)) == 0 for s in scen)
+    c["Expo_Check_ETSExclusive"] = all(
+        sum(x * y for x, y in zip(s.p_stat1, s.p_stat2)) == 0 for s in scen)
+    c["Expo_Check_CashIsChannels"] = all(
+        abs(sum(tot) - sum(e2) - sum(dr) - sum(pt)) <= tol_m
+        for s in scen
+        for tot, e2, dr, pt in ((s.bau_total, s.bau_ets2, s.bau_dir,
+                                 s.bau_pt),
+                                (s.with_total, s.with_ets2, s.with_dir,
+                                 s.with_pt)))
+    c["Expo_Check_ConvYears"] = conv_ok
+    diff = [sum(expo.measure_avoided[k][n] for k in _MKEYS) - sel.avoided[n]
+            for n in range(len(expo.years))]
+    diff = [d if abs(d) > tol_m else 0.0 for d in diff]
+    c["Expo_Check_MeasuresReconcile"] = sum(d * d for d in diff) <= tol_m
+    c["Expo_Check_ContractZero"] = sum(
+        x * x for x in expo.measure_avoided["RC"]) <= tol_m
+    c["Expo_Check_BridgeSums"] = abs(
+        sel.disc["total_bau"]
+        - sum(expo.measure_disc_avoided[k] for k in _MKEYS)
+        - sel.disc["total_with"]) <= tol_m
+    # group 8: selector validity
+    c["Chk_Sel_Scenario"] = scenario in SCENARIOS_UI
+    c["Chk_Sel_Basis"] = basis in BASES
+    c["Chk_Sel_DirectETS"] = direct_ets in ONOFF
+    return dict((k, bool(v)) for k, v in c.items())
 
 
 def all_states(inputs=INPUTS):

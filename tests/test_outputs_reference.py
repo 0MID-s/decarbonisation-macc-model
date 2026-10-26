@@ -75,7 +75,8 @@ class OutputsReference(unittest.TestCase):
         self.assertFalse(fleet.eligible)
         # the old all-measures comparison would have failed here
         self.assertGreater(abs(r.abated_sel - r.macc_total), 6 * TOL)
-        self.assertTrue(r.checks["Dash_TileVsMACC"])
+        self.assertTrue(r.checks["Chk_TileVsMACC"])
+        self.assertTrue(all(r.checks.values()), r.checks)
         self.assertEqual(r.chk_master, "OK")
         self.assertEqual(r.chk_fail_count, 0)
 
