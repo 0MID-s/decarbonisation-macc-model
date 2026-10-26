@@ -318,3 +318,41 @@ not verified.
   (unchanged by the run). No dist/excel-check-* folder remains.
 - Re-verified by script only. The changed labels and the autoscaled MACC axis
   have not been reviewed visually. Excel for the web: not verified.
+
+#### WR-10 sub-entry (annuity check for any tonne profile)
+
+- Date: 2026-10-26, after commit 5a864ed (WR-10) and the amended Notes record
+  line. The annuity check is now equivalent annual cost / equivalent annual
+  tonnes, annualised with one capital recovery factor over the operating
+  years, so it agrees with the levelised cost before subsidy for any profile.
+  Two new rows per measure block on Measures (equivalent annual capital cost,
+  equivalent annual tonnes), so 12 more formula cells per state.
+- Method: `.venv/bin/python tools/excel_check.py`, Excel for Mac, all 12 states,
+  same comparison as above.
+
+| Basis | Scenario | Direct ETS | Formula cells | Mismatches | Error values | Chk_Master in Excel |
+|---|---|---|---|---|---|---|
+| Location-based | Low | Off | 12,291 | 0 | 0 | OK |
+| Location-based | Low | On | 12,291 | 0 | 0 | OK |
+| Location-based | Central | Off | 12,291 | 0 | 0 | OK |
+| Location-based | Central | On | 12,291 | 0 | 0 | OK |
+| Location-based | High | Off | 12,291 | 0 | 0 | OK |
+| Location-based | High | On | 12,291 | 0 | 0 | OK |
+| Market-based | Low | Off | 12,291 | 0 | 0 | OK |
+| Market-based | Low | On | 12,291 | 0 | 0 | OK |
+| Market-based | Central | Off | 12,291 | 0 | 0 | OK |
+| Market-based | Central | On | 12,291 | 0 | 0 | OK |
+| Market-based | High | Off | 12,291 | 0 | 0 | OK |
+| Market-based | High | On | 12,291 | 0 | 0 | OK |
+
+- Visible elements changed: in each Measures block, the reconciliation rows
+  (CRF over the operating years, new equivalent annual capital cost row,
+  equivalent annual operating benefit, new equivalent annual tonnes row,
+  annuity-method cost label) and the annuity check note; rows below shift
+  down; Inputs rationale of Const_AnnuityTolRel; two Notes method lines; the
+  Notes Excel record line.
+- Deliverable: dist/maison_veritas.xlsx, sha256
+  `145e673fcf795b55ddd0fc3cfcbfa034df614e6537b2596a8e0bdad25068f65a`
+  (unchanged by the run). No dist/excel-check-* folder remains.
+- Re-verified by script only; the new rows have not been reviewed visually.
+  Excel for the web: not verified.
