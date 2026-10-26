@@ -21,7 +21,7 @@ EXPECTED = {
     "Const_PerThousand": 0.001, "Const_kW_per_MW": 1000,
     "Const_MWh_per_GO": 1, "Const_IRR_Guess": 0.1,
     "Const_CheckTolMoney": 1, "Const_IRRCheckTolMoney": 10,
-    "Const_AnnuityTolRel": 0.05, "Const_AnnuityTolAbs": 1,
+    "Const_AnnuityTolRel": 1e-9, "Const_AnnuityTolAbs": 1e-6,
     "Const_MACCRoundTol": 0.5,
 }
 MONEY = re.compile(r"€|EUR|USD|US\$|GBP")

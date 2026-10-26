@@ -254,6 +254,29 @@ class ChecksSheet(unittest.TestCase):
             self.assertIs(got["M_Check_LED_Annuity"], True, row_key)
             self.assertEqual(got["Chk_Master"], "ERROR", row_key)
 
+    def test_annuity_check_catches_small_corruption(self):
+        # WR-12: the annuity form is an exact identity, so the tolerance is
+        # at floating-point level. Taking EUR 1,000 off one yearly net cash
+        # flow cell (PV or HP) now fails the check; with the old 5%
+        # tolerance a EUR 50,000 corruption still passed.
+        from xl.layout import TIMELINE_FIRST_COL, col_letter
+        from xl.sheets.measures import SHEET, allocate_rows
+        _, blocks, _ = allocate_rows()
+        col = col_letter(TIMELINE_FIRST_COL + 5)
+        wbv = openpyxl.load_workbook(io.BytesIO(self.data), data_only=True)
+        for key in ("PV", "HP"):
+            other = "LED"
+            names = ["M_Check_%s_Annuity" % key,
+                     "M_Check_%s_Annuity" % other, "Chk_Master"]
+            cell = "%s%d" % (col, blocks[key]["m_cf"] + 1)
+            base = wbv[SHEET][cell].value
+            self.assertIsInstance(base, float)
+            got = evaluate_names(self.data, names,
+                                 overrides={(SHEET, cell): base - 1000.0})
+            self.assertIs(got["M_Check_%s_Annuity" % key], False, key)
+            self.assertIs(got["M_Check_%s_Annuity" % other], True, key)
+            self.assertEqual(got["Chk_Master"], "ERROR", key)
+
     def test_break_even_check_can_fail(self):
         # WR-08: the break-even check recomputes NPV incl. carbon value at
         # the break-even price from the yearly rows. A wrong NPV cell (which

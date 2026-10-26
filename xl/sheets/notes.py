@@ -180,8 +180,9 @@ MEASURES_METHOD = (
     "output: equivalent annual cost divided by equivalent annual tonnes, "
     "both annualised with one capital recovery factor over the operating "
     "years, recomputed from the yearly rows. It equals the levelised cost "
-    "before subsidy for any profile, within Const_AnnuityTolAbs and "
-    "Const_AnnuityTolRel.",
+    "before subsidy for any profile; the tolerances Const_AnnuityTolAbs "
+    "and Const_AnnuityTolRel only absorb floating-point rounding, so a "
+    "small error in one yearly cash-flow cell already fails the check.",
 )
 
 EXPOSURE_TITLE = "Carbon exposure and sensitivity method (Phase 4)"

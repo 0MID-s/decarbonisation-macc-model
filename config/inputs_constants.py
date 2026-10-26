@@ -80,15 +80,17 @@ INPUTS = (
        "1e-7 in the rate, which moves NPV by up to a few euros on these "
        "capex sizes (research Pitfall 4)"),
     _c("Const_AnnuityTolRel", "Annuity reconciliation tolerance, relative",
-       0.05, "fraction",
+       1e-9, "fraction",
        "Relative tolerance of the internal annuity vs levelised "
-       "reconciliation. The annuity form annualises cost and tonnes with "
-       "one capital recovery factor over the levelised-cost horizon, so the "
-       "two forms agree for any profile; a gap beyond the tolerance means a "
-       "broken row or formula (WR-10)"),
+       "reconciliation. The two forms are algebraically identical (one "
+       "capital recovery factor annualises cost and tonnes and cancels), so "
+       "this only absorbs floating-point rounding; any real gap means a "
+       "broken row or formula (WR-10, WR-12)"),
     _c("Const_AnnuityTolAbs", "Annuity reconciliation tolerance, absolute",
-       1.0, "abs tolerance (currency units per tonne)",
-       "Absolute floor for the annuity reconciliation for costs near zero"),
+       1e-6, "abs tolerance (currency units per tonne)",
+       "Absolute floor for the annuity reconciliation when the cost is near "
+       "zero; floating-point level, the same size as Const_CheckTolerance "
+       "(WR-12)"),
     _c("Const_MACCRoundTol", "MACC rounding tolerance per measure", 0.5,
        "tCO2e per measure",
        "Analyst assumption: MACC chart widths are rounded to whole tonnes "
