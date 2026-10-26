@@ -94,8 +94,9 @@ INPUTS = (
            3.8, "per cent", "Const_PctToFrac", "%", NA, "Src_EurostatFlash",
            _S,
            "Re-read 2026-10-20 (see docs/DATA_LOG.md). Context only (D-19): "
-           "the 2026 energy-driven spike; flagged for the Phase 4 inflation "
-           "sensitivity; not used in the base case",
+           "the 2026 energy-driven spike; shown on Rates as context, not used "
+           "in any calculation (the model uses the long-run assumption "
+           "Fin_InflationLongRun) and not varied on the Sensitivity sheet",
            "Transcribed: Eurostat euro indicator release 2-16102026-AP "
            "(16 October 2026), euro area 3.8% in September 2026 (Belgium "
            "4.5%). First read in 02-RESEARCH 3.9; re-read 2026-10-20, "
@@ -111,7 +112,8 @@ INPUTS = (
            "2010 real value against the euro; the US-CPI route would give a "
            "factor of about 1.31, i.e. prices about 25% higher (an "
            "indicative analyst estimate, not a sourced input; see "
-           "docs/DATA_LOG.md; candidate Phase 4 sensitivity)",
+           "docs/DATA_LOG.md; tested as the NGFS currency conversion route "
+           "driver in the Sensitivity tornado)",
            "Transcribed from docs/DATA_LOG.md (Src_EurostatFX, address "
            "A|AVG|NAC|USD|2010, flag none)"),
 )

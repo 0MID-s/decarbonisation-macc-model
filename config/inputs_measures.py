@@ -82,9 +82,9 @@ def _num(id_, desc, val, unit, mu, addr, src=_HP):
                   "", "DEA, %s" % addr)
 
 
-_IND = ("Memo (research A3): whether the indirect investment line is "
-        "included in the headline total is not stated in the sheet; "
-        "resolved against the PDF catalogue in Phase 3")
+_IND = ("Memo (research A3, D-06): the headline nominal investment is the "
+        "total, so the indirect investment line is excluded from capex and "
+        "shown as a memo line on the Measures sheet")
 _RVO_RAT = ("RVO EML measures have payback of 5 years or less; the cost "
             "sheet does not state a price year, so 2023 (the list year) is "
             "assumed (research A2), converted on the Rates sheet")
@@ -223,7 +223,9 @@ INPUTS = (
            "are commonly rated for about 50,000 operating hours (a typical "
            "manufacturer rating, not a cited source); at about 3,000 to "
            "4,000 operating hours a year for a one- to two-shift plant this "
-           "gives roughly 12 to 17 years; 15 adopted; Phase 4 sensitivity",
+           "gives roughly 12 to 17 years; 15 adopted; a plus/minus 20% "
+           "lifetime change is a Python-verified note on Notes, not a live "
+           "sensitivity",
            "DATA_LOG: lifetime not found in Src_RVOEML"),
     scalar("Meas_VSD_Life", _SEC,
            "Frequency controller (VSD) on compressor lifetime", 15, "years",
@@ -231,7 +233,9 @@ INPUTS = (
            "Analyst assumption (no lifetime stated in the RVO EML workbook "
            "or Informatiebank pages searched, see DATA_LOG): planning "
            "service life for a variable-speed drive on a compressor, chosen "
-           "by the analyst, not taken from a source; Phase 4 sensitivity",
+           "by the analyst, not taken from a source; a plus/minus 20% "
+           "lifetime change is a Python-verified note on Notes, not a live "
+           "sensitivity",
            "DATA_LOG: lifetime not found in Src_RVOEML"),
     scalar("Meas_PV_CapexPBL", _SEC,
            "PBL SDE++ 2026 cross-check: rooftop PV >=15 kWp <1 MWp, "
@@ -259,7 +263,8 @@ INPUTS = (
            _FB + "round planning figure for the upfront price gap between a "
            "battery-electric and a diesel light van, chosen by the analyst, "
            "not taken from a source; the ICCT studies cover delivery "
-           "trucks, not light vans; Phase 4 tests it in the sensitivity",
+           "trucks, not light vans; the EV price premium is a tornado driver "
+           "on the Sensitivity sheet (plus/minus Sens_Torn_EVPct)",
            _FBN),
     scalar("Meas_Fleet_EVkWhPerKm", _SEC,
            "Fleet: electric van energy use incl. charging losses", 0.25,
@@ -279,9 +284,12 @@ _SUB = ("Analyst assumption (D-15): no grant assumed by default; enter a % "
         "year-0 capex only, not to replacements (typical grant practice)")
 
 
+_NOT_VARIED = "Analyst assumption; not varied on the Sensitivity sheet"
+
+
 def _share(id_, desc, val, rat):
     return scalar(id_, _SEC, desc, val, "per cent", "Const_PctToFrac", "%",
-                  NA, None, _A, rat, "Analyst assumption; Phase 4 sensitivity")
+                  NA, None, _A, rat, _NOT_VARIED)
 
 
 def _sub(key, extra=""):
@@ -291,9 +299,9 @@ def _sub(key, extra=""):
                   "Analyst assumption (D-15, MEAS-10)")
 
 
-def _ana(id_, desc, val, unit, basis, rat):
+def _ana(id_, desc, val, unit, basis, rat, note=_NOT_VARIED):
     return scalar(id_, _SEC, desc, val, unit, "Const_None", unit, basis, None,
-                  _A, rat, "Analyst assumption; Phase 4 sensitivity")
+                  _A, rat, note)
 
 
 INPUTS = INPUTS + (
@@ -329,8 +337,8 @@ INPUTS = INPUTS + (
            "Industrial heat pump full-load hours", 8000, "h/yr",
            "Const_None", "h/yr", NA, "Src_PBLSDE2026", _S,
            "Sourced base case (orchestrator resolution 3): DEA states no "
-           "hours; 6,000 h is a Phase 4 sensitivity; a subsidy reference "
-           "case, not a DEA value",
+           "hours; a subsidy reference case, not a DEA value; not varied "
+           "on the Sensitivity sheet",
            "OT-model sheet 98, cell C29 (industrial heat pump, closed "
            "system, 8,000 h)"),
     scalar("Meas_HP_HeatHighPJ", _SEC,
@@ -362,8 +370,8 @@ INPUTS = INPUTS + (
            "price)", 2.05, "EUR/GO", "Const_MWh_per_GO", "EUR/MWh",
            EUR2025_NOM, "Src_WalloniaMarket", _S,
            "Producer-side regulatory reference value, likely below a retail "
-           "green premium, so it flatters the contract; Phase 4 "
-           "sensitivity (D-12)",
+           "green premium, so it flatters the contract; a tornado driver on "
+           "the Sensitivity sheet (plus/minus Sens_Torn_GOPct, D-12)",
            "Page 1: \"Valeur d'une GO: 2,05 EUR/GO\" (average GO "
            "purchase price from producers, 1 Jan to 31 Dec 2025)"),
     _share("Meas_LED_LightingShare",
@@ -401,7 +409,10 @@ INPUTS = INPUTS + (
     _ana("Meas_Fleet_ChargerCapex", "Fleet: depot AC charger per van, "
          "installed", 2000, "EUR per vehicle", EUR2025_REAL,
          "Depot AC charger installed per van; no van TCO source found "
-         "(research V9); " + _AS),
+         "(research V9); " + _AS,
+         "Analyst assumption; varied with the other capex in the Capex "
+         "tornado driver on the Sensitivity sheet (plus/minus "
+         "Sens_Torn_CapexPct)"),
     _ana("Meas_Fleet_MaintSaving", "Fleet: maintenance saving of an "
          "electric vs a diesel van", 0.03, "EUR/km", EUR2025_REAL,
          "Maintenance saving per km; no source found (V9); " + _AS),

@@ -172,6 +172,63 @@ class Notes(unittest.TestCase):
         self.assertIn("excluded from capex and shown as a memo line", t)
         self.assertIn("tornado on the Sensitivity sheet", t)
 
+    # WR-14: phase-planning phrases that describe pending work rather than
+    # the built state. Section headings such as "(Phase 3)", the phase
+    # history list and "DATA_LOG Phase 3" document references are allowed.
+    PLANNING = re.compile(
+        r"Phase \d+ (?:sensitivity|decision|decides|tests|inflation|X_VAT|D-)"
+        r"|(?:candidate|in|for|to test in|belong to|not used in) Phase \d"
+        r"|resolved against|to be resolved|captured as data for Phase")
+
+    def test_inputs_rationale_has_no_planning_language(self):
+        # WR-14: every Inputs rationale and note describes the built state.
+        for r in self.ds.inputs:
+            for field in ("rationale", "note"):
+                text = " ".join((getattr(r, field) or "").split())
+                self.assertIsNone(self.PLANNING.search(text), (r.id, field))
+                bare = re.sub(r"(?:DATA_LOG|NGFS) Phase \d", "", text)
+                self.assertNotRegex(bare, r"Phase \d", (r.id, field))
+        # and the rendered Rationale / notes cells on the Inputs sheet
+        ws = self.wb["Inputs"]
+        hdr = [c.value for c in ws[11]]
+        self.assertIn("Rationale / notes", hdr)
+        col = hdr.index("Rationale / notes") + 1
+        n = 0
+        for row in ws.iter_rows(min_row=12, min_col=col, max_col=col):
+            v = row[0].value
+            if isinstance(v, str):
+                n += 1
+                self.assertIsNone(self.PLANNING.search(" ".join(v.split())),
+                                  row[0].coordinate)
+        self.assertGreater(n, 100)
+
+    def test_client_sheets_have_no_planning_language(self):
+        # WR-14: Notes, Rates and Carbon text cells, the same rule
+        for name in ("Notes", "Rates", "Carbon"):
+            for row in self.wb[name].iter_rows():
+                for c in row:
+                    if isinstance(c.value, str) and not c.value.startswith("="):
+                        self.assertIsNone(
+                            self.PLANNING.search(" ".join(c.value.split())),
+                            "%s!%s" % (name, c.coordinate))
+
+    def test_inputs_sensitivity_claims_are_true(self):
+        # WR-14: only inputs that the Sensitivity sheet really varies say so
+        by = {r.id: r for r in self.ds.inputs}
+        not_varied = ("Meas_LED_LightingShare", "Meas_LED_Coverage",
+                      "Meas_LED_SavingRate", "Meas_VSD_MotorShare",
+                      "Meas_VSD_Coverage", "Meas_VSD_SavingRate",
+                      "Meas_PV_Size", "Meas_Fleet_MaintSaving",
+                      "Meas_Fleet_DieselVanPrice", "Meas_RC_Term")
+        for k in not_varied:
+            self.assertEqual(by[k].note, "Analyst assumption; not varied on "
+                             "the Sensitivity sheet", k)
+        self.assertIn("Capex tornado driver", by["Meas_Fleet_ChargerCapex"].note)
+        self.assertNotIn("6,000 h", by["Meas_HP_FullLoadHours"].rationale)
+        for k in ("Meas_HP_IndirectCapex_Trad", "Meas_HP_IndirectCapex_HT"):
+            self.assertIn("excluded from capex and shown as a memo line",
+                          by[k].rationale)
+
     def test_measures_assumptions_stated(self):
         # WR-07: full-tariff electricity valuation and the CO2-only residual
         # mix are stated in Notes

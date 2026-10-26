@@ -113,15 +113,16 @@ INPUTS = tuple(
               "Real energy-price escalation per year", 0.0, "per cent",
               "Const_PctToFrac", "%", NA, None, Status.ASSUMPTION,
               "Forward energy prices held flat in real terms (D-22); "
-              "energy-price sensitivity is Phase 4"),
+              "energy prices are varied on the Sensitivity sheet (two-way "
+              "grid and tornado)"),
        scalar("Price_DieselBE_WithTax", _SEC,
               "Belgian automotive gas oil (diesel), 2025 mean of weekly "
               "prices with taxes", 1658.59, "EUR/1000 l", "Const_PerThousand",
               "EUR/l", PriceBasis("EUR", 2025, "nominal"),
               "Src_EUOilBulletin", _S,
               "The model divides by (1 + VAT) on the Measures sheet because "
-              "a VAT-registered firm recovers VAT but pays excise (Phase 2 "
-              "X_VAT logic, D-11); the without-tax column (770.58 EUR/1000 "
+              "a VAT-registered firm recovers VAT but pays excise (the same "
+              "X_VAT basis as the Baseline energy prices, D-11); the without-tax column (770.58 EUR/1000 "
               "l) would understate the saving",
               "Oil Bulletin file, sheet 'Prices with taxes', column Y "
               "(BE_price_with_tax_diesel), mean of the 52 weekly rows dated "

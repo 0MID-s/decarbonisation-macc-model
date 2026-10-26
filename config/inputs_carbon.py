@@ -130,7 +130,8 @@ INPUTS = (
            "ETS2 start year (default, after postponement)", 2028, "year",
            "Regulation (EU) 2026/667, postponement provision (as pasted from "
            "the ELI page; article number not shown in the paste)",
-           "Default 2028 (input; delayed-start sensitivity in Phase 4)",
+           "Default 2028 (input; a further delay of Sens_ETS2_StartDelay "
+           "years is a tornado driver on the Sensitivity sheet)",
            src="Src_Reg2026_667", status=Status.SOURCED,
            text="(per 02-RESEARCH 3.11: Regulation (EU) 2026/667, OJ L 2026/667, "
                 "18.3.2026)"),

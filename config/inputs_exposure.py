@@ -127,7 +127,7 @@ INPUTS = (
     _sens("Carbon_NGFS_AltRouteFactor", "Alternative NGFS conversion route "
           "factor", 1.31, "factor",
           "Indicative analyst estimate of the US-CPI conversion route "
-          "(Phase 2 D-41 flag), not a sourced input; tested against the "
+          "(flagged in D-41), not a sourced input; tested against the "
           "Eurostat route"),
     _sens("Sens_Note_LifePct", "Note-only sensitivity: lifetime change",
           0.2, "fraction", "Used only for the Python-verified note on Notes "

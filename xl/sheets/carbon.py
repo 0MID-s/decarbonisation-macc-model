@@ -38,7 +38,8 @@ NGFS_LICENCE = (
 LIMIT_NOTE = (
     "Assumes the US dollar kept its 2010 real value against the euro. A "
     "US-CPI route would give about 1.31, so prices about 25% higher (an indicative analyst estimate, not a sourced input; see docs/DATA_LOG.md); "
-    "candidate Phase 4 sensitivity (D-41)")
+    "tested as the NGFS currency conversion route driver in the "
+    "Sensitivity tornado (D-41)")
 ANCHOR_NOTE = (
     "NGFS point years are fixed, locked cells on Inputs; changing First "
     "model year shifts the timeline and the paths re-interpolate to the new "
@@ -46,9 +47,10 @@ ANCHOR_NOTE = (
     "NGFS publication year")
 NGFS_YEAR_STEP = 5  # NGFS publishes Price|Carbon every five years
 EUA_NOTE = (
-    "EUA 2025 average in nominal 2025 euros = EUR 2025 prices; scenarios are "
-    "not floored or blended to it (D-29); any short-run blending is a "
-    "Phase 4 decision")
+    "EUA 2025 average in nominal 2025 euros = EUR 2025 prices; the NGFS "
+    "scenario paths on this sheet are not floored or blended to it (D-29); "
+    "the cash carbon price paths on the Exposure sheet start from it and "
+    "converge to the selected scenario")
 SCOPE_IDS = ("Carbon_ETS2_Scope_Gas", "Carbon_ETS2_Scope_LPG",
              "Carbon_ETS2_Scope_Naphtha", "Carbon_ETS2_Scope_OtherFuels",
              "Carbon_ETS2_Scope_FleetDiesel", "Carbon_ETS2_Scope_Elec",

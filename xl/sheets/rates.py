@@ -143,9 +143,10 @@ def _discount_block(ws, cells, styles, v, r, rows):
     cells.formula(ws, r, ORIG_COL, "=Fin_HICP_EA_Sep2026",
                   styles.get("link", pct), value=v["Fin_HICP_EA_Sep2026"])
     cells.text(ws, r, ORIG_COL + 1,
-               "context only, Phase 4 sensitivity (D-19)", note)
+               "context only, not used in any calculation (D-19)", note)
     r += 2
     cells.text(ws, r, LABEL_COL,
-               "No size or illiquidity premium (D-20); 6%/8%/10% "
-               "rank-stability test in Phase 4", note)
+               "No size or illiquidity premium (D-20); the MACC rank-stability "
+               "test at 6%/8%/10% real hurdle rates is on the Sensitivity "
+               "sheet", note)
     return r
