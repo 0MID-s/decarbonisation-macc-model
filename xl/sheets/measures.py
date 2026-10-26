@@ -818,13 +818,20 @@ def _write_results(w, m, b, R, ref, check_names, mv, nm):
           "Check: SUMPRODUCT NPV equals CF0 + NPV() memo",
           "=ABS(%s-%s)<=Const_CheckTolMoney" % (D(b["npv"]), D(b["npvmemo"])),
           abs(m.npv - m.npv_memo) <= tol_m)
-    lev_num = isinstance(m.lev, float)
+    # WR-08: a real test of the definition, recomputed from the yearly
+    # cash-flow and tonnes rows (not from the NPV / PV(tonnes) cells the
+    # break-even formula reads): NPV incl. carbon value at a constant carbon
+    # price equal to the break-even price must be zero.
+    be_num = isinstance(m.break_even, float)
     check(b["chk_be"], "M_Check_%s_BreakEven" % key,
-          "Check: break-even price equals levelised cost",
-          "=IF(ISNUMBER(%s),ABS(%s-%s)<=Const_CheckTolerance,TRUE)" % (
-              D(b["lev"]), nz(b["lev"]), nz(b["be"])),
-          (abs(m.lev - m.break_even) <= mv["Const_CheckTolerance"])
-          if lev_num else True)
+          "Check: NPV incl. carbon value at the break-even price is zero "
+          "(recomputed from the yearly rows)",
+          "=IF(ISNUMBER(%s),ABS(SUMPRODUCT(%s,M_DF)+%s*SUMPRODUCT(%s,M_DF))"
+          "<=Const_CheckTolMoney,TRUE)" % (
+              D(b["be"]), cfr, nz(b["be"]), _rng(b["tSel"])),
+          (abs(ap.npv0(ref.rate, cf) + m.break_even
+               * ap.npv0(ref.rate, list(m.t_sel))) <= tol_m)
+          if be_num else True)
 
     # ---- internal reconciliation
     w.band(b["i_band"], "Internal reconciliation (not a client output)")

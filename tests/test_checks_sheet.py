@@ -168,6 +168,27 @@ class ChecksSheet(unittest.TestCase):
             self.assertEqual(got["Chk_Master"], out.chk_master)
             self.assertEqual(got["Chk_FailCount"], out.chk_fail_count)
 
+    def test_break_even_check_can_fail(self):
+        # WR-08: the break-even check recomputes NPV incl. carbon value at
+        # the break-even price from the yearly rows. A wrong NPV cell (which
+        # both the levelised cost and the break-even formula read) used to
+        # pass the old "break-even = levelised" self-comparison; now it fails.
+        sheet, addr = self._addr("M_HP_NPV")
+        names = ["M_Check_HP_BreakEven", "M_Check_LED_BreakEven",
+                 "M_HP_LevCost", "M_HP_BreakEven", "Chk_Master"]
+        base = evaluate_names(self.data, names)
+        self.assertIs(base["M_Check_HP_BreakEven"], True)
+        got = evaluate_names(self.data, names, overrides={(sheet, addr): 0.0})
+        self.assertEqual(got["M_HP_LevCost"], got["M_HP_BreakEven"])
+        self.assertIs(got["M_Check_HP_BreakEven"], False)
+        self.assertIs(got["M_Check_LED_BreakEven"], True)
+        self.assertEqual(got["Chk_Master"], "ERROR")
+        f = self.wb["Checks"]
+        desc = [c.value for row in f.iter_rows() for c in row
+                if isinstance(c.value, str) and "break-even price" in c.value]
+        self.assertTrue(desc)
+        self.assertFalse(any("equals levelised cost" in d for d in desc))
+
     def test_tile_vs_macc_catches_tile_drift(self):
         # the second leg ties the tile to the per-measure MACC data
         sheet, addr = self._addr("Dash_AbatedSel")

@@ -78,7 +78,7 @@ In words: minus the NPV divided by the present value of the abated tonnes, using
 
 ### Break-even carbon price
 
-It is the same figure. It is the carbon price at which the measure's NPV including carbon value is exactly zero. It is closed form, so no Goal Seek is needed and it updates live. Check: the heat pump pays once carbon exceeds about EUR 106 per tonne.
+It is the same figure. It is the carbon price at which the measure's NPV including carbon value is exactly zero. It is closed form, so no Goal Seek is needed and it updates live. A check per measure (`M_Check_LED_BreakEven` and the others) recomputes the NPV including carbon value at that constant price from the yearly cash-flow and tonnes rows and confirms it is zero, so a wrong reference in the break-even formula would show as a failed check. Check: the heat pump pays once carbon exceeds about EUR 106 per tonne.
 
 ### MACC widths and heights
 

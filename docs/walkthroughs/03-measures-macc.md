@@ -94,7 +94,7 @@ LED: -95,185 / 432.5 = **-220.06 EUR/tCO2e** (`M_LED_LevCost`).
 Reading it:
 - A negative abatement cost means the measure saves money and cuts carbon.
 - The same figure is the **break-even carbon price**: the carbon price at which the measure's NPV (cash plus the value of the avoided carbon) is exactly zero. For LED that is -220, because LED has a positive NPV even if carbon were free. Carbon would have to cost -220 EUR per tonne to wipe out the gain. For a measure with a positive figure, the break-even is the price carbon must reach to make the measure pay.
-- The workbook computes it in closed form (no Goal Seek), so it updates live and works in Excel for the web.
+- The workbook computes it in closed form (no Goal Seek), so it updates live and works in Excel for the web. A check (`M_Check_<measure>_BreakEven`) then recomputes the NPV including carbon value at that constant price straight from the yearly rows and confirms it is zero.
 
 Carbon value is a **shadow-price lens**: tonnes times the selected scenario price, shown as "NPV including carbon value" (LED EUR 188,793). It is not cash. What the firm actually pays for carbon, channel by channel, is Phase 4.
 

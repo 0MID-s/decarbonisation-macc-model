@@ -88,7 +88,8 @@ DESC = {
 }
 SUFFIX_DESC = {
     "NPVMemo": "Check: SUMPRODUCT NPV equals CF0 + NPV() memo",
-    "BreakEven": "Check: break-even price equals levelised cost",
+    "BreakEven": "Check: NPV incl. carbon value at the break-even price is "
+                 "zero (recomputed from the yearly cash-flow and tonnes rows)",
     "Annuity": "Check: annuity cost agrees with levelised cost before subsidy",
     "NPVatZero": "Check: NPV at r = 0 equals the plain sum",
     "NPVatIRR": "Check: NPV at the IRR is about zero",

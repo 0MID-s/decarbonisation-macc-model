@@ -189,9 +189,12 @@ def check_inventory(inputs, mv, meas, expo, sens, base, basis, scenario,
             if isinstance(m.irr, float) else True)
         c["M_Check_%s_Annuity" % k] = bool(m.annuity_ok) if m.eligible \
             else True
+        # WR-08: NPV incl. carbon value at a constant price equal to the
+        # break-even price, recomputed from the yearly rows, is zero
         c["M_Check_%s_BreakEven" % k] = (
-            abs(m.lev - m.break_even) <= tol
-            if isinstance(m.lev, float) else True)
+            abs(ap.npv0(meas.rate, cf) + m.break_even
+                * ap.npv0(meas.rate, list(m.t_sel))) <= tol_m
+            if isinstance(m.break_even, float) else True)
     # group 4: sensitivity
     sel = expo.scen[expo.sel_key]
     base_npv = sens.npv_incl
