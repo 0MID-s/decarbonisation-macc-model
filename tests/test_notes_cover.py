@@ -98,7 +98,8 @@ class Notes(unittest.TestCase):
             [r for r in self.ds.inputs if r.id == "Carbon_EUA_Avg2025"][0],
             id="Carbon_ETS2_Proj_2030")
         line = ets2_projection_line(self.ds.inputs + (rec,), self.ds.sources)
-        self.assertIn("captured as data for Phase 4", line)
+        self.assertIn("captured as data:", line)
+        self.assertIn("not used in the model calculations", line)
         self.assertIn("Carbon_ETS2_Proj_2030", line)
 
     def test_flat_grid_deviation_stated(self):
@@ -156,6 +157,20 @@ class Notes(unittest.TestCase):
                   "independent", "cumulative and undiscounted"):
             self.assertIn(w, t)
         self.assertNotIn("full method and version log in Phase 5", t)
+
+    def test_no_stale_phase_language(self):
+        # WR-09: the v1.0 Notes describe what was built, not pending work
+        import xl.sheets.notes as nt
+        t = " ".join(self._text().split())
+        for bad in ("to be resolved", "candidate Phase", "Phase 4 decides",
+                    "belong to Phase", "to test in Phase",
+                    "captured as data for Phase", "not used in Phase"):
+            self.assertNotIn(bad, t)
+        line = " ".join(nt.ets2_projection_line(
+            self.ds.inputs, self.ds.sources).split())
+        self.assertNotIn("Phase", line)
+        self.assertIn("excluded from capex and shown as a memo line", t)
+        self.assertIn("tornado on the Sensitivity sheet", t)
 
     def test_measures_assumptions_stated(self):
         # WR-07: full-tariff electricity valuation and the CO2-only residual

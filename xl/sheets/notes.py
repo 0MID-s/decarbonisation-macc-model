@@ -21,8 +21,8 @@ WRAP = 130
 PROJ_PREFIX = "Carbon_ETS2_Proj_"
 NO_PROJECTION = (
     "ETS2 price projection: Not captured: no official projection located on "
-    "allowlisted sources (see RESEARCH 3.11). Phase 4 decides how carbon "
-    "prices apply to each exposure channel (D-30).")
+    "allowlisted sources (see RESEARCH 3.11). Carbon prices are applied to "
+    "each exposure channel on the Exposure sheet (D-30).")
 
 ABOUT = (
     "Every number on the Inputs sheet is either sourced to a cited real-world "
@@ -49,7 +49,7 @@ LIMITATIONS = (
     "energy intensity is probably overstated; no unsourced size adjustment is "
     "applied (D-06).",
     "Naphtha is kept as a flagged line: it is sector-specific and not "
-    "addressable by the Phase 3 measures (D-06).",
+    "addressable by the six decarbonisation measures (D-06).",
     "The energy balance sector covers NACE divisions C20 and C21, so the value-added "
     "scaling base is C20 + C21 (D-39).",
     "The 2024 air emissions accounts are imputed by Eurostat.",
@@ -61,9 +61,12 @@ LIMITATIONS = (
     "decision.",
     "The residual-mix factor is held flat (D-24).",
     "The RVO cost price year is assumed to be the list year.",
-    "The DEA indirect-investment line is to be resolved in Phase 3.",
-    "No size or illiquidity premium is added to the discount rate; this is "
-    "covered by the Phase 4 rank-stability test (D-20).",
+    "The DEA indirect-investment difference (heat pump minus boiler) is "
+    "excluded from capex and shown as a memo line on the Measures sheet "
+    "(D-06).",
+    "No size or illiquidity premium is added to the discount rate; the "
+    "MACC rank-stability block on the Sensitivity sheet re-ranks the "
+    "measures at several real hurdle rates instead (D-20).",
     "Discount-rate basis: the Euros column of Damodaran's waccEurope.xls "
     "(January 2026 update, read from the official file with a read-only "
     "parser after a macro check, D-42). That column embeds 1.5% expected euro "
@@ -74,7 +77,8 @@ LIMITATIONS = (
     "Alternative conversion route (D-41): a US-CPI route would give a factor "
     "(input Carbon_NGFS_AltRouteFactor) instead of the Eurostat route factor, so carbon prices "
     "about a quarter higher (an indicative analyst estimate, not a sourced "
-    "input; see docs/DATA_LOG.md); a candidate Phase 4 sensitivity.",
+    "input; see docs/DATA_LOG.md); tested as the NGFS currency conversion "
+    "route driver of the tornado on the Sensitivity sheet.",
 )
 LEGAL_PREFIXES = ("Carbon_ETS2_", "Carbon_ETS1_")
 LEGAL_EXTRA_IDS = ("Base_NRG_IncludesC21",)
@@ -142,7 +146,7 @@ MEASURES_METHOD = (
     "and the MACC rankings under them are not on an identical gas basis; "
     "the gap is not quantified in the model.",
     "Carbon value at the selected NGFS scenario is a shadow-price lens, not "
-    "cash. Cash carbon costs by channel belong to Phase 4 (D-16).",
+    "cash. Cash carbon costs by channel are on the Exposure sheet (D-16).",
     "The electricity stack applies efficiency, electrification and solar "
     "first, then the renewable contract on the residual. Measures interact "
     "and the stack fixes one order, so per-measure results are not fully "
@@ -165,7 +169,8 @@ MEASURES_METHOD = (
     "width) on the selected basis are above zero (M_*_Eligible). Otherwise "
     "it stays in the ranked table as n/a, ranks last and has zero width, so "
     "no bar can have a negative width whatever the inputs.",
-    "Key analyst assumptions to test in Phase 4: Meas_LED_LightingShare, "
+    "Key analyst assumptions behind the measure results: "
+    "Meas_LED_LightingShare, "
     "Meas_LED_Coverage, Meas_LED_SavingRate, Meas_VSD_MotorShare, "
     "Meas_VSD_Coverage, Meas_VSD_SavingRate, Meas_PV_Size, "
     "Meas_Fleet_ChargerCapex, Meas_Fleet_MaintSaving, Meas_RC_GOPrice "
@@ -367,8 +372,8 @@ def ets2_projection_line(inputs, sources):
     for s in sources:
         if s.id == "Src_ETS2Projection":
             ds = s.dataset
-    return ("Official ETS2 price projection captured as data for Phase 4: "
-            + ", ".join(ids) + " (" + ds + "); it is not used in Phase 2 "
+    return ("Official ETS2 price projection captured as data: "
+            + ", ".join(ids) + " (" + ds + "); it is not used in the model "
             "calculations (D-30).")
 
 
@@ -384,7 +389,8 @@ def carbon_notes(sources):
         "over 2010. Limitation: it assumes the US dollar kept its 2010 real "
         "value against the euro; a US-CPI route would give the factor in input Carbon_NGFS_AltRouteFactor, so "
         "prices about 25% higher (an indicative analyst estimate, not a sourced "
-        "input; see docs/DATA_LOG.md), a candidate Phase 4 sensitivity.",
+        "input; see docs/DATA_LOG.md), tested as the NGFS currency "
+        "conversion route driver of the tornado on the Sensitivity sheet.",
         "EUA anchor (D-29): " + EUA_NOTE + ".",
         NGFS_ATTRIBUTION, NGFS_MODIFIED, NGFS_LICENCE,
     )
