@@ -45,8 +45,8 @@ VERSION_LOG = (
     ("0.4.0-phase4", "2026-10-25",
      "Phase 4: carbon cost exposure, scenarios and sensitivity"),
     ("1.0.0", "2026-10-25",
-     "Outputs, hardening and interview pack: Dashboard, Disclosure, Checks, "
-     "ReadMe, finished Cover and Notes"),
+     "Outputs and hardening: Dashboard, Disclosure, Checks, ReadMe, "
+     "finished Cover and Notes, model walkthrough"),
 )
 
 # Excel verification record shown on Notes. Only what has happened so far

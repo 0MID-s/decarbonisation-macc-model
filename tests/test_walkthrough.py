@@ -181,8 +181,15 @@ class DocumentTests(unittest.TestCase):
             with open(other, encoding="utf-8") as f:
                 self.assertIsNone(pat.search(f.read()))
 
-    def test_no_private_notes_reference(self):
-        self.assertNotIn("Interview-Notes", self.text)
+    def test_docs_have_no_local_paths(self):
+        # Published docs must not leak machine-specific paths.
+        pat = re.compile(r"/Users/|/private/tmp|/home/|~/|[A-Za-z]:\\")
+        root = os.path.dirname(DOC)
+        for dirpath, _, files in os.walk(root):
+            for name in files:
+                if name.endswith(".md"):
+                    with open(os.path.join(dirpath, name), encoding="utf-8") as f:
+                        self.assertIsNone(pat.search(f.read()), name)
 
 
 if __name__ == "__main__":

@@ -33,9 +33,8 @@ Full suite: 174 tests pass.
 
 ## Quick Look observation
 
-`qlmanage -t -s 1200` rendered
-`/private/tmp/claude-501/-Users-o-Desktop-Claude-Projects-maison-veritas-decarb-macc/6df99bd5-15c4-484a-86a1-a444d58b03a8/scratchpad/ql3/spike_macc.xlsx.png`
-and it was inspected. It shows only the first sheet: the "GATE-A: Excel check
+`qlmanage -t -s 1200` rendered a thumbnail of the spike workbook (a temporary
+file, not kept) and it was inspected. It shows only the first sheet: the "GATE-A: Excel check
 for the MACC spike" title, the synthetic banner, the Check 1 to Check 12 table
 and the reply-format line. No chart is visible in the thumbnail (expected: Quick
 Look renders the first sheet only). Chart presence is proven by the XML tests,

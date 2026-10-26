@@ -411,3 +411,10 @@ not verified.
   `7395efd88dac54fb240558774046adb61ba1e4e91f2ab3cbce12ffa6777ffbf1`).
 - The earlier layout was approved visually by the user (GATE-B and the
   post-review labels). Excel for the web: not verified.
+
+### Pre-publication text rebuild
+
+- 2026-10-26. The version-log wording changed (text only). Re-verified by
+  tools/excel_check.py in all 12 states: 12,291 formula cells each,
+  0 mismatches, 0 error values, Chk_Master OK. Final deliverable sha256
+  `1f03a849b7e3d3c283e6115d0602e0d578f44879c50c092d356e26b2f748a621`.

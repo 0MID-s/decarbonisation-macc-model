@@ -140,7 +140,7 @@ These mirror the Notes sheet.
 - The Disclosure sheet maps outputs to requirements; it is not a compliance statement.
 - Excel for the web: not verified. The final Excel review (GATE-B) passed in Excel desktop on 2026-10-26.
 
-## 6. Interview questions
+## 6. Reviewer questions
 
 ### Q1. Why is year 0 not discounted?
 Year 0 is 2026, when the money is spent; a cash flow today is worth its face value. Operating flows start at the end of year 1 and are discounted from there. See the discount-factor row on Measures.

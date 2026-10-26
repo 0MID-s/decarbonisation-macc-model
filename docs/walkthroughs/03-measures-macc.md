@@ -78,7 +78,7 @@ Extra: try the same with the discount rate at 0%. You just add the cash flows: -
 
 **Multiple sign changes.** Read the net cash flow of LED: negative in 2026, positive for 14 years, negative in 2041 (the replacement outweighs that year's saving), positive again, with a small residual at the end. The sign flips three times. A series like that can have more than one rate that gives NPV = 0, so the IRR may not be unique. The workbook flags this in words next to the IRR for LED (3 changes), VSD (3 changes) and Fleet (7 changes). Heat pump (1) and PV (1) are clean. The renewable electricity contract has no upfront outlay, so IRR and payback show "n/a (no upfront outlay)".
 
-Rule of thumb for the interview: NPV is the decision measure. IRR is a supporting measure and not reliable when the sign flips more than once.
+Rule of thumb: NPV is the decision measure. IRR is a supporting measure and not reliable when the sign flips more than once.
 
 **Payback.** Years until the money put in has come back.
 - Simple payback (no discounting): LED 7.6 years.
@@ -146,7 +146,7 @@ Tiers, from the workbook:
 
 The MACC is a **screening, not an optimiser**. It ranks by cost per tonne. It does not pick the best budget-constrained portfolio, it does not model interactions beyond the stack, and it leaves out barriers and hidden costs. Kesicki and Ekins (2012) make this point: negative-cost measures often are not done in practice because of attention, disruption and information costs not in the numbers.
 
-## 9. Ten likely interview questions
+## 9. Ten likely reviewer questions
 
 **1. Why is year 0 not discounted?** Year 0 is 2026, when the money is spent. A cash flow today is worth its face value, so its discount factor is 1. Operating flows start at the end of year 1 (2027) and are discounted from there.
 

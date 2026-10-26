@@ -69,7 +69,7 @@ Two words used throughout:
 - **The RVO price year**, assumed to be the list year.
 - **No size or illiquidity premium** on the discount rate.
 
-## Likely interview questions
+## Likely reviewer questions
 
 1. **Why value added, not turnover, to scale the sector?** Value added measures real activity and is less distorted by pass-through of raw material costs. Turnover is shown as a memo (D19) and gives a ratio about 39% higher; both are visible.
 2. **What is NCV versus GCV, and why does it matter?** GCV counts the heat from condensing flue-gas water vapour, NCV does not. Eurostat uses NCV, gas prices use GCV. I convert with a ratio of 1.108 from DESNZ factors so energy and price are consistent.

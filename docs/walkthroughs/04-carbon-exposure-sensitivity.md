@@ -131,7 +131,7 @@ Result: the order is the same at every hurdle: variable-speed drives, solar PV, 
 
 Hurdle rate vs WACC: WACC (weighted average cost of capital) is what the capital costs the firm; a hurdle rate is what managers demand on top, often because projects are risky or capital is rationed. Using hurdles above WACC tests whether the plan survives a stricter investor.
 
-## 14. Interview questions and short answers
+## 14. Reviewer questions and short answers
 
 1. **Why is the scenario price market-anchored?** NGFS values are shadow prices far from the traded price today, so the path starts at the observed EUR 73.43 and converges to NGFS by 2030.
 2. **What does netting the embedded allowance do?** It counts only the change versus the carbon already in the 2025 power price; otherwise the model would double count.
