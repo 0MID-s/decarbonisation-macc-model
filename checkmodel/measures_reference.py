@@ -336,8 +336,14 @@ def compute_measures(inputs, basis, scenario, overrides=None):
         # PV of tonnes (the cost denominator) and the average annual tonnes
         # (the bar width) are positive, so a bar can never be negative.
         eligible = pv_sel > 0 and avg_sel > 0
-        lev = ap.levelised(npv, pv_sel)
-        lev_pre = ap.levelised(npv_pre, pv_sel)
+        # The cost cells follow the same flag as the sheet (WR-11): an
+        # ineligible measure shows "n/a" even when its PV of tonnes is > 0.
+        if eligible:
+            lev = ap.levelised(npv, pv_sel)
+            lev_pre = ap.levelised(npv_pre, pv_sel)
+            be = ap.break_even(npv, pv_sel)
+        else:
+            lev = lev_pre = be = ap.NA_NO_ABATEMENT
         # Annuity form (WR-10): equivalent annual cost / equivalent annual
         # tonnes, all annualised with one CRF over the levelised-cost horizon
         # (the operating years), so it equals the levelised cost before
@@ -381,7 +387,7 @@ def compute_measures(inputs, basis, scenario, overrides=None):
             pay_disc=ap.payback([c * d for c, d in zip(cf, df)]),
             pv_t_lb=pv_lb, pv_t_mb=pv_mb, pv_t_sel=pv_sel,
             avg_t_lb=avg_lb, avg_t_mb=avg_mb, avg_t_sel=avg_sel,
-            eligible=eligible, lev=lev, break_even=ap.break_even(npv, pv_sel),
+            eligible=eligible, lev=lev, break_even=be,
             lev_pre_sub=lev_pre, ann_crf=ann_crf, ann_capital=ann_cap,
             ann_benefit=ann_ben, ann_tonnes=ann_t, annuity=ann,
             annuity_ok=ok))

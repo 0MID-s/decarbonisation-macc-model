@@ -166,6 +166,54 @@ class ChecksSheet(unittest.TestCase):
             self.assertEqual(got["Chk_FailCount"], 0)
             self.assertEqual(out.chk_fail_count, 0)
 
+    def test_ineligible_cost_cells_match_reference(self):
+        # WR-11: in the WR-03 state (PV of tonnes > 0, average tonnes <= 0)
+        # the sheet shows "n/a" for the cost cells. The reference once kept a
+        # number there, so the cached values disagreed with the formulas.
+        # Rebuild in each state (the build gate is mocked: the MB states
+        # fail Chk_ShareInRange, a Phase 5 check, on both sides) and compare
+        # every cached value with the formula evaluation.
+        import dataclasses
+        from checkmodel.measures_reference import compute_measures
+        from checkmodel.outputs_reference import compute_outputs
+        states = (("Location-based", "EF_GridLB_Change", 8.0),
+                  ("Market-based", "EF_ResidualMB_Change", 8.0),
+                  ("Market-based", "EF_ResidualMB_Change", 10.0))
+        for basis, rid, pct in states:
+            ins = tuple(dataclasses.replace(r, published_value=pct)
+                        if r.id == rid else r for r in self.ds.inputs)
+            ds = dataclasses.replace(self.ds, inputs=ins,
+                                     selector_state=(basis, "Central"))
+            ref = compute_measures(ins, basis, "Central")
+            # the state exists: some measure has PV of tonnes > 0 but is
+            # left out because its average tonnes are <= 0
+            gap = [m for m in ref.measures
+                   if m.pv_t_sel > 0 and not m.eligible]
+            self.assertTrue(gap, (basis, pct))
+            for m in ref.measures:
+                if not m.eligible:
+                    for v in (m.lev, m.break_even, m.lev_pre_sub):
+                        self.assertEqual(v, "n/a (no abatement on this "
+                                         "basis)", (basis, pct, m.key))
+            with mock.patch.object(build, "evaluate_names",
+                                   return_value={"Chk_Master": "OK",
+                                                 "Chk_FailCount": 0}), \
+                    mock.patch.object(build, "_cached_value",
+                                      side_effect=[["OK"], [0]]):
+                data, _ = build.build_bytes("main", ds)
+            bad, n = compare_cached(data)
+            self.assertGreater(n, 0)
+            self.assertEqual(bad, [], (basis, pct))
+            names = ["Chk_Master"] + [
+                "M_%s_%s" % (m.key, f) for m in gap
+                for f in ("LevCost", "BreakEven")]
+            got = evaluate_names(data, names)
+            for m in gap:
+                self.assertEqual(got["M_%s_LevCost" % m.key], m.lev)
+                self.assertEqual(got["M_%s_BreakEven" % m.key], m.break_even)
+            out = compute_outputs(ins, basis, "Central", "Off")
+            self.assertEqual(got["Chk_Master"], out.chk_master)
+
     def test_annuity_check_holds_for_changing_grid_factor(self):
         # WR-10: the annuity form used simple averages and agreed with the
         # levelised cost only for flat tonne profiles, so any non-zero
