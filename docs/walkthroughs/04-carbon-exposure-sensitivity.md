@@ -73,7 +73,7 @@ Market-based discounted values (Central): do nothing EUR 6.48 million, after act
 ## 7. Cost of not acting vs acting
 
 Two ways to total the years:
-- **Cumulative**: add the nominal yearly bills.
+- **Cumulative**: add the undiscounted yearly bills (real 2025 euros, no inflation).
 - **Discounted** (`Expo_DiscBAU_Sel`, `Expo_DiscWith_Sel`, `Expo_DiscAvoided_Sel`): add after applying discount factors. Use this to compare with NPVs.
 
 Headline, direct ETS Off, in EUR million (discounted; cumulative in brackets):

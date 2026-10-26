@@ -170,6 +170,17 @@ class DocumentTests(unittest.TestCase):
         bad = stray_numbers(self.text)
         self.assertEqual(bad, [], "unlisted figures: %s" % bad)
 
+    def test_exposure_money_not_called_nominal(self):
+        # WR-03: the model is in real 2025 euros; bills are never nominal
+        pat = re.compile(r"nominal\s+((yearly\s+)?bills?|cumulative|exposure)",
+                         re.I)
+        self.assertIsNone(pat.search(self.text))
+        other = os.path.join(os.path.dirname(DOC), "walkthroughs",
+                             "04-carbon-exposure-sensitivity.md")
+        if os.path.exists(other):
+            with open(other, encoding="utf-8") as f:
+                self.assertIsNone(pat.search(f.read()))
+
     def test_no_private_notes_reference(self):
         self.assertNotIn("Interview-Notes", self.text)
 
