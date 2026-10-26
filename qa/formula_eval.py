@@ -21,8 +21,9 @@ arithmetic, comparison and concatenation, are swallowed only by IFERROR (and
 ISNUMBER), and are never evaluated away by IF, so IF(guard,IRR(..),"n/a")
 behaves as in Excel. A cell whose final value is an error value raises.
 Further refusals: unary minus directly before ^ (Excel gives (-2)^2=4,
-Python -4), chained ^ (Excel is left-associative), number & text
-concatenation (locale formatting), ROUND with digits other than 0, COUNTIF
+Python -4), chained ^ (Excel is left-associative), & with a non-integer
+number or a logical (locale formatting; whole numbers such as years are
+written as General format does, "2035"), ROUND with digits other than 0, COUNTIF
 criteria with operators or wildcards, and an IRR whose NPV function does not
 have exactly one root on [-0.99, 10] (a non-unique IRR is refused, not guessed).
 Text comparison is case-insensitive, as in Excel ("LB"="lb" is TRUE).
@@ -309,6 +310,18 @@ def _COUNTIF(rng, crit):
     raise FormulaEvalError("unsupported COUNTIF criterion %r" % (crit,))
 
 
+def _concat_text(x):
+    """Operand of &: text as is; a whole number (such as a year) as Excel's
+    General format writes it ("2035"). Other numbers and logicals are
+    refused, since their text depends on locale and number format."""
+    if isinstance(x, str):
+        return x
+    if (isinstance(x, (int, float)) and not isinstance(x, bool)
+            and math.isfinite(x) and float(x).is_integer() and abs(x) < 1e15):
+        return str(int(x))
+    raise FormulaEvalError("& is supported between text and whole numbers only")
+
+
 _FUNCS = {"SUM": _SUM, "AVERAGE": _AVERAGE, "MIN": _MIN, "MAX": _MAX,
           "ABS": _ABS, "AND": _AND, "IF": _IF, "MATCH": _MATCH,
           "INDEX": _INDEX, "CHOOSE": _CHOOSE,
@@ -404,9 +417,7 @@ class _X(object):
         e = self._bad(o)
         if e:
             return _X(e)
-        a, b = _scalar(self.v, "&"), _scalar(o.v, "&")
-        if not (isinstance(a, str) and isinstance(b, str)):
-            raise FormulaEvalError("& is supported between two text values only")
+        a, b = _concat_text(_scalar(self.v, "&")), _concat_text(_scalar(o.v, "&"))
         return _X(a + b)
 
     def __neg__(self):

@@ -98,7 +98,7 @@ Electricity cost from carbon = purchased MWh times the marginal emission factor 
 
 ### Cumulative and discounted exposure
 
-Cumulative adds the nominal yearly bills (`Dash_CostNotActing` = EUR 13,870,507, undiscounted). Discounted applies the factors first (`Expo_DiscBAU_Sel`, same value as `Dash_CostNotActingDisc`). Use discounted to compare with NPVs. The Dashboard headline tile is the undiscounted cumulative sum and is labelled that way.
+Cumulative adds the nominal yearly bills (`Dash_CostNotActing` = EUR 13,870,507, undiscounted). Discounted applies the factors first (`Expo_DiscBAU_Sel`, same value as `Dash_CostNotActingDisc`). Use discounted to compare with NPVs. The Dashboard headline tile is the undiscounted cumulative sum over the exposure window only, 2026 to `Expo_LastYear` (2035), not the full timeline to 2055 that the NPVs use. Its label is a live formula that names the window from `Time_FirstYear` and `Expo_LastYear`, so it stays right if the window input changes.
 
 ### The bridge
 

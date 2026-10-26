@@ -250,7 +250,8 @@ def exposure_scenario_chart(wb, sheet, hdr_row, first_row, last_row, cat_col,
                      "name_font": {"name": "Arial", "size": 11}})
     chart.set_x_axis({"num_font": FONT, "label_position": "low"})
     chart.set_y_axis({
-        "num_format": "#,##0", "name": "EUR, real 2025, undiscounted",
+        "num_format": "#,##0",
+        "name": "EUR, real 2025, undiscounted, exposure window",
         "name_font": dict(FONT, bold=False), "num_font": FONT,
         "major_gridlines": {"visible": True, "line": {"color": "#D9D9D9"}},
     })

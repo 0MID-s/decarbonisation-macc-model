@@ -323,8 +323,15 @@ class TestPhase3Functions(unittest.TestCase):
         self.assertEqual(_calc('="a"&"b"'), "ab")
         self.assertEqual(_calc('="x: "&A1', {"A1": "Central"}), "x: Central")
         self.assertEqual(_calc('=IF("a"&"b"="AB",1,0)'), 1)
-        self.refuses('="a"&1')
-        self.refuses('=1&2')
+        # whole numbers (years) concatenate as Excel's General format does
+        self.assertEqual(_calc('="a"&1'), "a1")
+        self.assertEqual(_calc('=1&2'), "12")
+        self.assertEqual(_calc('="2026 to "&A1', {"A1": 2035}), "2026 to 2035")
+        self.assertEqual(_calc('=A1&" to "&A2', {"A1": 2026.0, "A2": 2035}),
+                         "2026 to 2035")
+        # non-integers and logicals depend on number format: refused
+        self.refuses('="a"&A1', {"A1": 1.5})
+        self.refuses('="a"&A1', {"A1": True})
 
     def test_sumproduct(self):
         self.assertEqual(_calc("=SUMPRODUCT(A1:C1,A2:C2)",

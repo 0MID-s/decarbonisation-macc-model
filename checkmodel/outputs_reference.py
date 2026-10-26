@@ -128,6 +128,10 @@ def compute_outputs(inputs, basis, scenario, direct_ets, overrides=None):
         "npv_incl": "Including carbon cash savings, %s scenario, %s basis"
                     % (scenario, basis),
         "cost": "Cost of not acting, %s scenario" % scenario,
+        # the cumulative tiles sum the exposure window only (CR-02)
+        "cost_window": "Cash carbon cost %d to %d (exposure window), "
+                       "undiscounted, real EUR 2025" % (
+                           expo.years[0], int(mv["Expo_LastYear"])),
         "scen_chart": "Cost of not acting by scenario: BAU vs with measures "
                       "(%s basis, Direct ETS %s)" % (basis, direct_ets),
         "selectors": {"Sel_Scenario": scenario, "Sel_Basis": basis,

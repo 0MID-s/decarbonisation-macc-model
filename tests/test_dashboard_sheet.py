@@ -50,7 +50,8 @@ class LintPreTests(unittest.TestCase):
         self.assertEqual(problems, [])
 
 
-SEL = r"(Sel_Scenario|Sel_Basis|Sel_DirectETS)"
+# selector names, plus the two year inputs of the exposure-window label (CR-02)
+SEL = r"(Sel_Scenario|Sel_Basis|Sel_DirectETS|Time_FirstYear|Expo_LastYear)"
 STR = r'"[^"]*"'
 SHAPES = (
     r"^=[A-Za-z_][A-Za-z0-9_]*$",
@@ -155,6 +156,28 @@ class DashboardSheet(unittest.TestCase):
                 if isinstance(c.value, str)]
         self.assertTrue(any("undiscounted" in t for t in text))
         self.assertTrue(any("can be negative" in t for t in text))
+
+    def test_cost_window_label_is_live(self):
+        # CR-02: the cumulative tiles cover the exposure window only, so the
+        # label names it from Time_FirstYear and Expo_LastYear.
+        from qa.formula_eval import FormulaEvaluator
+        hits = [c for row in self.ws.iter_rows() for c in row
+                if isinstance(c.value, str) and "Expo_LastYear" in c.value]
+        self.assertEqual(len(hits), 1)
+        coord = hits[0].coordinate
+        text = [c.value for row in self.ws.iter_rows() for c in row
+                if isinstance(c.value, str)]
+        self.assertFalse(any("last model year" in t for t in text))
+        r = compute_outputs(INPUTS, "Market-based", "Central", "Off")
+        self.assertEqual(r.labels["cost_window"], "Cash carbon cost 2026 to "
+                         "2035 (exposure window), undiscounted, real EUR 2025")
+        wf = openpyxl.load_workbook(io.BytesIO(self.data))
+        self.assertEqual(FormulaEvaluator(wf).value("Dashboard", coord),
+                         r.labels["cost_window"])
+        sheet, addr = self._addr("Expo_LastYear")
+        got = FormulaEvaluator(wf, {(sheet, addr): 2040}).value(
+            "Dashboard", coord)
+        self.assertIn("2026 to 2040 (exposure window)", got)
 
     def test_low_scenario_negative_cost_master_ok(self):
         sheet, addr = self._addr("Sel_Scenario")

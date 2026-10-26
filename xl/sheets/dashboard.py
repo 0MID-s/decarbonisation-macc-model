@@ -117,14 +117,17 @@ def build_dashboard(wb, styles, cells, dataset, cfg, out):
           lab["cost"])
     tile_cell(t + 1, c, "Dash_CostNotActing", "=Expo_CumBAU_Sel",
               ref.cum_bau_sel, "eur")
-    label(t + 2, c, None, "Cumulative cash carbon cost, undiscounted, real "
-          "EUR 2025, from the first model year to the last model year")
+    # CR-02: the cumulative sums only the exposure window, which ends at
+    # Expo_LastYear (NPVs still run to the last model year); say so live.
+    label(t + 2, c, '="Cash carbon cost "&Time_FirstYear&" to "&Expo_LastYear'
+          '&" (exposure window), undiscounted, real EUR 2025"',
+          lab["cost_window"])
     tile_cell(t + 3, c, "Dash_CostAvoided", "=Expo_CumAvoided_Sel",
               ref.cum_avoided_sel, "eur")
     label(t + 4, c, None, "Carbon cost avoided by the measures (undiscounted)")
     tile_cell(t + 5, c, "Dash_CostNotActingDisc", "=Expo_DiscBAU_Sel",
               ref.disc_bau_sel, "eur")
-    label(t + 6, c, None, "Same cost, discounted at the real rate")
+    label(t + 6, c, None, "Same window, discounted at the real rate")
     label(t + 7, c, None, "Under the Low scenario this can be negative: the "
           "electricity bill falls when carbon prices fall (pass-through).")
     # (5) model checks
