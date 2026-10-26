@@ -175,6 +175,16 @@ class MeasuresSheet(unittest.TestCase):
         self.assertIn("Pre-tax, ex-VAT, real EUR 2025",
                       self.wb["Measures"]["B3"].value)
 
+    def test_residual_mix_unit_is_co2_only(self):
+        # WR-07: the AIB residual mix is CO2 only, so its row says tCO2/MWh
+        from xl.layout import LABEL_COL, UNIT_COL
+        ws = self.wb["Measures"]
+        rows = [r for r in ws.iter_rows()
+                if r[LABEL_COL].value and str(r[LABEL_COL].value).startswith(
+                    "Residual mix factor, market-based")]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0][UNIT_COL].value, "tCO2/MWh")
+
     def test_column_letters_follow_layout(self):
         # WR-05: year-0 / year-1..n references and the summary SUM columns
         # are derived from the layout, so they point at the right cells.

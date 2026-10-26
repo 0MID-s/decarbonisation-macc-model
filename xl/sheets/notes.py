@@ -126,6 +126,21 @@ MEASURES_METHOD = (
     "The financial NPV includes any subsidy (Meas_*_Subsidy, default 0) and "
     "drives IRR, payback and abatement cost. NPV before subsidy is shown "
     "alongside it (D-15).",
+    "Electricity valuation (an analyst assumption): every electricity change "
+    "is valued at the full Eurostat X_VAT band price (BL_ElecPrice), which "
+    "includes network charges and levies. PV output is treated as fully "
+    "self-consumed (a check keeps it below the remaining load) with no "
+    "export value, so the PV saving is an upper bound: self-consumed solar "
+    "avoids the energy part of the bill but only part of the network "
+    "charges and levies. The fleet's charging electricity is costed at the "
+    "same full price, so its saving is fuel avoided less charging at that "
+    "price.",
+    "Gas basis of the electricity factors: the market-based residual mix "
+    "(EF_ResidualMB, AIB) is CO2 only, while the location-based grid factor "
+    "(EF_GridLB, EEA) and the fuel factors are CO2e. Market-based "
+    "electricity tonnes therefore exclude non-CO2 gases, so the two bases "
+    "and the MACC rankings under them are not on an identical gas basis; "
+    "the gap is not quantified in the model.",
     "Carbon value at the selected NGFS scenario is a shadow-price lens, not "
     "cash. Cash carbon costs by channel belong to Phase 4 (D-16).",
     "The electricity stack applies efficiency, electrification and solar "

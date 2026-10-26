@@ -382,9 +382,11 @@ INPUTS = INPUTS + (
            "value " + _AS),
     _share("Meas_VSD_MotorShare",
            "Compressed-air share of industrial electricity", 10,
-           "Anchor: Fraunhofer ISI (Radgen & Blaustein 2001, about 10% of "
-           "EU industrial electricity) and JRC (motor systems 65%) (D-08); "
-           "value " + _AS),
+           "Analyst assumption (D-08): no official EU compressed-air share "
+           "was verified. Order-of-magnitude anchor only: a Fraunhofer ISI "
+           "estimate of about 10% of EU industrial electricity, read from a "
+           "search summary and logged in docs/DATA_LOG.md at MEDIUM "
+           "confidence, not a verified source; value " + _AS),
     _share("Meas_VSD_Coverage",
            "Share of compressed-air load suited to a VSD retrofit", 50,
            "Avoids counting savings on already-controlled compressors "

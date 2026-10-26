@@ -157,6 +157,15 @@ class Notes(unittest.TestCase):
             self.assertIn(w, t)
         self.assertNotIn("full method and version log in Phase 5", t)
 
+    def test_measures_assumptions_stated(self):
+        # WR-07: full-tariff electricity valuation and the CO2-only residual
+        # mix are stated in Notes
+        t = " ".join(self._text().split())
+        for w in ("full Eurostat X_VAT band price (BL_ElecPrice)",
+                  "the PV saving is an upper bound",
+                  "(EF_ResidualMB, AIB) is CO2 only"):
+            self.assertIn(w, t)
+
     def test_corrections_rendered(self):
         from config.disclosure import CORRECTIONS
         vals = [c.value for row in self.wb["Notes"].iter_rows() for c in row]

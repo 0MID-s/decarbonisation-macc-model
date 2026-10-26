@@ -259,12 +259,13 @@ def build_measures(wb, styles, cells, dataset, cfg, layouts):
     w.series(R["ef_lb"], lambda k, c: "=EF_GridLB*(1+EF_GridLB_Change)^%s"
              % _a(c, R["idx"]), ref.f_lb, "dec5", link=True, name="M_EF_LB",
              tag="LB")
-    w.line(R["ef_mb"], "Residual mix factor, market-based", "tCO2e/MWh")
+    w.line(R["ef_mb"], "Residual mix factor, market-based (CO2 only)",
+           "tCO2/MWh")
     w.series(R["ef_mb"], lambda k, c: "=EF_ResidualMB*(1+EF_ResidualMB_Change)"
              "^%s" % _a(c, R["idx"]), ref.f_mb, "dec5", link=True,
              name="M_EF_MB", tag="MB")
     w.line(R["ef_sel"], "Electricity factor, selected basis (display only)",
-           "tCO2e/MWh")
+           "tCO2e/MWh (LB); tCO2/MWh (MB)")
     w.series(R["ef_sel"], lambda k, c: "=CHOOSE(M_BasisIdx,%s,%s)"
              % (_a(c, R["ef_lb"]), _a(c, R["ef_mb"])), ref.f_sel, "dec5",
              name="M_EF_Sel")

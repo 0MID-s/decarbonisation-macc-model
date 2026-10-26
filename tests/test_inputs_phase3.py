@@ -53,6 +53,19 @@ class Phase3InputTests(unittest.TestCase):
             self.assertEqual((r.status, r.source_id, r.published_unit),
                              (st, src, unit), id_)
 
+    def test_vsd_share_labelled_without_unlogged_citations(self):
+        # WR-07: only the anchor logged in docs/DATA_LOG.md is named; the
+        # unlogged Radgen & Blaustein / JRC 65% citations are not used.
+        r = BY["Meas_VSD_MotorShare"]
+        self.assertIs(r.status, A)
+        self.assertIsNone(r.source_id)
+        self.assertTrue(r.rationale.startswith("Analyst assumption"))
+        for bad in ("Radgen", "65%", "JRC"):
+            self.assertNotIn(bad, r.rationale)
+        log = (Path(__file__).resolve().parent.parent / "docs"
+               / "DATA_LOG.md").read_text(encoding="utf-8")
+        self.assertIn("Fraunhofer ISI about 10% (MEDIUM confidence)", log)
+
     def test_assumptions_have_rationale(self):
         for r in ALL:
             if r.id.startswith(("Meas_", "Price_Diesel")) \
