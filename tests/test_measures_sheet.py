@@ -175,6 +175,31 @@ class MeasuresSheet(unittest.TestCase):
         self.assertIn("Pre-tax, ex-VAT, real EUR 2025",
                       self.wb["Measures"]["B3"].value)
 
+    def test_column_letters_follow_layout(self):
+        # WR-05: year-0 / year-1..n references and the summary SUM columns
+        # are derived from the layout, so they point at the right cells.
+        import re
+        from xl.layout import col_letter
+        ws = self.wb["Measures"]
+        f0, f1 = col_letter(TIMELINE_FIRST_COL), col_letter(TIMELINE_FIRST_COL + 1)
+        fl = col_letter(TIMELINE_LAST_COL)
+        for k in KEYS:
+            cf = self.wb.defined_names["M_%s_CF" % k].attr_text
+            row = int(re.search(r"\$(\d+):", cf).group(1))
+            memo = self._cells(self.wb, "M_%s_NPVMemo" % k)[0].value
+            self.assertEqual(memo, "=$%s$%d+NPV(Rate_DiscountReal,$%s$%d:$%s$%d)"
+                             % (f0, row, f1, row, fl, row), k)
+        for name, suffix in (("M_Portfolio_NPV", "NPV"),
+                             ("M_Total_tLB", "AvgtLB"),
+                             ("M_Total_tMB", "AvgtMB")):
+            f = self._cells(self.wb, name)[0].value
+            m = re.fullmatch(r"=SUM\(([A-Z]+)(\d+):([A-Z]+)(\d+)\)", f)
+            self.assertIsNotNone(m, f)
+            self.assertEqual(m.group(1), m.group(3))
+            got = [ws["%s%d" % (m.group(1), r)].value
+                   for r in range(int(m.group(2)), int(m.group(4)) + 1)]
+            self.assertEqual(got, ["=M_%s_%s" % (k, suffix) for k in KEYS])
+
 
 if __name__ == "__main__":
     unittest.main()

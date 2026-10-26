@@ -642,6 +642,12 @@ def _write_results(w, m, b, R, ref, check_names, mv, nm):
     chg = [0] + [1 if sign[n - 1] != 0 and sign[n] != sign[n - 1] else 0
                  for n in range(1, ny)]
     cfr, dcfr = _rng(b["m_cf"]), _rng(b["dcf"])
+    # year 0 cell and the year 1..n range of the net cash flow row, derived
+    # from the timeline layout (WR-05), never hard-coded letters
+    cf0 = "$%s$%d" % (col_letter(TIMELINE_FIRST_COL), b["m_cf"] + 1)
+    cf_rest = "$%s$%d:$%s$%d" % (col_letter(TIMELINE_FIRST_COL + 1),
+                                 b["m_cf"] + 1, col_letter(TIMELINE_LAST_COL),
+                                 b["m_cf"] + 1)
     pc = lambda k: col_letter(TIMELINE_FIRST_COL + k - 1)  # noqa: E731
 
     w.band(b["r_band"], "Results: " + m.name)
@@ -684,9 +690,8 @@ def _write_results(w, m, b, R, ref, check_names, mv, nm):
     w.scalar(b["npv"], "=SUMPRODUCT(%s,M_DF)" % cfr, m.npv, "eur",
              name=nm("NPV"))
     w.line(b["npvmemo"], "Memo: CF0 + NPV(rate, CF1..CFn)", "EUR")
-    w.scalar(b["npvmemo"], "=$N$%d+NPV(Rate_DiscountReal,$O$%d:$AQ$%d)" % (
-        b["m_cf"] + 1, b["m_cf"] + 1, b["m_cf"] + 1), m.npv_memo, "eur",
-        name=nm("NPVMemo"))
+    w.scalar(b["npvmemo"], "=%s+NPV(Rate_DiscountReal,%s)" % (cf0, cf_rest),
+             m.npv_memo, "eur", name=nm("NPVMemo"))
     w.note(b["npvmemo"], "Excel NPV() discounts its first value one period, "
            "so year 0 stays outside it")
     w.line(b["pvsub"], "PV of subsidy", "EUR")
@@ -724,7 +729,6 @@ def _write_results(w, m, b, R, ref, check_names, mv, nm):
     w.line(b["guess"], "IRR guess", "fraction")
     w.scalar(b["guess"], "=IF(SUM(%s)<0,-Const_IRR_Guess,Const_IRR_Guess)"
              % cfr, guess, "pct")
-    cf0 = "$N$%d" % (b["m_cf"] + 1)
     # numeric view of a cell that may hold an n/a text, so a guarded branch
     # never does arithmetic on text
     nz = lambda row: "IF(ISNUMBER(%s),%s,0)" % (D(row), D(row))  # noqa: E731
@@ -853,15 +857,15 @@ def _write_results(w, m, b, R, ref, check_names, mv, nm):
           "tolerance documented on Inputs (Const_AnnuityTolRel)")
     check(b["chk_zero"], "M_Check_%s_NPVatZero" % key,
           "Check: NPV at r = 0 equals the plain sum",
-          "=ABS((%s+NPV(0,$O$%d:$AQ$%d))-SUM(%s))<=Const_CheckTolMoney" % (
-              cf0, b["m_cf"] + 1, b["m_cf"] + 1, cfr),
+          "=ABS((%s+NPV(0,%s))-SUM(%s))<=Const_CheckTolMoney" % (
+              cf0, cf_rest, cfr),
           abs(cf[0] + sum(cf[1:]) - sum(cf)) <= tol_m)
     irr_num = isinstance(m.irr, float)
     check(b["chk_irr"], "M_Check_%s_NPVatIRR" % key,
           "Check: NPV at the IRR is about zero",
-          "=IF(ISNUMBER(%s),ABS(%s+NPV(%s,$O$%d:$AQ$%d))<="
+          "=IF(ISNUMBER(%s),ABS(%s+NPV(%s,%s))<="
           "Const_IRRCheckTolMoney,TRUE)" % (
-              D(b["irr"]), cf0, nz(b["irr"]), b["m_cf"] + 1, b["m_cf"] + 1),
+              D(b["irr"]), cf0, nz(b["irr"]), cf_rest),
           (abs(ap.npv0(m.irr, cf)) <= mv["Const_IRRCheckTolMoney"])
           if irr_num else True)
 
@@ -885,9 +889,6 @@ def _write_summary(w, ref, R, B, check_names):
         w.cells.text(w.ws, r0 + 1, LABEL_COL + i, t, hdr)
     first = r0 + 2
     last = first + len(ref.measures) - 1
-    # tags first, so the LB / MB lint sees them before any reader formula
-    w.cells.tag(SHEET, first, 3, last, 3, "LB")
-    w.cells.tag(SHEET, first, 4, last, 4, "MB")
     cols = (("AvgtSel", "tco2e", lambda x: x.avg_t_sel),
             ("AvgtLB", "tco2e", lambda x: x.avg_t_lb),
             ("AvgtMB", "tco2e", lambda x: x.avg_t_mb),
@@ -898,6 +899,13 @@ def _write_summary(w, ref, R, B, check_names):
             ("IRR", "pct", lambda x: x.irr),
             ("PaySimple", "dec1", lambda x: x.pay_simple),
             ("PayDisc", "dec1", lambda x: x.pay_disc))
+    # summary column index and letter from the position in cols (WR-05)
+    ci = dict((suffix, LABEL_COL + 1 + j)
+              for j, (suffix, _n, _a) in enumerate(cols))
+    sc = dict((k, col_letter(c)) for k, c in ci.items())
+    # tags first, so the LB / MB lint sees them before any reader formula
+    w.cells.tag(SHEET, first, ci["AvgtLB"], last, ci["AvgtLB"], "LB")
+    w.cells.tag(SHEET, first, ci["AvgtMB"], last, ci["AvgtMB"], "MB")
     for i, mr in enumerate(ref.measures):
         r = first + i
         w.cells.text(w.ws, r, LABEL_COL, mr.name, w.styles.get("label"))
@@ -911,19 +919,22 @@ def _write_summary(w, ref, R, B, check_names):
     ms = ref.measures
     w.cells.text(w.ws, pr, LABEL_COL, "Portfolio financial NPV (sum of "
                  "measures, stack order applied)", w.styles.get("label"))
-    w.cells.formula(w.ws, pr, 3, "=SUM(G%d:G%d)" % (first + 1, last + 1),
+    w.cells.formula(w.ws, pr, 3, "=SUM(%s%d:%s%d)" % (
+                        sc["NPV"], first + 1, sc["NPV"], last + 1),
                     w.styles.get("calc", "eur"),
                     value=sum(x.npv for x in ms))
     cells.define_name("M_Portfolio_NPV", "=%s!$D$%d" % (SHEET, pr + 1))
     w.cells.text(w.ws, pr + 1, LABEL_COL, "Total annual tCO2e, "
                  "location-based", w.styles.get("label"))
-    w.cells.formula(w.ws, pr + 1, 3, "=SUM(D%d:D%d)" % (first + 1, last + 1),
+    w.cells.formula(w.ws, pr + 1, 3, "=SUM(%s%d:%s%d)" % (
+                        sc["AvgtLB"], first + 1, sc["AvgtLB"], last + 1),
                     w.styles.get("calc", "tco2e"),
                     value=sum(x.avg_t_lb for x in ms))
     cells.define_name("M_Total_tLB", "=%s!$D$%d" % (SHEET, pr + 2))
     w.cells.text(w.ws, pr + 2, LABEL_COL, "Total annual tCO2e, "
                  "market-based", w.styles.get("label"))
-    w.cells.formula(w.ws, pr + 2, 3, "=SUM(E%d:E%d)" % (first + 1, last + 1),
+    w.cells.formula(w.ws, pr + 2, 3, "=SUM(%s%d:%s%d)" % (
+                        sc["AvgtMB"], first + 1, sc["AvgtMB"], last + 1),
                     w.styles.get("calc", "tco2e"),
                     value=sum(x.avg_t_mb for x in ms))
     cells.define_name("M_Total_tMB", "=%s!$D$%d" % (SHEET, pr + 3))
