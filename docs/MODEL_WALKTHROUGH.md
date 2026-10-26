@@ -138,7 +138,7 @@ These mirror the Notes sheet.
 - ETS2 timing is politically uncertain. The model uses the delayed start (`Carbon_ETS2_StartYear` = 2028).
 - Two sensitivities on Notes are computed in Python at build time and are not live cells.
 - The Disclosure sheet maps outputs to requirements; it is not a compliance statement.
-- Excel for the web has not been verified. The final Excel review (GATE-B) is pending.
+- Excel for the web: not verified. The final Excel review (GATE-B) passed in Excel desktop on 2026-10-26.
 
 ## 6. Interview questions
 
@@ -215,7 +215,7 @@ See section 7: an independent Python re-implementation, a formula-string evaluat
 - **Lint and scan.** Tests check write discipline (no typed numbers outside Inputs), unit vocabulary, internal links and a security scan.
 - **12 states.** The same comparison in all selector combinations, with every check TRUE.
 - **Excel desktop scripted check.** Recorded in `docs/EXCEL_CHECKS.md` and on Notes: Phase 3 default and six states, Phase 4 twelve states, no mismatches and no error values.
-- **Not yet done.** The Phase 5 final review (GATE-B) is pending, and Excel for the web is not verified.
+- **GATE-B.** On 2026-10-26, 12 states were recalculated in Excel desktop with no mismatches and the master flag OK, and the user approved the visual review in Excel desktop. Excel for the web: not verified.
 - **This document.** A test rebuilds the workbook and checks every number below against it.
 
 ## Figures quoted

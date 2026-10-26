@@ -218,3 +218,10 @@ rendering was not part of the user's check and will be re-checked at GATE-B
   selector changes, MACC/bridge/tornado, Disclosure dropdown, A4 print preview)
   and approved. No issues were reported; the MACC technique stays "A".
 - Excel for the web: not verified (the user did not perform the web check).
+
+Final text-only rebuild: formula-identical, re-verified by the script in all 12
+states (12,278 formula cells each, 0 mismatches, 0 error values, Chk_Master OK).
+Date: 2026-10-26. Final deliverable sha256
+`1668b7aeb6d8ede4462793eb6d9a01761b81c772d497389d2c2f6cce9aab0e73`
+(only the Notes record text changed; unchanged by the run). Excel for the web:
+not verified.

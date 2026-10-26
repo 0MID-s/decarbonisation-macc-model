@@ -61,6 +61,8 @@ EXCEL_RECORD = (
     "Phase 4 scripted recalculation in Excel for Mac 16.114.1 on 2026-10-25: "
     "12 selector states, no mismatches and no error values (re-run after the "
     "code-review fixes, same result).",
-    "Phase 5 GATE-B: pending.",
+    "Phase 5 GATE-B on 2026-10-26 in Excel for Mac 16.114.1: 12 states "
+    "recalculated in Excel desktop with no mismatches; master flag OK. Visual "
+    "review approved by the user in Excel desktop.",
     "Excel for the web: not verified.",
 )
