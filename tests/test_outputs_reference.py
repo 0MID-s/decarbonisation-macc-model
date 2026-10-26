@@ -64,6 +64,21 @@ class OutputsReference(unittest.TestCase):
             self.assertEqual(r.chk_fail_count, 0)
             self.assertLessEqual(abs(r.abated_sel - r.macc_total), 6 * TOL, st)
 
+    def test_negative_abatement_reconciles(self):
+        # CR-01: Meas_Fleet_EVkWhPerKm = 1.5 makes the fleet abate a negative
+        # amount; the MACC leaves it out and the like-for-like check passes.
+        ov = {"Meas_Fleet_EVkWhPerKm": 1.5}
+        r = o.compute_outputs(INPUTS, *DEFAULT, overrides=ov)
+        m = compute_measures(INPUTS, DEFAULT[0], DEFAULT[1], ov)
+        fleet = m.by_key("Fleet")
+        self.assertLess(fleet.avg_t_sel, 0)
+        self.assertFalse(fleet.eligible)
+        # the old all-measures comparison would have failed here
+        self.assertGreater(abs(r.abated_sel - r.macc_total), 6 * TOL)
+        self.assertTrue(r.checks["Dash_TileVsMACC"])
+        self.assertEqual(r.chk_master, "OK")
+        self.assertEqual(r.chk_fail_count, 0)
+
     def test_linked_value(self):
         r = o.compute_outputs(INPUTS, *DEFAULT)
         self.assertEqual(o.linked_value("Expo_CumBAU_Sel", DEFAULT), r.cum_bau_sel)

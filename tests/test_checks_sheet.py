@@ -14,8 +14,10 @@ CHECK_RE = re.compile(r"^(M|Carb|BL|Expo|Sens)_Check_")
 ALLOWED = re.compile(
     r"^=(IFERROR\([A-Za-z0-9_]+,FALSE\)|IFERROR\([A-Za-z0-9_]+=\"OK\",FALSE\)"
     r"|IFERROR\(ISNUMBER\(MATCH\([A-Za-z_]+,[A-Za-z_]+,0\)\),FALSE\)"
-    r"|IFERROR\(ABS\(Dash_AbatedSel-MACC_TotalAbatement\)<=COUNT\(MACC_Chart_Width\)"
-    r"\*Const_MACCRoundTol,FALSE\)|IFERROR\(AND\(Dash_Share>=0,Dash_Share<=1\),FALSE\)"
+    r"|IFERROR\(AND\(ABS\(SUMPRODUCT\(MACC_Data_Abatement,MACC_Data_Eligible\)"
+    r"-MACC_TotalAbatement\)<=COUNT\(MACC_Chart_Width\)\*Const_MACCRoundTol,"
+    r"ABS\(SUM\(MACC_Data_Abatement\)-Dash_AbatedSel\)<=Const_CheckTolerance\),FALSE\)"
+    r"|IFERROR\(AND\(Dash_Share>=0,Dash_Share<=1\),FALSE\)"
     r"|IFERROR\(OR\(Dash_AbatedSel=M_Total_tLB,Dash_AbatedSel=M_Total_tMB\),FALSE\)"
     r"|AND\(.*\)|COUNTIF\(.*,FALSE\)|SUM\(.*\)|IF\(AND\(.*\),\"OK\",\"ERROR\"\))$")
 
@@ -98,6 +100,34 @@ class ChecksSheet(unittest.TestCase):
         sheet, addr = self._addr("Const_MACCRoundTol")
         got = evaluate_names(self.data, ["Chk_TileVsMACC"],
                              overrides={(sheet, addr): 0.0})
+        self.assertIs(got["Chk_TileVsMACC"], False)
+
+    def test_negative_abatement_is_not_a_master_error(self):
+        # CR-01: a measure with negative abatement is a valid state. The MACC
+        # leaves it out, the tile keeps it (net sum), and the master stays OK.
+        sheet, addr = self._addr("Meas_Fleet_EVkWhPerKm")
+        names = ["Chk_Master", "Chk_FailCount", "Chk_TileVsMACC",
+                 "M_Check_All", "Expo_Check_All", "Sens_Check_All",
+                 "M_Fleet_AvgtSel", "M_Fleet_Eligible", "Dash_AbatedSel",
+                 "MACC_TotalAbatement"]
+        got = evaluate_names(self.data, names,
+                             overrides={(sheet, addr): 1.5})
+        self.assertLess(got["M_Fleet_AvgtSel"], 0)
+        self.assertEqual(got["M_Fleet_Eligible"], 0)
+        # the two totals really differ, so the old check would have failed
+        self.assertGreater(abs(got["Dash_AbatedSel"]
+                               - got["MACC_TotalAbatement"]), 6 * 0.5)
+        self.assertIs(got["Chk_TileVsMACC"], True)
+        for n in ("M_Check_All", "Expo_Check_All", "Sens_Check_All"):
+            self.assertIs(got[n], True, n)
+        self.assertEqual(got["Chk_Master"], "OK")
+        self.assertEqual(got["Chk_FailCount"], 0)
+
+    def test_tile_vs_macc_catches_tile_drift(self):
+        # the second leg ties the tile to the per-measure MACC data
+        sheet, addr = self._addr("Dash_AbatedSel")
+        got = evaluate_names(self.data, ["Chk_TileVsMACC"],
+                             overrides={(sheet, addr): 1.0})
         self.assertIs(got["Chk_TileVsMACC"], False)
 
     def test_group6_text_row(self):

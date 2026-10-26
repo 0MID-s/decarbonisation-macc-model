@@ -99,7 +99,9 @@ def build_dashboard(wb, styles, cells, dataset, cfg, out):
               "=CHOOSE(M_BasisIdx,M_Total_tLB,M_Total_tMB)", ref.abated_sel,
               "tco2e")
     label(t + 2, c, None,
-          "tCO2e per year; equals the MACC width total (see Checks)")
+          "tCO2e per year, net sum of all six measures; a measure with "
+          "negative abatement counts here but is left off the MACC (see "
+          "Checks)")
     # (3) share of Scope 1+2
     c = 3
     label(t, c, '="Share of Scope 1+2 abated, "&Sel_Basis&" basis"',

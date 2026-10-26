@@ -82,7 +82,7 @@ It is the same figure. It is the carbon price at which the measure's NPV includi
 
 ### MACC widths and heights
 
-Width is abated tonnes a year on the selected basis; height is levelised cost. Measures are sorted by cost with a RANK-based helper block. The chart is a native Excel area chart on a date-style axis, so the blocks have vertical edges. Click `MACC_TotalAbatement` (= 3,220 tCO2e); a check (`Chk_TileVsMACC`) ties the Dashboard tile to it.
+Width is abated tonnes a year on the selected basis; height is levelised cost. Measures are sorted by cost with a RANK-based helper block. The chart is a native Excel area chart on a date-style axis, so the blocks have vertical edges. Click `MACC_TotalAbatement` (= 3,220 tCO2e); a check (`Chk_TileVsMACC`) compares like with like: the MACC width total against the measures shown on the MACC (`MACC_Data_Eligible` = 1), and the Dashboard tile against the net sum of all six. The tile is that net sum, so a measure with negative abatement (for example a fleet with a very high EV consumption) lowers the tile but is left off the MACC, and the master check stays OK.
 
 ### Scope 2: LB versus MB selection
 

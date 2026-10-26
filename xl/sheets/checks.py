@@ -103,12 +103,19 @@ SELECTORS = (
 # Dashboard-dependent checks (plan 05-04): name -> (formula, description,
 # name of the Dashboard cell the row links to). They are calculated here.
 CUSTOM = {
+    # Like for like (CR-01): the MACC leaves out a measure with no abatement
+    # (M_<K>_Eligible = 0), so the MACC width total is reconciled with the
+    # eligible measures only, and the tile with the net sum of all six.
     "Chk_TileVsMACC": (
-        "=IFERROR(ABS(Dash_AbatedSel-MACC_TotalAbatement)<="
-        "COUNT(MACC_Chart_Width)*Const_MACCRoundTol,FALSE)",
-        "Dashboard abatement tile equals the MACC width total (MACC widths "
-        "are rounded to whole tonnes; tolerance Const_MACCRoundTol per "
-        "measure)", "Dash_AbatedSel"),
+        "=IFERROR(AND(ABS(SUMPRODUCT(MACC_Data_Abatement,MACC_Data_Eligible)"
+        "-MACC_TotalAbatement)<=COUNT(MACC_Chart_Width)*Const_MACCRoundTol,"
+        "ABS(SUM(MACC_Data_Abatement)-Dash_AbatedSel)<=Const_CheckTolerance),"
+        "FALSE)",
+        "Abatement of the measures on the MACC equals the MACC width total "
+        "(widths rounded to whole tonnes; tolerance Const_MACCRoundTol per "
+        "measure), and the Dashboard tile equals the net sum of all six "
+        "measures, including any with negative abatement that the MACC "
+        "leaves out", "Dash_AbatedSel"),
     "Chk_ShareInRange": (
         "=IFERROR(AND(Dash_Share>=0,Dash_Share<=1),FALSE)",
         "Share of Scope 1+2 abated is between 0 and 1", "Dash_Share"),

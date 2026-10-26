@@ -43,11 +43,16 @@ class OutputsResult:
     named: Dict[str, object] = field(default_factory=dict)
 
 
-def compute_outputs(inputs, basis, scenario, direct_ets):
-    meas = compute_measures(inputs, basis, scenario)
-    expo = compute_exposure(inputs, basis, scenario, direct_ets)
-    sens = compute_sensitivity(inputs, basis, scenario, direct_ets)
-    base = compute_baseline(model_values(inputs))
+def compute_outputs(inputs, basis, scenario, direct_ets, overrides=None):
+    """Dashboard/Checks reference values; overrides maps input IDs to values
+    (as in compute_measures), for what-if states such as negative abatement."""
+    meas = compute_measures(inputs, basis, scenario, overrides)
+    expo = compute_exposure(inputs, basis, scenario, direct_ets, overrides)
+    sens = compute_sensitivity(inputs, basis, scenario, direct_ets, overrides)
+    mv = dict(model_values(inputs))
+    if overrides:
+        mv.update(overrides)
+    base = compute_baseline(mv)
     tol = float(next(r.published_value for r in inputs if r.id == _TOL_ID))
 
     t_lb = sum(m.avg_t_lb for m in meas.measures)
@@ -72,7 +77,14 @@ def compute_outputs(inputs, basis, scenario, direct_ets):
     for k, v in expo.checks.items():
         checks["Expo_" + k] = bool(v)
     n_meas = len(meas.measures)
-    checks["Dash_TileVsMACC"] = abs(abated - macc_total) <= n_meas * tol
+    # Like for like (CR-01): the MACC leaves out measures with no abatement,
+    # so its width total is compared with the eligible measures only, and the
+    # tile (net sum of all six, negatives included) with the per-measure sum.
+    elig_t = sum(m.avg_t_sel for m in meas.measures if m.eligible)
+    checks["Dash_TileVsMACC"] = (
+        abs(elig_t - macc_total) <= n_meas * tol
+        and abs(sum(m.avg_t_sel for m in meas.measures) - abated)
+        <= float(mv["Const_CheckTolerance"]))
 
     named = {
         "M_Portfolio_NPV": sens.npv_fin,

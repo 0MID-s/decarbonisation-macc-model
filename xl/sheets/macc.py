@@ -186,6 +186,11 @@ def build_macc(wb, styles, cells, dataset, cfg, layouts):
     for name, c in (("MACC_Chart_Width", "E"), ("MACC_Chart_Height", "D")):
         cells.define_name(name, "=%s!$%s$%d:$%s$%d" % (
             SHEET, c, s0 + 1, c, s1 + 1))
+    # Data block in stack order: raw selected-basis abatement (may be
+    # negative) and the 1/0 abatement flag; Chk_TileVsMACC reconciles them.
+    for name, c in (("MACC_Data_Abatement", "C"), ("MACC_Data_Eligible", "F")):
+        cells.define_name(name, "=%s!$%s$%d:$%s$%d" % (
+            SHEET, c, d0 + 1, c, d1 + 1))
     for r in range(d0, d1 + 1):
         ws.set_row(r, 40)
     ws.set_row(g.header_row, 38)
