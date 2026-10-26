@@ -225,3 +225,40 @@ Date: 2026-10-26. Final deliverable sha256
 `1668b7aeb6d8ede4462793eb6d9a01761b81c772d497389d2c2f6cce9aab0e73`
 (only the Notes record text changed; unchanged by the run). Excel for the web:
 not verified.
+
+### Post-review rebuild (code review fixes CR-01..WR-04)
+
+- Date: 2026-10-26, after the Phase 5 code review fixes (commits ea8c4f9 to
+  the Notes record update): like-for-like Chk_TileVsMACC with two new MACC
+  names, a live exposure-window label on the cost-of-not-acting tile, Checks
+  cached values taken from the reference model, the ReadMe first-ranked trace,
+  walkthrough wording and the revised ESRS row status.
+- Method: `.venv/bin/python tools/excel_check.py`, Excel for Mac, all 12 states,
+  same comparison as above (relative 1e-7, absolute 1e-9; Chk_Master read from
+  Excel).
+
+| Basis | Scenario | Direct ETS | Formula cells | Mismatches | Error values | Chk_Master in Excel |
+|---|---|---|---|---|---|---|
+| Location-based | Low | Off | 12,279 | 0 | 0 | OK |
+| Location-based | Low | On | 12,279 | 0 | 0 | OK |
+| Location-based | Central | Off | 12,279 | 0 | 0 | OK |
+| Location-based | Central | On | 12,279 | 0 | 0 | OK |
+| Location-based | High | Off | 12,279 | 0 | 0 | OK |
+| Location-based | High | On | 12,279 | 0 | 0 | OK |
+| Market-based | Low | Off | 12,279 | 0 | 0 | OK |
+| Market-based | Low | On | 12,279 | 0 | 0 | OK |
+| Market-based | Central | Off | 12,279 | 0 | 0 | OK |
+| Market-based | Central | On | 12,279 | 0 | 0 | OK |
+| Market-based | High | Off | 12,279 | 0 | 0 | OK |
+| Market-based | High | On | 12,279 | 0 | 0 | OK |
+
+- One more formula cell per state than GATE-B (12,279 vs 12,278): the
+  exposure-window label is now a formula.
+- Deliverable: dist/maison_veritas.xlsx, sha256
+  `59c8ce4d10ba786dd18da56c999d756eed31d1c565840bfd630b1ae7bd1d4020`
+  (unchanged by the run). No dist/excel-check-* folder remains.
+- Re-verified by script only. The user's visual approval above was given for
+  the pre-fix build; the fixes change visible labels (Dashboard tile
+  sub-labels, scenario chart axis title, ReadMe trace text, Disclosure status
+  column), which have not been reviewed visually. Excel for the web: not
+  verified.
