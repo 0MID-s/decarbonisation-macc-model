@@ -177,7 +177,7 @@ def build_dashboard(wb, styles, cells, dataset, cfg, out):
     macc_title = "=%s!$%s$%s" % (msheet, mcell[0], mcell[1:])
     cells.insert_chart(ws, "B%d" % (R_CHART1 + 1), macc_area_chart(
         wb, m.a_layout, title=macc_title, major_unit=m.chart_step,
-        label_col=7, size=(700, 330), axis_max=m.chart_axis_max))
+        label_col=7, size=(700, 330), axis_max=None))
     bsheet, bcell = cells.target_of("Expo_BridgeTitle")
     bridge_title = "=%s!$%s$%s" % (bsheet, bcell[0], bcell[1:])
     cells.insert_chart(ws, "D%d" % (R_CHART1 + 1),

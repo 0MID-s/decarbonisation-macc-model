@@ -72,7 +72,7 @@ class MaccSheetLayout:
     a_layout: object
     c_layout: object
     chart_step: int = 0
-    chart_axis_max: int = 0
+    zoom_axis_max: int = 0
 
 
 def _rows(ref):
@@ -203,10 +203,12 @@ def build_macc(wb, styles, cells, dataset, cfg, layouts):
     total = max(sum(res.chart_widths) for res in all_states(dataset.inputs).values())
     title_ref = "=%s!$B$%d" % (SHEET, TITLE_ROW + 1)
     step = nice_step(total)
-    axis_max = int(-(-total // step) * step)
+    # WR-02: no x-axis maximum on the full-curve chart (nor its Dashboard
+    # copy). Excel autoscales the date axis, so bars are never clipped or
+    # squeezed when inputs change; only the tick spacing is set at build.
     chart_a = macc_area_chart(wb, a_layout, title=title_ref,
                               major_unit=step, label_col=7,
-                              size=(980, 460), axis_max=axis_max)
+                              size=(980, 460), axis_max=None)
     cells.insert_chart(ws, CHART_A_CELL, chart_a)
     # Zoom chart: same series as chart A, x-axis cut just above the largest
     # cumulative abatement of the "Do first" (negative-cost) measures over all
@@ -219,7 +221,9 @@ def build_macc(wb, styles, cells, dataset, cfg, layouts):
     zoom_max = int(-(-first_tot // zstep) * zstep)
     cells.text(ws, 16, 10,
                "Zoom view: the same data as the full chart, with the x-axis "
-               "cut at %d tCO2e, so it never shows the full curve." % zoom_max,
+               "fixed at %d tCO2e for the delivered inputs; it does not "
+               "rescale if inputs change (the full chart above does)."
+               % zoom_max,
                styles.get("note"))
     chart_z = macc_area_chart(
         wb, a_layout, title="Zoom: money-saving measures (first %d tCO2e)"
@@ -235,4 +239,4 @@ def build_macc(wb, styles, cells, dataset, cfg, layouts):
         (TBL_FIRST, t1), (d0, d1), (s0, s1),
         (a_layout.helper_first_row, a_layout.helper_last_row),
         "G%d" % (REF_ROW + 1), "B%d" % (TITLE_ROW + 1), a_layout, c_layout,
-        step, axis_max)
+        step, zoom_max)

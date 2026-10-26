@@ -43,8 +43,8 @@ class MaccSheet(unittest.TestCase):
             self.wbv["MACC"].cell(row=r, column=5).value for r in range(59, 65)))
         lay = build_layouts()["macc"]
         self.assertGreater(lay.chart_step, 0)
-        self.assertGreaterEqual(lay.chart_axis_max, total)
-        self.assertEqual(lay.chart_axis_max % lay.chart_step, 0)
+        self.assertGreater(lay.zoom_axis_max, 0)
+        self.assertLessEqual(lay.zoom_axis_max, total)
 
     def _check_state(self, out, basis, scen):
         ref = compute_measures(INPUTS, basis, scen)
@@ -133,9 +133,15 @@ class MaccSheet(unittest.TestCase):
         z = [x for x in dated if "Zoom:" in x][0]
         cat = lambda x: re.findall(r"<c:cat>.*?<c:f>(.*?)</c:f>", x, re.S)
         self.assertEqual(cat(a), cat(z))
+        # WR-02: the full curve (and its Dashboard copy) has no fixed axis
+        # maximum, so Excel autoscales it and nothing clips when inputs
+        # change; only the zoom view keeps a fixed, labelled maximum.
+        for x in plain:
+            self.assertNotIn("<c:max ", x)
         self.assertRegex(z, r"<c:max val=\"\d+\"/>")
-        self.assertNotEqual(re.search(r"<c:max val=\"(\d+)\"", a).group(1),
-                            re.search(r"<c:max val=\"(\d+)\"", z).group(1))
+        note = self.wb["MACC"]["K17"].value
+        self.assertIn("does not rescale if inputs change", note)
+        self.assertNotIn("never shows the full curve", note)
         self.assertIn("<c:majorUnit", a)
         self.assertRegex(a, r"<c:title>.*MACC!\$B\$5")
         self.assertIn("<c:lineChart>", a)
