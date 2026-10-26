@@ -397,3 +397,17 @@ not verified.
   (unchanged by the run). No dist/excel-check-* folder remains.
 - Re-verified by script only; the reworded text has not been reviewed
   visually. Excel for the web: not verified.
+
+### Phase 3 review fixes: visual status
+
+- 2026-10-26. The user delegated the visual check of the Phase 3 review-fix
+  changes ("if they look good to you i trust you"). These changes were not
+  viewed in Excel by the user or by Claude.
+- Claude checked them programmatically: chart XML (the full MACC chart and
+  the Dashboard MACC chart autoscale; only the zoom chart keeps a fixed
+  maximum), the label and note text, and Chk_Master OK under location-based
+  with EF_GridLB_Change = -3%/yr. The scripted Excel desktop check is clean
+  in all 12 states (deliverable sha256
+  `7395efd88dac54fb240558774046adb61ba1e4e91f2ab3cbce12ffa6777ffbf1`).
+- The earlier layout was approved visually by the user (GATE-B and the
+  post-review labels). Excel for the web: not verified.
