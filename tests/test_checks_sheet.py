@@ -235,6 +235,53 @@ class ChecksSheet(unittest.TestCase):
                 for n in out.checks:
                     self.assertEqual(gb[n], out.checks[n], (basis, x, n))
 
+    def test_annuity_check_at_zero_real_rate(self):
+        # WR-13: with the nominal rate equal to inflation the real rate is
+        # exactly 0 and the closed-form CRF is 0/0. The sheet now takes the
+        # 1/n limit, as checkmodel.appraisal.crf does, so every check holds
+        # and the sheet matches the reference.
+        import dataclasses
+        from checkmodel.measures_reference import compute_measures
+        from checkmodel.outputs_reference import compute_outputs
+        infl = [r for r in self.ds.inputs if r.id == "Fin_InflationLongRun"][0]
+        n_addr = self._addr("Fin_CoC_ChemSpecialty")
+        b = self._addr("Sel_Basis")
+        wbv = openpyxl.load_workbook(io.BytesIO(self.data), data_only=True)
+        s, a = self._addr("Fin_InflationLongRun")
+        nominal = wbv[s][a].value
+        ov = {"Fin_CoC_ChemSpecialty": nominal}
+        for basis in ("Location-based", "Market-based"):
+            out = compute_outputs(self.ds.inputs, basis, "Central", "Off",
+                                  overrides=ov)
+            ref = compute_measures(self.ds.inputs, basis, "Central",
+                                   overrides=ov)
+            self.assertEqual(ref.rate, 0.0)
+            names = list(out.checks) + ["Chk_Master", "Chk_FailCount",
+                                        "Rate_DiscountReal"]
+            got = evaluate_names(self.data, names,
+                                 overrides={n_addr: nominal, b: basis})
+            self.assertEqual(got["Rate_DiscountReal"], 0.0, basis)
+            self.assertEqual(got["Chk_Master"], "OK", basis)
+            self.assertEqual(got["Chk_FailCount"], 0, basis)
+            self.assertEqual(out.chk_master, "OK", basis)
+            gb = _as_bool(got)
+            for n in out.checks:
+                self.assertEqual(gb[n], out.checks[n], (basis, n))
+        # and a full rebuild at that rate: every cached Measures, MACC and
+        # Checks value (from the reference) equals the formula evaluation.
+        # (Disclosure caches Sens_RankStab_AnyChanged as 0/1 while the name
+        # is a count, a separate Phase 5 matter, so it is not asserted here.)
+        ins = tuple(dataclasses.replace(r, published_value=infl.published_value)
+                    if r.id == "Fin_CoC_ChemSpecialty" else r
+                    for r in self.ds.inputs)
+        data, _ = build.build_bytes("main", dataclasses.replace(
+            self.ds, inputs=ins))
+        bad, n = compare_cached(data)
+        self.assertGreater(n, 0)
+        bad = [x for x in bad
+               if x.split("!", 1)[0] in ("Measures", "MACC", "Checks")]
+        self.assertEqual(bad, [])
+
     def test_annuity_check_can_fail(self):
         # WR-10: the annuity route sums the yearly rows itself, so a
         # corrupted net cash flow cell or selected-basis tonne cell (which

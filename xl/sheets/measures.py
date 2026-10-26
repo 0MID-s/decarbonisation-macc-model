@@ -848,8 +848,11 @@ def _write_results(w, m, b, R, ref, check_names, mv, nm):
     # the levelised cost reads, so a broken row or formula still fails it.
     w.line(b["crf"], "Capital recovery factor over the levelised-cost "
            "horizon (operating years, SUM(M_Op))", "factor")
-    w.scalar(b["crf"], "=Rate_DiscountReal/(1-1/(1+Rate_DiscountReal)"
-             "^SUM(M_Op))", m.ann_crf, "factor")
+    # WR-13: at a real rate of exactly 0 (nominal rate = inflation) the
+    # closed form is 0/0; the limit is 1/n, as in checkmodel.appraisal.crf.
+    w.scalar(b["crf"], "=IF(Rate_DiscountReal=0,1/SUM(M_Op),"
+             "Rate_DiscountReal/(1-1/(1+Rate_DiscountReal)^SUM(M_Op)))",
+             m.ann_crf, "factor")
     crf_c = D(b["crf"])
     w.line(b["eqcap"], "Equivalent annual capital cost before subsidy (CRF "
            "x PV of initial capex and replacements less residual value)",
