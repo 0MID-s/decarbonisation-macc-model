@@ -152,21 +152,59 @@ class ChecksSheet(unittest.TestCase):
                                    overrides=ov)
             self.assertEqual(sorted(widths), sorted(ref.chart_widths))
             self.assertEqual(got["MACC_TotalAbatement"], sum(ref.chart_widths))
-            # every MACC / tile / eligibility check passes. The only failures
-            # are the annuity reconciliations, which hold only for flat tonne
-            # profiles (a rising grid factor is not flat); the reference
-            # model agrees name by name, so Chk_Master is ERROR in both.
+            # every check passes, including the annuity reconciliations
+            # (WR-10: they now hold for any tonne profile), and the
+            # reference model agrees name by name.
             failing = sorted(n for n, v in _as_bool(
                 {n: got[n] for n in out.checks}).items() if v is not True)
-            self.assertTrue(failing)
-            self.assertTrue(all(n.startswith("M_Check_")
-                                and n.endswith("_Annuity") for n in failing),
-                            failing)
+            self.assertEqual(failing, [])
             self.assertEqual(failing, sorted(n for n, v in out.checks.items()
                                              if not v))
             self.assertIs(got["Chk_TileVsMACC"], True)
-            self.assertEqual(got["Chk_Master"], out.chk_master)
-            self.assertEqual(got["Chk_FailCount"], out.chk_fail_count)
+            self.assertEqual(out.chk_master, "OK")
+            self.assertEqual(got["Chk_Master"], "OK")
+            self.assertEqual(got["Chk_FailCount"], 0)
+            self.assertEqual(out.chk_fail_count, 0)
+
+    def test_annuity_check_holds_for_changing_grid_factor(self):
+        # WR-10: the annuity form used simple averages and agreed with the
+        # levelised cost only for flat tonne profiles, so any non-zero
+        # EF_GridLB_Change under location-based read ERROR on a valid input.
+        from checkmodel.outputs_reference import compute_outputs
+        g = self._addr("EF_GridLB_Change")
+        b = self._addr("Sel_Basis")
+        for basis in ("Location-based", "Market-based"):
+            for x in (-0.05, -0.03, -0.01, 0.02, 0.05):
+                out = compute_outputs(self.ds.inputs, basis, "Central", "Off",
+                                      overrides={"EF_GridLB_Change": x})
+                names = list(out.checks) + ["Chk_Master", "Chk_FailCount"]
+                got = evaluate_names(self.data, names,
+                                     overrides={g: x, b: basis})
+                self.assertEqual(got["Chk_Master"], "OK", (basis, x))
+                self.assertEqual(got["Chk_FailCount"], 0, (basis, x))
+                self.assertEqual(out.chk_master, "OK", (basis, x))
+                gb = _as_bool(got)
+                for n in out.checks:
+                    self.assertEqual(gb[n], out.checks[n], (basis, x, n))
+
+    def test_annuity_check_can_fail(self):
+        # WR-10: the annuity route sums the yearly rows itself, so a
+        # corrupted net cash flow cell or selected-basis tonne cell (which
+        # the levelised cost reads) makes it fail.
+        from xl.layout import TIMELINE_FIRST_COL, col_letter
+        from xl.sheets.measures import SHEET, allocate_rows
+        _, blocks, _ = allocate_rows()
+        col = col_letter(TIMELINE_FIRST_COL + 5)
+        names = ["M_Check_HP_Annuity", "M_Check_LED_Annuity", "Chk_Master"]
+        base = evaluate_names(self.data, names)
+        self.assertIs(base["M_Check_HP_Annuity"], True)
+        for row_key, val in (("m_cf", 1e7), ("tSel", 1e5)):
+            cell = "%s%d" % (col, blocks["HP"][row_key] + 1)
+            got = evaluate_names(self.data, names,
+                                 overrides={(SHEET, cell): val})
+            self.assertIs(got["M_Check_HP_Annuity"], False, row_key)
+            self.assertIs(got["M_Check_LED_Annuity"], True, row_key)
+            self.assertEqual(got["Chk_Master"], "ERROR", row_key)
 
     def test_break_even_check_can_fail(self):
         # WR-08: the break-even check recomputes NPV incl. carbon value at

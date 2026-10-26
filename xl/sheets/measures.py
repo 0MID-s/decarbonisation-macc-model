@@ -65,7 +65,8 @@ RESULT_KEYS = (
     "guess", "irr", "nchg", "irrflag", "first_s", "pay_s", "first_d", "pay_d",
     "pvlb", "pvmb", "pvsel", "avglb", "avgmb", "avgsel", "elig", "lev", "be",
     "chk_memo", "chk_be",
-    "i_band", "levpre", "crf", "avgben", "ann", "chk_ann", "chk_zero",
+    "i_band", "levpre", "crf", "eqcap", "avgben", "eqt", "ann", "chk_ann",
+    "chk_zero",
     "chk_irr")
 TIMELINE_KEYS = ("tl_band", "idx", "op", "lastidx", "df", "pidx", "basisidx",
                  "scenidx", "cprice", "ef_lb", "ef_mb", "ef_sel")
@@ -767,7 +768,6 @@ def _write_results(w, m, b, R, ref, check_names, mv, nm):
             nm("PayDisc"), m.pay_disc)
 
     # ---- tonnes
-    ns = float(sum(ref.op))
     for k, row, lst, tag, label in (
             ("pvlb", "tLB", m.t_lb, "LB", "location-based"),
             ("pvmb", "tMB", m.t_mb, "MB", "market-based"),
@@ -839,30 +839,50 @@ def _write_results(w, m, b, R, ref, check_names, mv, nm):
     w.scalar(b["levpre"], '=IF(%s=0,"%s",-%s/%s)' % (
         elig, ap.NA_NO_ABATEMENT, D(b["npvpre"]), D(b["pvsel"])),
         m.lev_pre_sub, "eur_per_t")
-    rate = ref.rate
-    crf = ap.crf(rate, m.life)
-    w.line(b["crf"], "Capital recovery factor", "factor")
-    w.scalar(b["crf"], "=Rate_DiscountReal/(1-1/(1+Rate_DiscountReal)^%s)"
-             % D(b["life"]), crf, "factor")
-    avgben = sum(m.om_row[n] + m.e_elec[n] + m.e_gas[n] + m.e_diesel[n]
-                 for n in range(ny)) / ns
-    w.line(b["avgben"], "Average annual operating benefit", "EUR/yr")
-    w.scalar(b["avgben"], "=(SUM(%s)+SUM(%s)+SUM(%s)+SUM(%s))/SUM(M_Op)" % (
-        _rng(b["m_om"]), _rng(b["m_eE"]), _rng(b["m_eG"]), _rng(b["m_eD"])),
-        avgben, "eur")
-    ann_v = ((m.capex * crf - avgben) / m.avg_t_sel if m.eligible
-             else ap.NA_NO_ABATEMENT)
-    w.line(b["ann"], "Annuity-method cost", "EUR/tCO2e")
-    w.scalar(b["ann"], '=IF(%s=0,"%s",(%s*%s-%s)/%s)' % (
-        elig, ap.NA_NO_ABATEMENT, D(b["capex"]), D(b["crf"]), D(b["avgben"]),
-        D(b["avgsel"])), ann_v, "eur_per_t")
+    # WR-10: the annuity form annualises every term with one capital
+    # recovery factor over the levelised-cost horizon (the operating years,
+    # SUM(M_Op)), so it equals the levelised cost before subsidy for any
+    # tonne or benefit profile. It is built from separate sums (capex x the
+    # initial / replacement / residual flags, the O&M and energy rows, the LB
+    # or MB tonne row), not from the NPV, PV(tonnes) or net cash flow cells
+    # the levelised cost reads, so a broken row or formula still fails it.
+    w.line(b["crf"], "Capital recovery factor over the levelised-cost "
+           "horizon (operating years, SUM(M_Op))", "factor")
+    w.scalar(b["crf"], "=Rate_DiscountReal/(1-1/(1+Rate_DiscountReal)"
+             "^SUM(M_Op))", m.ann_crf, "factor")
+    crf_c = D(b["crf"])
+    w.line(b["eqcap"], "Equivalent annual capital cost before subsidy (CRF "
+           "x PV of initial capex and replacements less residual value)",
+           "EUR/yr")
+    w.scalar(b["eqcap"], "=%s*%s*(SUMPRODUCT(%s,M_DF)+SUMPRODUCT(%s,M_DF)-"
+             "%s*INDEX(M_DF,M_LastIdx+1))" % (
+                 crf_c, D(b["capex"]), _rng(b["init"]), _rng(b["repl"]),
+                 D(b["resfrac"])), m.ann_capital, "eur")
+    w.line(b["avgben"], "Equivalent annual operating benefit (CRF x PV of "
+           "the O&M and energy rows)", "EUR/yr")
+    w.scalar(b["avgben"], "=%s*(SUMPRODUCT(%s,M_DF)+SUMPRODUCT(%s,M_DF)+"
+             "SUMPRODUCT(%s,M_DF)+SUMPRODUCT(%s,M_DF))" % (
+                 crf_c, _rng(b["m_om"]), _rng(b["m_eE"]), _rng(b["m_eG"]),
+                 _rng(b["m_eD"])), m.ann_benefit, "eur")
+    w.line(b["eqt"], "Equivalent annual abated tCO2e, selected basis (CRF x "
+           "PV of the location- or market-based tonne row)", "tCO2e/yr")
+    w.scalar(b["eqt"], "=%s*IF(M_BasisIdx=1,SUMPRODUCT(%s,M_DF),"
+             "SUMPRODUCT(%s,M_DF))" % (crf_c, _rng(b["tLB"]), _rng(b["tMB"])),
+             m.ann_tonnes, "tco2e")
+    ann_v = m.annuity if m.eligible else ap.NA_NO_ABATEMENT
+    w.line(b["ann"], "Annuity-method cost (equivalent annual cost / "
+           "equivalent annual tonnes)", "EUR/tCO2e")
+    w.scalar(b["ann"], '=IF(%s=0,"%s",(%s-%s)/%s)' % (
+        elig, ap.NA_NO_ABATEMENT, D(b["eqcap"]), D(b["avgben"]),
+        D(b["eqt"])), ann_v, "eur_per_t")
     ann_ok = m.annuity_ok if m.eligible else True
     check(b["chk_ann"], "M_Check_%s_Annuity" % key,
           "Check: annuity cost agrees with levelised cost before subsidy",
           "=IF(%s=0,TRUE,ABS(%s-%s)<=Const_AnnuityTolAbs+Const_AnnuityTolRel*"
           "ABS(%s))" % (elig, nz(b["ann"]), nz(b["levpre"]), nz(b["levpre"])),
-          ann_ok, "annuity and levelised forms agree only for flat profiles; "
-          "tolerance documented on Inputs (Const_AnnuityTolRel)")
+          ann_ok, "one CRF over the levelised-cost horizon annualises cost and "
+          "tonnes, so the forms agree for any profile; recomputed from the "
+          "yearly rows (tolerance Const_AnnuityTolAbs / Const_AnnuityTolRel)")
     check(b["chk_zero"], "M_Check_%s_NPVatZero" % key,
           "Check: NPV at r = 0 equals the plain sum",
           "=ABS((%s+NPV(0,%s))-SUM(%s))<=Const_CheckTolMoney" % (

@@ -103,6 +103,10 @@ class MeasureResult:
     lev: Cost
     break_even: Cost
     lev_pre_sub: Cost
+    ann_crf: float
+    ann_capital: float
+    ann_benefit: float
+    ann_tonnes: float
     annuity: float
     annuity_ok: bool
 
@@ -334,10 +338,23 @@ def compute_measures(inputs, basis, scenario, overrides=None):
         eligible = pv_sel > 0 and avg_sel > 0
         lev = ap.levelised(npv, pv_sel)
         lev_pre = ap.levelised(npv_pre, pv_sel)
-        avg_net = sum(om_row[n] + e_elec[n] + e_gas[n] + e_dsl[n]
-                      for n in rng) / n_op
-        if eligible and avg_sel > 0 and life > 0:
-            ann = ap.annuity_cost(capex, r, life, avg_net, avg_sel)
+        # Annuity form (WR-10): equivalent annual cost / equivalent annual
+        # tonnes, all annualised with one CRF over the levelised-cost horizon
+        # (the operating years), so it equals the levelised cost before
+        # subsidy for any tonne or benefit profile. Built from separate sums:
+        # capex x the initial / replacement / residual flags, the O&M and
+        # energy rows, and the LB or MB tonne row.
+        horizon = int(n_op)
+        ann_crf = ap.crf(r, horizon)
+        pv_cap = capex * (sum(df[n] * (init[n] + repl[n]) for n in rng)
+                          - res_frac * df[last])
+        pv_ben = ap.npv0(r, [om_row[n] + e_elec[n] + e_gas[n] + e_dsl[n]
+                             for n in rng])
+        ann_cap = ann_crf * pv_cap
+        ann_ben = ann_crf * pv_ben
+        ann_t = ann_crf * pv_sel
+        if eligible:
+            ann = ap.annuity_cost(r, horizon, pv_cap, pv_ben, pv_sel)
             ok = abs(ann - lev_pre) <= (
                 v["Const_AnnuityTolAbs"]
                 + v["Const_AnnuityTolRel"] * abs(lev_pre))
@@ -365,7 +382,9 @@ def compute_measures(inputs, basis, scenario, overrides=None):
             pv_t_lb=pv_lb, pv_t_mb=pv_mb, pv_t_sel=pv_sel,
             avg_t_lb=avg_lb, avg_t_mb=avg_mb, avg_t_sel=avg_sel,
             eligible=eligible, lev=lev, break_even=ap.break_even(npv, pv_sel),
-            lev_pre_sub=lev_pre, annuity=ann, annuity_ok=ok))
+            lev_pre_sub=lev_pre, ann_crf=ann_crf, ann_capital=ann_cap,
+            ann_benefit=ann_ben, ann_tonnes=ann_t, annuity=ann,
+            annuity_ok=ok))
 
     # ---- MACC table --------------------------------------------------
     rows = [(m.name, m.avg_t_sel, m.lev if m.eligible else 0.0, m.eligible)

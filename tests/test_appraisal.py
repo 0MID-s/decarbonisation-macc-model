@@ -95,9 +95,29 @@ class Levelised(unittest.TestCase):
         df = ap.discount_factors(r, life + 1)
         npv = ap.npv0(r, cf)
         pv_t = sum(tonnes * d for d in df[1:])
+        pv_b = sum(benefit * d for d in df[1:])
         self.assertAlmostEqual(ap.levelised(npv, pv_t),
-                               ap.annuity_cost(capex, r, life, benefit, tonnes),
+                               ap.annuity_cost(r, life, capex, pv_b, pv_t),
                                places=9)
+
+    def test_annuity_equals_levelised_for_any_profile(self):
+        # WR-10: one CRF over the horizon annualises cost and tonnes, so the
+        # identity holds for uneven benefits, tonnes, replacements and a
+        # residual value, not only for flat profiles.
+        r, ny, life, capex = 0.07, 30, 12, 5000.0
+        repl = ap.replacement_flags(ny, life)
+        res = ap.residual_fraction(ny - 1, life)
+        ben = [0.0] + [300.0 * 0.97 ** n for n in range(1, ny)]
+        t = [0.0] + [40.0 * 1.05 ** n for n in range(1, ny)]
+        cf = [(-capex if n == 0 else 0.0) - capex * repl[n] + ben[n]
+              + (capex * res if n == ny - 1 else 0.0) for n in range(ny)]
+        df = ap.discount_factors(r, ny)
+        pv_cap = capex * (1 + sum(d * f for d, f in zip(df, repl))
+                          - res * df[-1])
+        lev = ap.levelised(ap.npv0(r, cf), ap.npv0(r, t))
+        ann = ap.annuity_cost(r, ny - 1, pv_cap, ap.npv0(r, ben),
+                              ap.npv0(r, t))
+        self.assertAlmostEqual(lev, ann, places=9)
 
     def test_levelised_price(self):
         p, d, o = [10.0, 20.0], [1.0, 0.5], [2.0, 4.0]

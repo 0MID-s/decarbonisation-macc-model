@@ -82,9 +82,10 @@ INPUTS = (
     _c("Const_AnnuityTolRel", "Annuity reconciliation tolerance, relative",
        0.05, "fraction",
        "Relative tolerance of the internal annuity vs levelised "
-       "reconciliation; the forms agree only for flat profiles "
-       "(replacements, degradation, 29-year window); the prototype showed "
-       "at most 2.4% difference (research Code Example 7)"),
+       "reconciliation. The annuity form annualises cost and tonnes with "
+       "one capital recovery factor over the levelised-cost horizon, so the "
+       "two forms agree for any profile; a gap beyond the tolerance means a "
+       "broken row or formula (WR-10)"),
     _c("Const_AnnuityTolAbs", "Annuity reconciliation tolerance, absolute",
        1.0, "abs tolerance (currency units per tonne)",
        "Absolute floor for the annuity reconciliation for costs near zero"),

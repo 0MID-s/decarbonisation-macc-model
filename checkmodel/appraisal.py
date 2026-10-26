@@ -149,10 +149,21 @@ def crf(rate, life):
     return rate / (1.0 - 1.0 / (1.0 + rate) ** life)
 
 
-def annuity_cost(capex, rate, life, avg_net_operating_benefit, avg_tonnes):
-    # type: (float, float, int, float, float) -> float
-    """Annuity-form abatement cost, used only for the reconciliation."""
-    return (capex * crf(rate, life) - avg_net_operating_benefit) / avg_tonnes
+def annuity_cost(rate, horizon, pv_capital, pv_operating_benefit, pv_tonnes):
+    # type: (float, int, float, float, float) -> float
+    """Annuity-form abatement cost, used only for the reconciliation (WR-10).
+
+    Equivalent annual cost / equivalent annual tonnes, every term annualised
+    with one capital recovery factor over the levelised-cost horizon
+    (``horizon`` operating years). ``pv_capital`` is the PV of the capital
+    stream before subsidy (initial capex plus replacements less the residual
+    value), ``pv_operating_benefit`` the PV of the O&M and energy rows and
+    ``pv_tonnes`` the PV of the abated tonnes. The CRF cancels, so this equals
+    the levelised cost before subsidy for any profile; it is reached through
+    separate sums, so a broken row still shows up.
+    """
+    a = crf(rate, horizon)
+    return (a * pv_capital - a * pv_operating_benefit) / (a * pv_tonnes)
 
 
 def levelised_price(price_row, df, op):

@@ -119,7 +119,7 @@ It reads OK only if every group of checks passes. `Chk_FailCount` counts failure
 ## 4. Method choices and rejected alternatives
 
 - **Representative firm, not a real company.** A real firm's report would be a one-off, and gaps in its disclosure would force guesses. A scaled sector firm lets every number be traced to Eurostat; real data can replace the Base inputs without changing a formula. Rejected: Corbion and Belgian listed firms, which are larger or partly outside the EU ETS scope or unread.
-- **Levelised cost, not an annuity.** The annuity form is kept as an internal check only. Levelised cost handles replacements and residual values cleanly.
+- **Levelised cost, not an annuity.** The annuity form is kept as an internal check only: equivalent annual cost divided by equivalent annual tonnes, both annualised with one capital recovery factor over the operating years, recomputed from the yearly rows. It equals the levelised cost before subsidy for any profile, so a gap means a broken row. Levelised cost handles replacements and residual values cleanly.
 - **Closed form, not Data Tables.** Data Tables cannot be created in Excel for the web and cannot be authored by the library. Rejected: Goal Seek and Solver for the same reason.
 - **Anchored carbon prices, not raw NGFS.** NGFS values are model shadow prices far from the traded price today. Rejected: using NGFS from year 0, or using the market price flat for ever.
 - **Discounted headline for comparisons, undiscounted for the Dashboard tile.** The tile follows the common reading of "what we pay"; the discounted figure is shown beside it and used wherever NPV is compared.
@@ -155,7 +155,7 @@ The marginal power plant sets the price whatever certificates the firm holds. Th
 It is a decision lens, not an invoice. Putting it into NPV would count carbon twice, once as cash exposure and once as a shadow price. It is shown separately (`Expo_ICP_DiscAvoided` = EUR 2,218,879).
 
 ### Q5. Why levelised rather than annuity?
-Levelised divides the present value of net cost by the present value of tonnes, so replacements, residual values and different lives are handled in one step. The annuity form is a cross-check of the same figure.
+Levelised divides the present value of net cost by the present value of tonnes, so replacements, residual values and different lives are handled in one step. The annuity form (equivalent annual cost / equivalent annual tonnes) is a cross-check of the same figure, reached through separate sums.
 
 ### Q6. What would change with real company data?
 Replace the Base inputs (value added, energy use, fleet). Nothing else changes: every formula flows from them. Measure sizing, the stack and exposure all re-run.

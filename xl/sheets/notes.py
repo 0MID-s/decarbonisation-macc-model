@@ -176,8 +176,12 @@ MEASURES_METHOD = (
     "Meas_Fleet_ChargerCapex, Meas_Fleet_MaintSaving, Meas_RC_GOPrice "
     "(producer-side value), Meas_HP_FullLoadHours (PBL subsidy reference "
     "case) and the JRC 2009 heat split.",
-    "The annuity-method reconciliation is an internal check with tolerance "
-    "Const_AnnuityTolRel, not a client output.",
+    "The annuity-method reconciliation is an internal check, not a client "
+    "output: equivalent annual cost divided by equivalent annual tonnes, "
+    "both annualised with one capital recovery factor over the operating "
+    "years, recomputed from the yearly rows. It equals the levelised cost "
+    "before subsidy for any profile, within Const_AnnuityTolAbs and "
+    "Const_AnnuityTolRel.",
 )
 
 EXPOSURE_TITLE = "Carbon exposure and sensitivity method (Phase 4)"
@@ -252,8 +256,9 @@ METHOD_CHOICES = (
     "Levelised abatement cost: the cost of a measure is the present value "
     "of its net cost divided by the present value of its abated tonnes, so "
     "measures with different lives and cash profiles are comparable on one "
-    "number. The annuity form (Const_AnnuityTolRel) is an internal check "
-    "of the same figure.",
+    "number. The annuity form (equivalent annual cost / equivalent annual "
+    "tonnes, Const_AnnuityTolRel) is an internal check of the same figure, "
+    "recomputed from the yearly rows.",
     "Pass-through netting: the electricity carbon cost reaches the firm "
     "through the power price at the pass-through rate Pass_PTR and is "
     "netted against the embedded EUA already in the baseline price. The "
