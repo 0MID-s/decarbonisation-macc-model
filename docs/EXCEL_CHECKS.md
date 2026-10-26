@@ -262,3 +262,16 @@ not verified.
   sub-labels, scenario chart axis title, ReadMe trace text, Disclosure status
   column), which have not been reviewed visually. Excel for the web: not
   verified.
+
+### User visual verdict (post-review build)
+
+- Date: 2026-10-26. The user reviewed the labels changed by the code review
+  fixes in Excel desktop (Dashboard tile sub-labels, scenario chart axis
+  title, ReadMe trace text, Disclosure status column).
+- Verdict (verbatim): "skip web, looks good overall".
+- Excel for the web: not verified (the user chose to skip it).
+- The flagged disclosure references ship with their visible flags.
+- Final text-only rebuild after this verdict (Notes record wording only):
+  re-verified by tools/excel_check.py in all 12 states, 12,279 formula cells
+  each, 0 mismatches, 0 error values, Chk_Master OK. Deliverable sha256
+  `61522688e388d929bf70d1819dc80b227a0ea09d3fcda9c934bcb4ad12f8e74a`.

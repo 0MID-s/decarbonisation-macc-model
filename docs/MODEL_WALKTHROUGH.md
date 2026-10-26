@@ -216,7 +216,7 @@ See section 7: an independent Python re-implementation, a formula-string evaluat
 - **12 states.** The same comparison in all selector combinations, with every check TRUE.
 - **Excel desktop scripted check.** Recorded in `docs/EXCEL_CHECKS.md` and on Notes: Phase 3 default and six states, Phase 4 twelve states, no mismatches and no error values.
 - **GATE-B.** On 2026-10-26, 12 states were recalculated in Excel desktop with no mismatches and the master flag OK, and the user approved the visual review in Excel desktop. Excel for the web: not verified.
-- **Post-review rebuild.** The code review fixes (CR-01 to WR-04: like-for-like tile check, live exposure-window label, reference-model cached check values, ReadMe trace, wording and disclosure status) changed formulas and labels. The rebuilt workbook was re-verified on 2026-10-26 by the scripted Excel desktop check in all 12 states (no mismatches, master flag OK). That re-verification is by script only: the user's visual approval was given for the build before these fixes.
+- **Post-review rebuild.** The code review fixes (CR-01 to WR-04: like-for-like tile check, live exposure-window label, reference-model cached check values, ReadMe trace, wording and disclosure status) changed formulas and labels. The rebuilt workbook was re-verified on 2026-10-26 by the scripted Excel desktop check in all 12 states (no mismatches, master flag OK). The user then reviewed the changed labels in Excel desktop on 2026-10-26 and approved them.
 - **This document.** A test rebuilds the workbook and checks every number below against it.
 
 ## Figures quoted
