@@ -68,5 +68,11 @@ EXCEL_RECORD = (
     "including new labels and checks): 12 states recalculated in Excel "
     "desktop with no mismatches; master flag OK. The changed labels were "
     "then reviewed and approved by the user in Excel desktop.",
+    "Phase 3 review fixes on 2026-10-26 (one MACC eligibility rule, an "
+    "autoscaled full MACC x-axis, a break-even check recomputed from the "
+    "yearly rows, new Notes assumption lines and labels): 12 states "
+    "recalculated in Excel desktop with no mismatches; master flag OK. "
+    "Re-verified by script only; the changed labels have not been reviewed "
+    "visually.",
     "Excel for the web: not verified.",
 )

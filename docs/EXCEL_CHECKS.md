@@ -275,3 +275,46 @@ not verified.
   re-verified by tools/excel_check.py in all 12 states, 12,279 formula cells
   each, 0 mismatches, 0 error values, Chk_Master OK. Deliverable sha256
   `61522688e388d929bf70d1819dc80b227a0ea09d3fcda9c934bcb4ad12f8e74a`.
+
+### Post-review rebuild (Phase 3 review fixes)
+
+- Date: 2026-10-26, after the Phase 3 re-review fixes (commits 125fd05 to
+  b5a955b plus the Notes record line): WR-03 one MACC eligibility rule (PV of
+  tonnes and average annual tonnes both > 0), WR-02 no fixed x-axis maximum on
+  the full MACC chart and its Dashboard copy, WR-05 layout-derived column
+  letters (formula-identical), WR-07 new unit labels and Notes assumption
+  lines, WR-08 break-even check recomputed from the yearly rows, WR-09 Notes
+  wording on the built state.
+- Method: `.venv/bin/python tools/excel_check.py`, Excel for Mac, all 12 states,
+  same comparison as above (relative 1e-7, absolute 1e-9; Chk_Master read from
+  Excel).
+
+| Basis | Scenario | Direct ETS | Formula cells | Mismatches | Error values | Chk_Master in Excel |
+|---|---|---|---|---|---|---|
+| Location-based | Low | Off | 12,279 | 0 | 0 | OK |
+| Location-based | Low | On | 12,279 | 0 | 0 | OK |
+| Location-based | Central | Off | 12,279 | 0 | 0 | OK |
+| Location-based | Central | On | 12,279 | 0 | 0 | OK |
+| Location-based | High | Off | 12,279 | 0 | 0 | OK |
+| Location-based | High | On | 12,279 | 0 | 0 | OK |
+| Market-based | Low | Off | 12,279 | 0 | 0 | OK |
+| Market-based | Low | On | 12,279 | 0 | 0 | OK |
+| Market-based | Central | Off | 12,279 | 0 | 0 | OK |
+| Market-based | Central | On | 12,279 | 0 | 0 | OK |
+| Market-based | High | Off | 12,279 | 0 | 0 | OK |
+| Market-based | High | On | 12,279 | 0 | 0 | OK |
+
+- Visible elements changed: Measures eligibility row label (both > 0 rule),
+  residual-mix row unit (tCO2/MWh, CO2 only) and selected-factor row unit,
+  break-even check label on Measures and Checks; MACC barrier note (rule
+  sentence) and zoom note (fixed axis, does not rescale); full MACC chart and
+  the Dashboard MACC chart x-axis now autoscaled by Excel (no fixed maximum);
+  Inputs rationale of Meas_VSD_MotorShare; Notes: MACC eligibility line,
+  electricity-valuation line, CO2-only residual mix line, reworded DEA
+  indirect, size-premium, US-CPI route, cash-carbon and key-assumption lines,
+  ETS2 projection line, and the new Excel record line.
+- Deliverable: dist/maison_veritas.xlsx, sha256
+  `b66cddd55516b4aa27a33220112b2962d46d0510eb1b8eef5dbf616f07163f21`
+  (unchanged by the run). No dist/excel-check-* folder remains.
+- Re-verified by script only. The changed labels and the autoscaled MACC axis
+  have not been reviewed visually. Excel for the web: not verified.
