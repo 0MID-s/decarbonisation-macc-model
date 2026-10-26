@@ -144,6 +144,12 @@ MEASURES_METHOD = (
     "positions are cumulative tCO2e, so bar widths equal annual abatement. "
     "The axis is set to Date axis (time scale) in the file; a build step "
     "does this because the charting library always writes automatic.",
+    "MACC eligibility (one rule for the flag and the bar width): a measure "
+    "is shown on the MACC only if both its present value of abated tonnes "
+    "(the cost denominator) and its average annual abated tonnes (the bar "
+    "width) on the selected basis are above zero (M_*_Eligible). Otherwise "
+    "it stays in the ranked table as n/a, ranks last and has zero width, so "
+    "no bar can have a negative width whatever the inputs.",
     "Key analyst assumptions to test in Phase 4: Meas_LED_LightingShare, "
     "Meas_LED_Coverage, Meas_LED_SavingRate, Meas_VSD_MotorShare, "
     "Meas_VSD_Coverage, Meas_VSD_SavingRate, Meas_PV_Size, "

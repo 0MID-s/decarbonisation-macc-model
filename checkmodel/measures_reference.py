@@ -328,7 +328,10 @@ def compute_measures(inputs, basis, scenario, overrides=None):
         n_op = float(sum(op))
         avg_lb, avg_mb = sum(t_lb) / n_op, sum(t_mb) / n_op
         avg_sel = avg_lb if basis == BASES[0] else avg_mb
-        eligible = pv_sel > 0
+        # One rule for the MACC (WR-03): a measure is shown only if both the
+        # PV of tonnes (the cost denominator) and the average annual tonnes
+        # (the bar width) are positive, so a bar can never be negative.
+        eligible = pv_sel > 0 and avg_sel > 0
         lev = ap.levelised(npv, pv_sel)
         lev_pre = ap.levelised(npv_pre, pv_sel)
         avg_net = sum(om_row[n] + e_elec[n] + e_gas[n] + e_dsl[n]

@@ -126,6 +126,8 @@ So the heat pump is **not** a negative-cost measure. It only pays off once carbo
 
 The MACC (marginal abatement cost curve) sorts measures from cheapest to dearest per tonne. Each measure is a block: **width** is the tonnes it avoids per year, **height** is its abatement cost. Negative blocks sit below the zero line.
 
+**Which measures get a block.** A measure is drawn only if it abates on the selected basis, and the workbook tests that with one rule: both the present value of its abated tonnes (the denominator of the abatement cost) and its average annual abated tonnes (the block width) must be above zero (`M_<measure>_Eligible` = 1). If either is zero or negative, the measure stays in the ranked table as "n/a", ranks last and gets zero width. Using one rule for the flag and the width means no block can ever have a negative width, even after an extreme input edit such as a fast-rising grid factor.
+
 Default order (market-based, Central), in EUR per tCO2e:
 1. VSD (variable-speed drives): -722
 2. PV (rooftop solar): -591

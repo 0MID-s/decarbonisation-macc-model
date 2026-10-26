@@ -784,8 +784,10 @@ def _write_results(w, m, b, R, ref, check_names, mv, nm):
         if tag:
             w.cells.tag(SHEET, b[k], SCALAR_COL, b[k], SCALAR_COL, tag)
     elig = D(b["elig"])
-    w.line(b["elig"], "Abatement on selected basis (1 = yes)", "flag (1/0)")
-    w.scalar(b["elig"], "=IF(%s>0,1,0)" % D(b["pvsel"]),
+    w.line(b["elig"], "Abatement on selected basis (1 = yes: PV of tonnes "
+           "and average annual tonnes both > 0)", "flag (1/0)")
+    w.scalar(b["elig"], "=IF(AND(%s>0,%s>0),1,0)" % (D(b["pvsel"]),
+                                                     D(b["avgsel"])),
              1 if m.eligible else 0, "int", name=nm("Eligible"))
     w.line(b["lev"], "Levelised abatement cost (EUR/tCO2e, excl. carbon "
            "value; negative = saves money)", "EUR/tCO2e")

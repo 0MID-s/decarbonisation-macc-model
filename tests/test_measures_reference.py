@@ -218,6 +218,19 @@ class Invariants(unittest.TestCase):
         self.assertEqual(costs, sorted(costs))
         self.assertEqual(len(rows), 6)
 
+    def test_eligibility_never_gives_negative_width(self):
+        # WR-03: a fast-rising LB grid factor once made the heat pump (PV of
+        # tonnes > 0, average tonnes < 0) and the fleet eligible with
+        # negative chart widths. Eligibility now needs both > 0.
+        for x in (0.08, 0.10):
+            r = mr.compute_measures(INPUTS, "Location-based", "Central",
+                                    overrides={"EF_GridLB_Change": x})
+            self.assertTrue(all(w >= 0 for w in r.chart_widths), (x, r.chart_widths))
+            for m in r.measures:
+                self.assertEqual(m.eligible,
+                                 m.pv_t_sel > 0 and m.avg_t_sel > 0, (x, m.key))
+            self.assertFalse(r.by_key("HP" if x == 0.08 else "Fleet").eligible)
+
 
 if __name__ == "__main__":
     unittest.main()

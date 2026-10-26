@@ -49,7 +49,10 @@ TIER_NOTE = ("Tier rule: Do first if cost < 0; Next if cost is between 0 and "
 BARRIER_NOTE = ("Barrier notes are analyst commentary, not sourced data. "
                 "A measure with no abatement on the selected basis (the "
                 "renewable contract under location-based) stays in the table "
-                "as n/a, ranks last and has zero chart width.")
+                "as n/a, ranks last and has zero chart width. A measure "
+                "counts as abating only if both its PV of abated tonnes and "
+                "its average annual tonnes are above zero, so no bar can "
+                "have a negative width.")
 HEADS = ("Rank", "Measure", "Annual tCO2e (selected basis)",
          "Abatement cost (EUR/tCO2e)", "Financial NPV (after subsidy)",
          "NPV before subsidy", "IRR", "Discounted payback (years)", "Tier",

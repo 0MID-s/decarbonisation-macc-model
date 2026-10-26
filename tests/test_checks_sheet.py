@@ -129,6 +129,45 @@ class ChecksSheet(unittest.TestCase):
         self.assertEqual(got["Chk_Master"], "OK")
         self.assertEqual(got["Chk_FailCount"], 0)
 
+    def test_rising_grid_factor_gives_no_negative_width(self):
+        # WR-03: EF_GridLB_Change at +8%/yr and +10%/yr under location-based
+        # once gave the heat pump / fleet a negative MACC width. One rule
+        # (PV of tonnes and average tonnes both > 0) now drives the flag.
+        from checkmodel.measures_reference import compute_measures
+        g = self._addr("EF_GridLB_Change")
+        b = self._addr("Sel_Basis")
+        from checkmodel.outputs_reference import compute_outputs
+        names = ["Chk_Master", "Chk_FailCount", "MACC_Chart_Width",
+                 "M_HP_Eligible", "M_Fleet_Eligible", "MACC_TotalAbatement"]
+        for x, key in ((0.08, "HP"), (0.10, "Fleet")):
+            ov = {"EF_GridLB_Change": x}
+            out = compute_outputs(self.ds.inputs, "Location-based", "Central",
+                                  "Off", overrides=ov)
+            got = evaluate_names(self.data, names + list(out.checks),
+                                 overrides={g: x, b: "Location-based"})
+            widths = got["MACC_Chart_Width"]
+            self.assertTrue(all(w >= 0 for w in widths), (x, widths))
+            self.assertEqual(got["M_%s_Eligible" % key], 0)
+            ref = compute_measures(self.ds.inputs, "Location-based", "Central",
+                                   overrides=ov)
+            self.assertEqual(sorted(widths), sorted(ref.chart_widths))
+            self.assertEqual(got["MACC_TotalAbatement"], sum(ref.chart_widths))
+            # every MACC / tile / eligibility check passes. The only failures
+            # are the annuity reconciliations, which hold only for flat tonne
+            # profiles (a rising grid factor is not flat); the reference
+            # model agrees name by name, so Chk_Master is ERROR in both.
+            failing = sorted(n for n, v in _as_bool(
+                {n: got[n] for n in out.checks}).items() if v is not True)
+            self.assertTrue(failing)
+            self.assertTrue(all(n.startswith("M_Check_")
+                                and n.endswith("_Annuity") for n in failing),
+                            failing)
+            self.assertEqual(failing, sorted(n for n, v in out.checks.items()
+                                             if not v))
+            self.assertIs(got["Chk_TileVsMACC"], True)
+            self.assertEqual(got["Chk_Master"], out.chk_master)
+            self.assertEqual(got["Chk_FailCount"], out.chk_fail_count)
+
     def test_tile_vs_macc_catches_tile_drift(self):
         # the second leg ties the tile to the per-measure MACC data
         sheet, addr = self._addr("Dash_AbatedSel")
