@@ -356,3 +356,44 @@ not verified.
   (unchanged by the run). No dist/excel-check-* folder remains.
 - Re-verified by script only; the new rows have not been reviewed visually.
   Excel for the web: not verified.
+
+#### WR-11..WR-14 sub-entry (iteration 2 review fixes)
+
+- Date: 2026-10-26, after commits 0565811 (WR-11 reference cost cells gated
+  on the eligibility flag), 1c69ea3 (WR-12 annuity tolerance at
+  floating-point level: Const_AnnuityTolRel 1e-9, Const_AnnuityTolAbs 1e-6),
+  1df33f6 (WR-13 CRF takes the 1/n limit at a zero real rate) and d1bece6
+  (WR-14 Inputs, Rates and Carbon text on the built state), plus the amended
+  Notes record line. Same formula cell count as the WR-10 build.
+- Method: `.venv/bin/python tools/excel_check.py`, Excel for Mac, all 12 states,
+  same comparison as above.
+
+| Basis | Scenario | Direct ETS | Formula cells | Mismatches | Error values | Chk_Master in Excel |
+|---|---|---|---|---|---|---|
+| Location-based | Low | Off | 12,291 | 0 | 0 | OK |
+| Location-based | Low | On | 12,291 | 0 | 0 | OK |
+| Location-based | Central | Off | 12,291 | 0 | 0 | OK |
+| Location-based | Central | On | 12,291 | 0 | 0 | OK |
+| Location-based | High | Off | 12,291 | 0 | 0 | OK |
+| Location-based | High | On | 12,291 | 0 | 0 | OK |
+| Market-based | Low | Off | 12,291 | 0 | 0 | OK |
+| Market-based | Low | On | 12,291 | 0 | 0 | OK |
+| Market-based | Central | Off | 12,291 | 0 | 0 | OK |
+| Market-based | Central | On | 12,291 | 0 | 0 | OK |
+| Market-based | High | Off | 12,291 | 0 | 0 | OK |
+| Market-based | High | On | 12,291 | 0 | 0 | OK |
+
+- Visible elements changed: Inputs values and rationale of
+  Const_AnnuityTolRel and Const_AnnuityTolAbs; the CRF formula in each
+  Measures reconciliation block (same value at the delivered rate); Inputs
+  rationale or note of about twenty inputs (no more "Phase 4 sensitivity"
+  or "resolved in Phase 3"); Rates notes on the HICP context row and the
+  size-premium line; Carbon notes on the US-CPI route and the EUA anchor;
+  Notes annuity-method line, EUA anchor line and Excel record line.
+- Default outputs unchanged: M_Portfolio_NPV -72,398.9; Dash_NPVIncl
+  2,519,249.7; Dash_Share 0.3924; Dash_CostNotActing 13,870,507.3.
+- Deliverable: dist/maison_veritas.xlsx, sha256
+  `7395efd88dac54fb240558774046adb61ba1e4e91f2ab3cbce12ffa6777ffbf1`
+  (unchanged by the run). No dist/excel-check-* folder remains.
+- Re-verified by script only; the reworded text has not been reviewed
+  visually. Excel for the web: not verified.
