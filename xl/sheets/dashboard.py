@@ -98,10 +98,10 @@ def build_dashboard(wb, styles, cells, dataset, cfg, out):
     tile_cell(t + 1, c, "Dash_AbatedSel",
               "=CHOOSE(M_BasisIdx,M_Total_tLB,M_Total_tMB)", ref.abated_sel,
               "tco2e")
+    # CR-01: the tile is the net sum; the MACC omits non-abating measures
     label(t + 2, c, None,
-          "tCO2e per year, net sum of all six measures; a measure with "
-          "negative abatement counts here but is left off the MACC (see "
-          "Checks)")
+          "tCO2e per year, net of all six measures; the MACC omits any "
+          "negative one")
     # (3) share of Scope 1+2
     c = 3
     label(t, c, '="Share of Scope 1+2 abated, "&Sel_Basis&" basis"',
