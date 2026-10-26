@@ -31,7 +31,11 @@ The colour key separates inputs, formulas and links. Each result traces back thr
 
 Eurostat (energy prices, energy balances, air emissions, business statistics), European Environment Agency, AIB European Residual Mixes, UK DESNZ conversion factors, JRC PVGIS, Danish Energy Agency technology catalogues, PBL SDE++, RVO, NGFS scenarios (via IIASA), EEX, ECB, Damodaran (NYU Stern), EUR-Lex and the European Commission. The full register, with editions, URLs and retrieval dates, is on the Sources sheet and in [`docs/DATA_LOG.md`](docs/DATA_LOG.md).
 
-Data remains under the terms of its original publishers. Downloaded source files are not redistributed in this repository.
+All data and figures belong to their original publishers and are used with attribution, under each publisher's terms. The licence note for each source is on the Sources sheet. Downloaded source files are not redistributed in this repository.
+
+## Licence
+
+The code and documentation are released under the [MIT licence](LICENSE). The licence covers only the code and documentation, not the third-party data described above.
 
 ## How it is built and verified
 
