@@ -208,4 +208,13 @@ rendering was not part of the user's check and will be re-checked at GATE-B
 
 - Excel-only findings: none. No workbook fix was needed. No dist/excel-check-*
   folder remains.
-- Excel for the web: to be confirmed in the user review.
+- Excel for the web: not verified (see the user verdict below).
+
+### User visual verdict (Phase 5)
+
+- Date: 2026-10-26
+- Verdict: "approve desktop". The user reviewed the 8-step desktop checklist
+  (Cover flag and links, ReadMe trace links, Dashboard tiles and charts,
+  selector changes, MACC/bridge/tornado, Disclosure dropdown, A4 print preview)
+  and approved. No issues were reported; the MACC technique stays "A".
+- Excel for the web: not verified (the user did not perform the web check).
