@@ -66,8 +66,10 @@ TRACES = (
      "Dashboard tile -> M_Portfolio_NPV -> a measure cash-flow row on "
      "Measures -> capex input on Inputs -> Sources"),
     ("Abatement cost of the first ranked measure", "MACC_Rank_Cost",
-     "MACC ranked cost -> levelised cost on Measures -> heat pump (DEA) "
-     "input rows on Inputs"),
+     "MACC ranked cost -> levelised cost (M_<K>_LevCost) of whichever "
+     "measure ranks first on Measures (variable-speed drives in every "
+     "selector state with the shipped inputs) -> that measure's capex and "
+     "energy input rows on Inputs"),
     ("Cost of not acting", "Dash_CostNotActing",
      "Dashboard tile -> Expo_CumBAU_Sel -> ETS2 row on Exposure -> carbon "
      "path on Carbon -> NGFS input on Inputs"),

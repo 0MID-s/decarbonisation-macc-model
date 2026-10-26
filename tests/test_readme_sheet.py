@@ -57,6 +57,17 @@ class ReadMeTests(unittest.TestCase):
             self.assertIsNotNone(self.wb[sheet][addr].value,
                                  c.hyperlink.location)
 
+    def test_first_ranked_trace_names_the_rank_one_measure(self):
+        # WR-02: the trace names the measure that actually ranks first
+        from checkmodel.measures_reference import all_states
+        trace = next(t for t in rm.TRACES if t[1] == "MACC_Rank_Cost")
+        self.assertNotIn("heat pump", trace[2].lower())
+        # rank 1 does not depend on the Direct-ETS switch (Measures only)
+        firsts = {r.sorted_keys[0]
+                  for r in all_states(self.ds.inputs).values()}
+        self.assertEqual(firsts, {"VSD"})
+        self.assertIn("variable-speed drives", trace[2])
+
     def test_selector_links(self):
         locs = {c.hyperlink.location for c in self._cells()
                 if c.hyperlink is not None}
