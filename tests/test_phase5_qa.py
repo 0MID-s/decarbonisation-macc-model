@@ -30,6 +30,28 @@ class Deliverable(unittest.TestCase):
         cls.wbv = openpyxl.load_workbook(io.BytesIO(cls.data),
                                          data_only=True)
 
+    def test_no_assistant_or_session_wording(self):
+        """Client-visible text reads as an analyst's model: no "the user"
+        and no assistant name in any text-bearing part."""
+        import html
+        bad = [r"\bthe user\b", r"(?i)claude"]
+        hits = []
+        for n in self.zf.namelist():
+            if not n.endswith(".xml") or n.startswith("xl/styles"):
+                continue
+            raw = self.zf.read(n).decode("utf-8")
+            if n.startswith("xl/worksheets/"):
+                parts = re.findall(r"<is>(.*?)</is>", raw, re.S)
+                parts += re.findall(r'<c [^>]*t="str"[^>]*>.*?<v>(.*?)</v>',
+                                    raw, re.S)
+                raw = " ".join(parts)
+            text = html.unescape(re.sub(r"<[^>]+>", " ", raw))
+            for pat in bad:
+                for m in re.finditer(pat, text):
+                    hits.append((n, m.group(0), text[max(0, m.start() - 40):
+                                                      m.end() + 40]))
+        self.assertEqual(hits, [])
+
     def test_sheet_order(self):
         self.assertEqual(self.wb.sheetnames, D23)
 

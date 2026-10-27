@@ -45,12 +45,12 @@ SOURCES = (
            "NGFS long-term climate scenarios Phase V (v5.0), variable "
            "Price|Carbon, model REMIND-MAgPIE 3.3-4.8, region OECD & EU (R5)",
            "https://data.ene.iiasa.ac.at/ngfs/",
-           "Phase V, November 2024; explorer table pasted by the user on "
+           "Phase V, November 2024; explorer table pasted by the author on "
            "2026-10-19 (TSV sha256 42bd29b4b902... in DATA_LOG); the explorer "
-           "CSV snapshot matched and was deleted at the user's request "
+           "CSV snapshot matched and was deleted at the author's request "
            "(sha256 15d8e1ea...639f, D-43)", _D,
            "Adapted CC BY 4.0 (NGFS Phase 5 Scenario Explorer licence, "
-           "transcribed by the user, D-44): parts and adapted material may "
+           "transcribed by the author, D-44): parts and adapted material may "
            "be shared with attribution (\"NGFS Phase 5 Scenario Explorer, "
            "hosted by IIASA\", (c) NGFS Phase 5 Scenario Explorer), a "
            "statement that values were modified, and no implied endorsement"),
@@ -62,7 +62,7 @@ _ENACTED = "(per 02-RESEARCH 3.11: Directive (EU) 2023/959 as enacted, OJ L 130,
 _UNV = ("Unverified transcription: transcribed from 02-RESEARCH 3.11 "
         "(secondary reading of the EUR-Lex page); to be verified against "
         "the legal text. ")
-_USER = ("Text supplied by the user from EUR-Lex on 2026-10-20 (sha256 in "
+_USER = ("Text supplied by the author from EUR-Lex on 2026-10-20 (sha256 in "
          "docs/DATA_LOG.md): ")
 _LOG = ("see docs/DATA_LOG.md, Legal texts (WR-02 re-read)")
 # WR-03: which wording was actually read, shown first in the Inputs notes so
@@ -83,7 +83,7 @@ def _legal(id_, desc, val, unit, art, rationale, src="Src_ETSDirective",
         rationale = (("Text read: %s. " % read) if read else "") + _USER + rationale
         # IN-04: the text was read in the user's paste, not via 02-RESEARCH
         text = text.replace("per 02-RESEARCH 3.11: ", "")
-        note = ("Transcribed: %s %s; text supplied by the user from EUR-Lex "
+        note = ("Transcribed: %s %s; text supplied by the author from EUR-Lex "
                 "on 2026-10-20, quote and sha256 in docs/DATA_LOG.md "
                 "(Legal texts, plan 02-16)%s" % (art, text, extra))
     else:
@@ -115,7 +115,7 @@ INPUTS = (
            PriceBasis("EUR", 2025, "nominal"), "Src_EEXAuctions",
            Status.ASSUMPTION,
            "Unverified transcription: not reproducible from the repository "
-           "(WR-01); the user chose on 2026-10-20 not to supply the EEX rows, "
+           "(WR-01); the author chose on 2026-10-20 not to supply the EEX rows, "
            "see docs/DATA_LOG.md, EEX 2025 auctions (plan 02-16). "
            "Transcribed (D-14 route 3): volume-weighted mean of the 2025 EU "
            "ETS1 primary auction clearing prices from the EEX auction "
@@ -193,7 +193,7 @@ INPUTS = (
 
 _NGFS_BASIS = PriceBasis("USD", 2010, "real")
 _NGFS_NOTE = ("Transcribed (D-14 route 3): NGFS Phase V explorer table pasted "
-              "by the user, model REMIND-MAgPIE 3.3-4.8, region OECD & EU "
+              "by the author, model REMIND-MAgPIE 3.3-4.8, region OECD & EU "
               "(R5), variable Price|Carbon, unit US$2010/t CO2; see "
               "docs/DATA_LOG.md \"NGFS Phase V (D-40, D-43\"")
 _NGFS_RAT = ("%s scenario = NGFS %s (D-26); one IAM for all three scenarios, "

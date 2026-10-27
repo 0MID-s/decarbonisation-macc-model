@@ -63,11 +63,11 @@ EXCEL_RECORD = (
     "code-review fixes, same result).",
     "Phase 5 GATE-B on 2026-10-26 in Excel for Mac 16.114.1: 12 states "
     "recalculated in Excel desktop with no mismatches; master flag OK. Visual "
-    "review approved by the user in Excel desktop.",
+    "review approved by the author in Excel desktop.",
     "Post-review rebuild on 2026-10-26 (code review fixes CR-01 to WR-04, "
     "including new labels and checks): 12 states recalculated in Excel "
     "desktop with no mismatches; master flag OK. The changed labels were "
-    "then reviewed and approved by the user in Excel desktop.",
+    "then reviewed and approved by the author in Excel desktop.",
     "Phase 3 review fixes on 2026-10-26 (one MACC eligibility rule, an "
     "autoscaled full MACC x-axis, a break-even check recomputed from the "
     "yearly rows, an annuity check that holds for any tonne profile and "

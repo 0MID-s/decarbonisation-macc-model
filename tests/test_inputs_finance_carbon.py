@@ -79,10 +79,10 @@ class CarbonTests(unittest.TestCase):
     @staticmethod
     def data_log_outcomes():
         """Outcome per legal id, parsed from the DATA_LOG table "Final
-        outcomes after user paste" (WR-04: no hand-kept copy of the set)."""
+        outcomes after author paste" (WR-04: no hand-kept copy of the set)."""
         with open(os.path.join(ROOT, "docs", "DATA_LOG.md")) as f:
             log = f.read()
-        start = log.index("### Final outcomes after user paste")
+        start = log.index("### Final outcomes after author paste")
         end = log.find("\n## ", start)
         section = log[start:end if end > 0 else len(log)]
         out = {}
@@ -115,11 +115,11 @@ class CarbonTests(unittest.TestCase):
             self.assertIn("docs/DATA_LOG.md", r.note, r.id)
             if r.id in verified:
                 self.assertEqual(r.status, Status.SOURCED, r.id)
-                self.assertIn("supplied by the user from EUR-Lex on 2026-",
+                self.assertIn("supplied by the author from EUR-Lex on 2026-",
                               r.note, r.id)
-                self.assertIn("Text supplied by the user", r.rationale, r.id)
+                self.assertIn("Text supplied by the author", r.rationale, r.id)
                 self.assertTrue(r.rationale.startswith(
-                    ("Text supplied by the user", "Text read: ")), r.id)
+                    ("Text supplied by the author", "Text read: ")), r.id)
             else:
                 self.assertEqual(r.status, Status.ASSUMPTION, r.id)
                 self.assertTrue(r.rationale.startswith("Unverified transcription:"), r.id)

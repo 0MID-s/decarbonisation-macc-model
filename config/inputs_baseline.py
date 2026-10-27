@@ -123,8 +123,8 @@ INPUTS = (
          "Final energy consumption, energy use only (FC_IND_CPC_E); "
          "non-energy (feedstock) use is excluded because it is not combusted "
          "(D-05). Eurostat balances are on a net calorific value basis for "
-         "all carriers (D-08). Materiality cut-off (D-09, Claude's "
-         "discretion): carriers above 1% of sector final energy are separate "
+         "all carriers (D-08). Materiality cut-off (D-09, analyst "
+         "judgement): carriers above 1% of sector final energy are separate "
          "lines (gas, electricity, naphtha, LPG, derived heat); the rest is "
          "one remainder line computed on Baseline as total minus those five"),
     _nrg("Base_NRG_Gas", "BE chemical and petrochemical: natural gas",
@@ -138,7 +138,7 @@ INPUTS = (
     _nrg("Base_NRG_Naphtha", "BE chemical and petrochemical: naphtha",
          29361.1, "O4640",
          "Sector-specific petrochemical fuel kept as a separate flagged "
-         "line; no unsourced size adjustment (D-06, Claude's discretion)"),
+         "line; no unsourced size adjustment (D-06, analyst judgement)"),
     _nrg("Base_NRG_GasOil", "BE chemical and petrochemical: gas oil / diesel (memo)",
          1143.8, "O4671XR5220B",
          "Memo: dominant fuel of the remainder (gas oil, fuel oil, coke, "

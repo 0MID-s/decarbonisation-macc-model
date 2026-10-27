@@ -64,7 +64,7 @@ INPUTS = (
            "A declining path matters because of the Belgian nuclear "
            "extension; option to source the Federal Planning Bureau path is "
            "recorded in Notes",
-           "Accepted deviation from DATA-05 (declining LB path), user-locked "
+           "Accepted deviation from DATA-05 (declining LB path), author decision "
            "in D-38"),
     scalar("EF_ResidualMB", _SEC,
            "Belgium residual mix, market-based (AIB 2025)",

@@ -82,7 +82,7 @@ LIMITATIONS = (
 )
 LEGAL_PREFIXES = ("Carbon_ETS2_", "Carbon_ETS1_")
 LEGAL_EXTRA_IDS = ("Base_NRG_IncludesC21",)
-_TEXT_READ = re.compile(r"^Text read: (.+?)\. Text supplied by the user")
+_TEXT_READ = re.compile(r"^Text read: (.+?)\. Text supplied by the author")
 
 
 def legal_status_note(inputs):
@@ -96,7 +96,7 @@ def legal_status_note(inputs):
     assumed = [r for r in legal if r.status is Status.ASSUMPTION]
     parts = []
     if sourced:
-        parts.append("Legal parameters whose text the user supplied from "
+        parts.append("Legal parameters whose text the author supplied from "
                      "EUR-Lex on 2026-10-20 are Sourced: %s."
                      % ", ".join(r.id for r in sourced))
         by_read = {}  # type: Dict[str, List[str]]
