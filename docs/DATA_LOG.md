@@ -332,12 +332,12 @@ Cross-check observations (D-31, informational; the live DEA values remain the co
 
 ## Not fetched here (by design)
 
-- NGFS Phase V carbon prices: user-supplied (`data_raw/Src_NGFSPhaseV/`, D-43), handled in plan 02-11 and the NGFS parser.
-- Damodaran waccEurope: user-supplied (D-42); EUR-Lex legal texts: see the section "Legal texts (WR-02 re-read, plan 02-15)" below (7 VERIFIED by user paste (plan 02-16), 9 NOT READ); EEX auction data: hand entry (D-14 route 3), plan 02-07.
+- NGFS Phase V carbon prices: author-supplied (`data_raw/Src_NGFSPhaseV/`, D-43), handled in plan 02-11 and the NGFS parser.
+- Damodaran waccEurope: author-supplied (D-42); EUR-Lex legal texts: see the section "Legal texts (WR-02 re-read, plan 02-15)" below (7 VERIFIED by author paste (plan 02-16), 9 NOT READ); EEX auction data: hand entry (D-14 route 3), plan 02-07.
 
 ## User-supplied data (filled in plan 02-11)
 
-### NGFS Phase V (D-40, D-43; user paste of the IIASA explorer table, route 3)
+### NGFS Phase V (D-40, D-43; author paste of the IIASA explorer table, route 3)
 
 - File: `data_raw/Src_NGFSPhaseV/ngfs_price_carbon_user_paste.tsv` (gitignored), 2,228 bytes, .tsv suffix, sha256 `42bd29b4b90294beeb9548235dbedf75954186caf5a7b4855ad860e3f6396281`.
 - Method: sha256 computed with a stdlib script under `python3 -I` (path as argument); parsed read-only with `.venv/bin/python -W ignore -I tools/parse_ngfs.py` using `--model "REMIND-MAgPIE 3.3-4.8" --region "OECD & EU (R5)"`. Exactly three rows returned; all values compared one by one with the RESEARCH addendum (all equal).
@@ -355,15 +355,15 @@ Excluded rows and why:
 - MESSAGEix-GLOBIOM 2.0-M-R12-NGFS (2 rows): no Net Zero 2050 row.
 - REMIND-MAgPIE 3.3-4.8 IntegratedPhysicalDamages (median) (2 rows): damage variants, not the baseline scenarios.
 
-The explorer snapshot ngfs_snapshot_1792416458.csv (sha256 15d8e1eaf46989f6cab3f19243fd66e375781e1d2221011cf09e747ea175639f) and its .zip (sha256 7d62bf5b45d5c4f2ab11fb014aa2b72fae83d0e4ed2582e42fe243939144983b) matched this paste and were deleted at the user's request on 2026-10-19 (D-43); the .zip was never extracted by code.
+The explorer snapshot ngfs_snapshot_1792416458.csv (sha256 15d8e1eaf46989f6cab3f19243fd66e375781e1d2221011cf09e747ea175639f) and its .zip (sha256 7d62bf5b45d5c4f2ab11fb014aa2b72fae83d0e4ed2582e42fe243939144983b) matched this paste and were deleted at the author's request on 2026-10-19 (D-43); the .zip was never extracted by code.
 
-Licence: adapted CC BY 4.0 (NGFS Phase 5 Scenario Explorer licence). Transcribed from https://data.ene.iiasa.ac.at/ngfs/#/license by the user on 2026-10-19 (D-44; key clauses in `data_raw/Src_NGFSPhaseV/license_summary_user_paste.txt`). "This Public License is adapted from the Creative Commons Attribution 4.0 International Public License with the aim of keeping the Licensed Material always up-to-date and avoiding the circulation of obsolescent data constituting substantial portions of the Licensed Material." Section 2(a)(1): may "reproduce and Share parts of the Licensed Material, as long as this does not constitute a reproduction of a substantial portion of the Licensed Material" and produce, reproduce and share Adapted Material (figures, tables, derived analysis). Section 3(a)(1): attribution required (creator, copyright notice, licence and warranty-disclaimer notice, URI), "indicate if You modified the Licensed Material", and include the licence text or URI. Section 2(a)(5)(C): no implication of endorsement. Our use (3 scenarios x 7 years of one variable, model and region, converted to EUR 2025 and interpolated) is parts plus adapted material. Citation wording: "NGFS Phase 5 Scenario Explorer, hosted by IIASA", https://data.ene.iiasa.ac.at/ngfs, with the line "© NGFS Phase 5 Scenario Explorer" and a statement that values were modified.
+Licence: adapted CC BY 4.0 (NGFS Phase 5 Scenario Explorer licence). Transcribed from https://data.ene.iiasa.ac.at/ngfs/#/license by the author on 2026-10-19 (D-44; key clauses in `data_raw/Src_NGFSPhaseV/license_summary_user_paste.txt`). "This Public License is adapted from the Creative Commons Attribution 4.0 International Public License with the aim of keeping the Licensed Material always up-to-date and avoiding the circulation of obsolescent data constituting substantial portions of the Licensed Material." Section 2(a)(1): may "reproduce and Share parts of the Licensed Material, as long as this does not constitute a reproduction of a substantial portion of the Licensed Material" and produce, reproduce and share Adapted Material (figures, tables, derived analysis). Section 3(a)(1): attribution required (creator, copyright notice, licence and warranty-disclaimer notice, URI), "indicate if You modified the Licensed Material", and include the licence text or URI. Section 2(a)(5)(C): no implication of endorsement. Our use (3 scenarios x 7 years of one variable, model and region, converted to EUR 2025 and interpolated) is parts plus adapted material. Citation wording: "NGFS Phase 5 Scenario Explorer, hosted by IIASA", https://data.ene.iiasa.ac.at/ngfs, with the line "© NGFS Phase 5 Scenario Explorer" and a statement that values were modified.
 
 ### Damodaran Europe (D-42; D-14 route 3, read from the official file)
 
 - Source URL: https://pages.stern.nyu.edu/~adamodar/pc/datasets/waccEurope.xls
 - sha256: `05caa5715824c0855d42f6726e8b7f52f77b220cd5d2893af9cbbc71c4abcf5e`; sheet "Industry Averages"; date updated 2026-01-05 (serial 46027); file saved 2026-01-09.
-- Method: OLE streams checked first: only Workbook and summary information, no VBA or macro storage; read through a read-only stdlib parser; file deleted at the user's request. Claude's fetcher was not used and no .xls exception was added (D-16).
+- Method: OLE streams checked first: only Workbook and summary information, no VBA or macro storage; read through a read-only stdlib parser; file deleted at the author's request. The project fetcher was not used and no .xls exception was added (D-16).
 
 | Industry | Firms | Cost of capital (US$) | Cost of capital (Euros) |
 |---|---|---|---|
@@ -380,7 +380,7 @@ Fisher (D-19, D-42): 1.07811 / 1.02 - 1 = 5.70% real. Mismatch to state in the r
 
 Parameter: Carbon_EUA_Avg2025 = 73.43 EUR/tCO2 (2025 volume-weighted mean auction clearing price, EU ETS1 primary market, EEX).
 
-Route-3 history: the figure (and the simple mean 73.45, 213 successful auctions, last auction 15 Dec 2025 at 84.60) was computed during research on 2026-10-18 from the EEX auction history file. The inputs were not retained and the code never opens the EEX .zip (D-37), so the arithmetic cannot be reproduced from this repository. The user chose not to supply the 2025 auction rows on 2026-10-20 (option A2). Outcome: status downgraded to Analyst assumption, rationale begins "Unverified transcription:", value unchanged at 73.43. No sha256, sums or row-level data are logged because no file was supplied.
+Route-3 history: the figure (and the simple mean 73.45, 213 successful auctions, last auction 15 Dec 2025 at 84.60) was computed during research on 2026-10-18 from the EEX auction history file. The inputs were not retained and the code never opens the EEX .zip (D-37), so the arithmetic cannot be reproduced from this repository. The author chose not to supply the 2025 auction rows on 2026-10-20 (option A2). Outcome: status downgraded to Analyst assumption, rationale begins "Unverified transcription:", value unchanged at 73.43. No sha256, sums or row-level data are logged because no file was supplied.
 
 ## Legal texts (WR-02 re-read, plan 02-15)
 
@@ -407,32 +407,32 @@ EUR-Lex answered every request with HTTP 202 and an empty body (AWS WAF challeng
 | Carbon_ETS1_ThermalThresholdMW | https://eur-lex.europa.eu/eli/dir/2003/87/oj/eng | Annex I, combustion of fuels, 20 MW | NOT READ | EUR-Lex returned HTTP 202 with an empty body (WAF challenge) |
 | Base_NRG_IncludesC21 | https://eur-lex.europa.eu/eli/reg/2008/1099/oj/eng (Annex A item 2.6.1.6); also https://ec.europa.eu/eurostat/cache/metadata/en/nrg_bal_esms.htm | Annex A 2.6.1.6, NACE 20 and 21 | NOT READ | EUR-Lex: HTTP 202, empty body (WAF challenge). Eurostat metadata: page read, no statement on NACE 20 and 21 |
 
-VERIFIED rows: 0. NOT READ rows: 16. MISMATCH rows: 0. Plan 02-16 asks the user to paste the article text for each NOT READ row.
+VERIFIED rows: 0. NOT READ rows: 16. MISMATCH rows: 0. Plan 02-16 asks the author to paste the article text for each NOT READ row.
 
-### Final outcomes after user paste (plan 02-16, Part B1, partial)
+### Final outcomes after author paste (plan 02-16, Part B1, partial)
 
-Read date: 2026-10-20. File: data_raw/Src_ETSDirective/legal_text_user_paste.txt (plain text, user paste from EUR-Lex in a browser, read as untrusted data only), 4134 bytes, sha256 6530b21dadb8d601890c6299be6cc546cca4ea7ff860bee96d6a5f748dd531b8 (updated after the user pasted the full Article 30h on 2026-10-20; earlier version was 3134 bytes, sha256 180236187b0b2475791ebb4b8731e39653458ff7d34f911c04c48361b1a53fb0). The file is kept in data_raw (untracked).
+Read date: 2026-10-20. File: data_raw/Src_ETSDirective/legal_text_user_paste.txt (plain text, author paste from EUR-Lex in a browser, read as untrusted data only), 4134 bytes, sha256 6530b21dadb8d601890c6299be6cc546cca4ea7ff860bee96d6a5f748dd531b8 (updated after the author pasted the full Article 30h on 2026-10-20; earlier version was 3134 bytes, sha256 180236187b0b2475791ebb4b8731e39653458ff7d34f911c04c48361b1a53fb0). The file is kept in data_raw (untracked).
 
 | Parameter id | Outcome | Quote from the paste |
 |---|---|---|
-| Carbon_ETS2_StartYear | VERIFIED (user paste) | Reg. (EU) 2026/667, postponement provision (article number not shown in the paste; copied by the user from https://eur-lex.europa.eu/eli/reg/2026/667/oj/eng): "The operation of emissions trading for buildings, road transport and additional sectors set out in Chapter IVa of Directive 2003/87/EC shall be postponed until 2028." |
-| Carbon_ETS2_StabPrice | VERIFIED (user paste) | Text read: Dir. (EU) 2023/959 as enacted; later amendments (2026) not checked. Dir. 2003/87/EC Art. 30h(2) as inserted by Dir. (EU) 2023/959: "Where the average price of allowances referred to in paragraph 1 of this Article exceeds a price of EUR 45 for a period of two consecutive months, 20 million allowances ... Indexation based on the European index of consumer prices for 2020 shall apply. ... up to 31 December 2029." (EUR 45 in 2020 prices) |
-| Carbon_ETS2_StabMonths | VERIFIED (user paste) | Text read: Dir. (EU) 2023/959 as enacted; later amendments (2026) not checked. Same Art. 30h(2) sentence: "for a period of two consecutive months" |
-| Carbon_ETS2_StabRelease | VERIFIED (user paste) | Text read: Dir. (EU) 2023/959 as enacted; later amendments (2026) not checked. Same Art. 30h(2) sentence: "20 million allowances covered by this Chapter shall be released". Release possible up to 31 Dec 2029. The consolidated text after the 2026 amendments was not read. |
-| Carbon_ETS1_ThermalThresholdMW | VERIFIED (user paste, original 2003 wording only) | Text read: original 2003 Annex I wording; consolidated text not read. Dir. 2003/87/EC Annex I: "Combustion installations with a rated thermal input exceeding 20 MW (except hazardous or municipal waste installations)", gas column "Carbon dioxide". This is the original 2003 wording; the consolidated text was not read (an analyst note in the paste says the threshold is unchanged, which is not itself verified). |
+| Carbon_ETS2_StartYear | VERIFIED (author paste) | Reg. (EU) 2026/667, postponement provision (article number not shown in the paste; copied by the author from https://eur-lex.europa.eu/eli/reg/2026/667/oj/eng): "The operation of emissions trading for buildings, road transport and additional sectors set out in Chapter IVa of Directive 2003/87/EC shall be postponed until 2028." |
+| Carbon_ETS2_StabPrice | VERIFIED (author paste) | Text read: Dir. (EU) 2023/959 as enacted; later amendments (2026) not checked. Dir. 2003/87/EC Art. 30h(2) as inserted by Dir. (EU) 2023/959: "Where the average price of allowances referred to in paragraph 1 of this Article exceeds a price of EUR 45 for a period of two consecutive months, 20 million allowances ... Indexation based on the European index of consumer prices for 2020 shall apply. ... up to 31 December 2029." (EUR 45 in 2020 prices) |
+| Carbon_ETS2_StabMonths | VERIFIED (author paste) | Text read: Dir. (EU) 2023/959 as enacted; later amendments (2026) not checked. Same Art. 30h(2) sentence: "for a period of two consecutive months" |
+| Carbon_ETS2_StabRelease | VERIFIED (author paste) | Text read: Dir. (EU) 2023/959 as enacted; later amendments (2026) not checked. Same Art. 30h(2) sentence: "20 million allowances covered by this Chapter shall be released". Release possible up to 31 Dec 2029. The consolidated text after the 2026 amendments was not read. |
+| Carbon_ETS1_ThermalThresholdMW | VERIFIED (author paste, original 2003 wording only) | Text read: original 2003 Annex I wording; consolidated text not read. Dir. 2003/87/EC Annex I: "Combustion installations with a rated thermal input exceeding 20 MW (except hazardous or municipal waste installations)", gas column "Carbon dioxide". This is the original 2003 wording; the consolidated text was not read (an analyst note in the paste says the threshold is unchanged, which is not itself verified). |
 | Carbon_ETS2_StartYearEnacted | NOT READ (stays Analyst assumption) | Art. 30d(1) not supplied |
-| Carbon_ETS2_TripleTrigger | VERIFIED (user paste) | Text read: Dir. (EU) 2023/959 as enacted; later amendments (2026) not checked. Art. 30h(3) as inserted by Dir. (EU) 2023/959: "3. Where the average price of allowances referred to in paragraph 1 of this Article is more than three times the average price of allowances during the six preceding consecutive months, 150 million allowances covered by this Chapter shall be released from the market stability reserve in accordance with Article 1a(7) of Decision (EU) 2015/1814." Multiple = 3. |
-| Carbon_ETS2_TripleRelease | VERIFIED (user paste) | Text read: Dir. (EU) 2023/959 as enacted; later amendments (2026) not checked. Same Art. 30h(3) sentence: "150 million allowances covered by this Chapter shall be released". |
+| Carbon_ETS2_TripleTrigger | VERIFIED (author paste) | Text read: Dir. (EU) 2023/959 as enacted; later amendments (2026) not checked. Art. 30h(3) as inserted by Dir. (EU) 2023/959: "3. Where the average price of allowances referred to in paragraph 1 of this Article is more than three times the average price of allowances during the six preceding consecutive months, 150 million allowances covered by this Chapter shall be released from the market stability reserve in accordance with Article 1a(7) of Decision (EU) 2015/1814." Multiple = 3. |
+| Carbon_ETS2_TripleRelease | VERIFIED (author paste) | Text read: Dir. (EU) 2023/959 as enacted; later amendments (2026) not checked. Same Art. 30h(3) sentence: "150 million allowances covered by this Chapter shall be released". |
 | Carbon_ETS2_Scope_Gas, _LPG, _Naphtha, _OtherFuels, _FleetDiesel, _Elec, _Heat | NOT READ (stay Analyst assumption) | Annex III and Art. 30a not supplied |
 | Base_NRG_IncludesC21 | NOT READ (stays Analyst assumption) | Reg. 1099/2008 Annex A not supplied |
 
 Art. 30h(1) review note resolved: Art. 30h(1) (price more than twice, or 1.5 times for 2027 and 2028, the six-month average for more than three consecutive months; 50 million allowances) and Art. 30h(3) (more than three times; 150 million allowances) are separate mechanisms. The model uses 30h(2) and 30h(3); 30h(1) is context only and no model id refers to it. Paragraph 4 (when the 30h(2) condition is met on the same day as the 30h(1) or (3) condition, additional allowances are released only under paragraph 1 or 3) and paragraph 6 (no further release under this Article earlier than 12 months after a release) were read and are context only.
 
-Counts after this plan (updated for Art. 30h(3)): VERIFIED 7 (user paste), NOT READ 9 ids (StartYearEnacted, 7 scope flags, Base_NRG_IncludesC21), MISMATCH 0 (no value was contradicted by a supplied text).
+Counts after this plan (updated for Art. 30h(3)): VERIFIED 7 (author paste), NOT READ 9 ids (StartYearEnacted, 7 scope flags, Base_NRG_IncludesC21), MISMATCH 0 (no value was contradicted by a supplied text).
 
 ## Context figures and dates (WR-01, plan 02-18)
 
-Executor session 2026-10-20. No web reader (WebFetch) was available in this session, so web figures could not be re-read today; they are downgraded to Analyst assumption ("Unverified transcription") and listed for user follow-up. Dataset dates were read from local files with a stdlib script (python3 -I, path as argument, prints only the top-level `updated` field).
+Executor session 2026-10-20. No web reader (WebFetch) was available in this session, so web figures could not be re-read today; they are downgraded to Analyst assumption ("Unverified transcription") and listed for author follow-up. Dataset dates were read from local files with a stdlib script (python3 -I, path as argument, prints only the top-level `updated` field).
 
 | Item | URL | Read date | Outcome | Value |
 |---|---|---|---|---|
@@ -455,7 +455,7 @@ The workbook says a US-CPI route "would give about 1.31, so prices about 25% hig
 
 ## Phase 3 (measures engine), plan 03-01
 
-Executor session 2026-10-21. New raw files were fetched only through `tools/fetch_all.py` (hosts allowlisted; `energie.wallonie.be` added as an exact host in its own reviewed commit 024ae19 after the user approved the diff). Files are untrusted data in gitignored `data_raw/<Src_ID>/`; the xlsx was read with `tools/parse_xlsx.py` / openpyxl read-only under `-I`; the PDFs by macOS PDFKit text extraction only. All research values (V3-V10) were recomputed from the primary files; none differed.
+Executor session 2026-10-21. New raw files were fetched only through `tools/fetch_all.py` (hosts allowlisted; `energie.wallonie.be` added as an exact host in its own reviewed commit 024ae19 after the author approved the diff). Files are untrusted data in gitignored `data_raw/<Src_ID>/`; the xlsx was read with `tools/parse_xlsx.py` / openpyxl read-only under `-I`; the PDFs by macOS PDFKit text extraction only. All research values (V3-V10) were recomputed from the primary files; none differed.
 
 ### Src_EUOilBulletin (EU Weekly Oil Bulletin, price history)
 

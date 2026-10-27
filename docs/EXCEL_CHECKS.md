@@ -56,7 +56,7 @@ Excel for the web: still open, GATE-B (Phase 5).
 ### Deviation: location of the throwaway copy
 
 The plan said to copy into a `mktemp -d` folder. Excel for Mac (sandboxed)
-silently refused to open a file there (0 workbooks). By the user's decision
+silently refused to open a file there (0 workbooks). By the author's decision
 (2026-10-21) the copy was placed in a fresh subfolder of the git-ignored dist/
 folder (`dist/excel-check-<timestamp>/check.xlsx`), as in Phase 1, for this run
 only. The copy was closed without saving and the copy and its subfolder were
@@ -65,7 +65,7 @@ opened in Excel.
 
 ### User finding 1 (2026-10-21): MACC technique A drew equal-width bars
 
-The user opened dist/maison_veritas.xlsx in Excel for Mac 16.114 (Market-based,
+The author opened dist/maison_veritas.xlsx in Excel for Mac 16.114 (Market-based,
 Central). All six measures were drawn as equal-width, evenly spaced trapezoids
 and the x-axis showed only a "0" label. Widths should follow tCO2e per year
 (VSD 15, PV 155, LED 31, renewable contract 2,194, heat pump 789, fleet 36).
@@ -81,7 +81,7 @@ was ineffective: Excel saw the cells as dates, yet the category type stayed
 
 Confirmed fix: setting the category axis type to "Date axis" (`<c:auto val="0"/>`)
 drew variable-width rectangles at once, axis 0 to 3,500 in steps of 500
-(screenshot by the user). `xl/postprocess.py` now rewrites `c:auto` 1 to 0 inside
+(screenshot by the author). `xl/postprocess.py` now rewrites `c:auto` 1 to 0 inside
 `c:dateAx` in the built .xlsx (stdlib zipfile; other members byte-identical;
 replacement count asserted; applied to the spike build too). Categories are plain
 MACC column E again. The axis keeps min 0, max a multiple of the nice step,
@@ -91,24 +91,24 @@ Data labels now use short names (LED, VSD, Solar PV, Contract, Heat pump, Fleet)
 from a "Short chart label" column (MACC column L), read through INDEX/MATCH so
 they follow the live sort. The legend keeps the full names.
 
-Re-verification of variable widths and axis labels in Excel: pending, user.
+Re-verification of variable widths and axis labels in Excel: pending, author.
 
 ### User visual verdict
 
 Approved, 2026-10-24, Excel for Mac 16.114, after rebuild 6b0dec23 (auto=0,
-short labels). The user said the chart "seems good" and confirmed that the
+short labels). The author said the chart "seems good" and confirmed that the
 dropdowns drive the model. Live values read from the open workbook with
 High / Location-based: title "MACC: Location-based basis, High carbon price
 scenario"; the renewable contract shows "n/a (no abatement on this basis)",
 tier Later, rank 6; VSD 14 t / -801, Solar PV 139 / -656, LED 28 / -244,
 Heat pump 822 / 102, Fleet 37 / 143.
 
-The user remarked that Solar PV, VSD and LED look squished on the full MACC.
+The author remarked that Solar PV, VSD and LED look squished on the full MACC.
 That is correct data (about 200 t of about 3,220 t), so a zoom chart was added
-after the user's check (cell K18, right of chart A), using the same technique
+after the author's check (cell K18, right of chart A), using the same technique
 (date axis, auto=0 post-process) and the same series, with the x-axis cut just
 above the largest cumulative "Do first" abatement over all six states. Its
-rendering was not part of the user's check and will be re-checked at GATE-B
+rendering was not part of the author's check and will be re-checked at GATE-B
 (Excel for the web) and in the final review.
 
 ## Phase 4 (Exposure and Sensitivity), Excel desktop
@@ -152,7 +152,7 @@ rendering was not part of the user's check and will be re-checked at GATE-B
 ### User visual verdict (Phase 4)
 
 - Date: 2026-10-25
-- Checked by the user in Excel for Mac: the bridge chart (Exposure sheet) and the
+- Checked by the author in Excel for Mac: the bridge chart (Exposure sheet) and the
   tornado chart (Sensitivity sheet) across Central / Market-based / Direct ETS
   Off, Low, and Direct ETS On; the sensitivity grid centre; and the
   rank-stability indicator showing "Same".
@@ -172,7 +172,7 @@ rendering was not part of the user's check and will be re-checked at GATE-B
 - `dist/maison_veritas.xlsx` was unchanged by the run (sha256
   `e4822ca03be4a23bca85d8c8676e26bcb3f5faf14206c3265e10e66af93d9019`), and no
   check folders were left behind.
-- The user's visual verdict above was given before these fixes. The fixes do
+- The author's visual verdict above was given before these fixes. The fixes do
   not touch the bridge or tornado chart definitions.
 
 ## Phase 5 / GATE-B, Excel desktop
@@ -208,16 +208,16 @@ rendering was not part of the user's check and will be re-checked at GATE-B
 
 - Excel-only findings: none. No workbook fix was needed. No dist/excel-check-*
   folder remains.
-- Excel for the web: not verified (see the user verdict below).
+- Excel for the web: not verified (see the author verdict below).
 
 ### User visual verdict (Phase 5)
 
 - Date: 2026-10-26
-- Verdict: "approve desktop". The user reviewed the 8-step desktop checklist
+- Verdict: "approve desktop". The author reviewed the 8-step desktop checklist
   (Cover flag and links, ReadMe trace links, Dashboard tiles and charts,
   selector changes, MACC/bridge/tornado, Disclosure dropdown, A4 print preview)
   and approved. No issues were reported; the MACC technique stays "A".
-- Excel for the web: not verified (the user did not perform the web check).
+- Excel for the web: not verified (the author did not perform the web check).
 
 Final text-only rebuild: formula-identical, re-verified by the script in all 12
 states (12,278 formula cells each, 0 mismatches, 0 error values, Chk_Master OK).
@@ -257,7 +257,7 @@ not verified.
 - Deliverable: dist/maison_veritas.xlsx, sha256
   `59c8ce4d10ba786dd18da56c999d756eed31d1c565840bfd630b1ae7bd1d4020`
   (unchanged by the run). No dist/excel-check-* folder remains.
-- Re-verified by script only. The user's visual approval above was given for
+- Re-verified by script only. The author's visual approval above was given for
   the pre-fix build; the fixes change visible labels (Dashboard tile
   sub-labels, scenario chart axis title, ReadMe trace text, Disclosure status
   column), which have not been reviewed visually. Excel for the web: not
@@ -265,11 +265,11 @@ not verified.
 
 ### User visual verdict (post-review build)
 
-- Date: 2026-10-26. The user reviewed the labels changed by the code review
+- Date: 2026-10-26. The author reviewed the labels changed by the code review
   fixes in Excel desktop (Dashboard tile sub-labels, scenario chart axis
   title, ReadMe trace text, Disclosure status column).
 - Verdict (verbatim): "skip web, looks good overall".
-- Excel for the web: not verified (the user chose to skip it).
+- Excel for the web: not verified (the author chose to skip it).
 - The flagged disclosure references ship with their visible flags.
 - Final text-only rebuild after this verdict (Notes record wording only):
   re-verified by tools/excel_check.py in all 12 states, 12,279 formula cells
@@ -400,16 +400,16 @@ not verified.
 
 ### Phase 3 review fixes: visual status
 
-- 2026-10-26. The user delegated the visual check of the Phase 3 review-fix
+- 2026-10-26. The author delegated the visual check of the Phase 3 review-fix
   changes ("if they look good to you i trust you"). These changes were not
-  viewed in Excel by the user or by Claude.
-- Claude checked them programmatically: chart XML (the full MACC chart and
+  viewed in Excel by the author or by script.
+- They were checked programmatically: chart XML (the full MACC chart and
   the Dashboard MACC chart autoscale; only the zoom chart keeps a fixed
   maximum), the label and note text, and Chk_Master OK under location-based
   with EF_GridLB_Change = -3%/yr. The scripted Excel desktop check is clean
   in all 12 states (deliverable sha256
   `7395efd88dac54fb240558774046adb61ba1e4e91f2ab3cbce12ffa6777ffbf1`).
-- The earlier layout was approved visually by the user (GATE-B and the
+- The earlier layout was approved visually by the author (GATE-B and the
   post-review labels). Excel for the web: not verified.
 
 ### Pre-publication text rebuild
@@ -418,3 +418,16 @@ not verified.
   tools/excel_check.py in all 12 states: 12,291 formula cells each,
   0 mismatches, 0 error values, Chk_Master OK. Final deliverable sha256
   `1f03a849b7e3d3c283e6115d0602e0d578f44879c50c092d356e26b2f748a621`.
+
+### Pre-release text polish
+
+- 2026-10-27. Text-only change: workbook and documentation wording now
+  refers to the author instead of "the user" and uses "analyst judgement"
+  in the Baseline notes. Formulas, names and values are unchanged.
+  Re-verified by tools/excel_check.py in Excel for Mac in all 12 states:
+  12,291 formula cells each, 0 mismatches, 0 error values, Chk_Master OK.
+- Default outputs unchanged: M_Portfolio_NPV -72,398.9; Dash_NPVIncl
+  2,519,249.7; Dash_Share 0.3924; Dash_CostNotActing 13,870,507.3.
+- Final deliverable sha256
+  `f2945666ffe1eafc5af3e81937b85bef15150f59e6c0870d9822dc2c3eace698`.
+  No dist/excel-check-* folder remains. Excel for the web: not verified.

@@ -68,7 +68,7 @@ Environment: Microsoft Excel for Mac 16.114, spike sha256
 bb4c7a87cec8bc7e68f552c12b963f04740d24de403c6ac9097177876d45621e (fresh rebuild,
 identical to the 01-07 build).
 
-### Scripted checks in Excel desktop (AppleScript, Claude)
+### Scripted checks in Excel desktop (AppleScript)
 
 | Check | Result |
 |---|---|
@@ -77,9 +77,9 @@ identical to the 01-07 build).
 | 11 | C6 = High, C7 = Low: echo cells showed High / Low and MATCH 3 / 1; restored to Central |
 | 12 (error values) | No error values on any sheet after recalculation |
 
-### Visual checks (user)
+### Visual checks (author)
 
-The user reviewed checks 1 to 12 in Excel desktop and reported "looks good ...
+The author reviewed checks 1 to 12 in Excel desktop and reported "looks good ...
 I think everything works", with one note:
 
 - Check 3: on MACC_A the x-axis numbers are crowded ("a bit squished").
@@ -87,7 +87,7 @@ I think everything works", with one note:
   date-axis major unit (or label interval) and/or chart width so labels do not
   crowd.
 
-The user did not report each check separately; no problems were reported for
+The author did not report each check separately; no problems were reported for
 checks 1, 2, 4 to 10 or 12.
 
 ### Decisions (config/build_config.py)

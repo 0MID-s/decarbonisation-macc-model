@@ -6,7 +6,7 @@ Records how the build environment was verified and installed, the accepted resid
 
 ## Environment
 
-System Python 3.9.6, end of life since October 2025. Kept as an accepted limitation (D-09); an upgrade is deferred to the user. Used only inside the project venv `.venv/` (include-system-site-packages = false). The build runs offline; the network is needed only for the install step (pypi.org, files.pythonhosted.org).
+System Python 3.9.6, end of life since October 2025. Kept as an accepted limitation (D-09); an upgrade is deferred to the author. Used only inside the project venv `.venv/` (include-system-site-packages = false). The build runs offline; the network is needed only for the install step (pypi.org, files.pythonhosted.org).
 
 ## Package verification
 
@@ -78,7 +78,7 @@ Adding a domain: a deliberate, reviewed change to `ALLOWED_DOMAINS`, made in its
 
 ## Approval log
 
-2026-10-18: the user chose option A in chat (create the venv, upgrade its pip to 26.0.1 from requirements-bootstrap.txt, then install requirements.txt), after seeing hashes, maintainers, licences and fresh OSV results. Approved in chat.
+2026-10-18: the author chose option A in chat (create the venv, upgrade its pip to 26.0.1 from requirements-bootstrap.txt, then install requirements.txt), after seeing hashes, maintainers, licences and fresh OSV results. Approved in chat.
 
 ## Post-install evidence
 
@@ -103,6 +103,6 @@ Import check: xlsxwriter 3.2.9, openpyxl 3.1.5.
 ## Accepted residual risks
 
 - pip 26.0.1 advisories that cannot be fixed on Python 3.9: CVE-2026-3219, CVE-2026-6357, CVE-2026-8643, CVE-2026-13346. All need a malicious index or archive or crafted console-script names; neutralised by hash pinning, PyPI-only installs and no further installs.
-- Python 3.9.6 is end of life (D-09). The generator runs offline in a venv; upgrade deferred to the user.
+- Python 3.9.6 is end of life (D-09). The generator runs offline in a venv; upgrade deferred to the author.
 - setuptools 58.0.4 (bundled by venv) is not used by the build; wheels-only installs never invoke it.
 
